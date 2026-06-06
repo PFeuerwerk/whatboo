@@ -1,0 +1,55 @@
+@startuml
+
+title New Reservation
+
+actor Customer
+
+participant WhatsApp
+participant Webhook
+participant RuleEngine
+participant AvailabilityService
+database PostgreSQL
+
+Customer -> WhatsApp :
+"Reserva para 4 personas mañana a las 21:00"
+
+WhatsApp -> Webhook :
+Incoming Message
+
+Webhook -> RuleEngine :
+Process Message
+
+RuleEngine -> RuleEngine :
+Extract Date
+
+RuleEngine -> RuleEngine :
+Extract Time
+
+RuleEngine -> RuleEngine :
+Extract Guests
+
+RuleEngine -> AvailabilityService :
+Check Availability
+
+AvailabilityService -> PostgreSQL :
+Query Reservations
+
+PostgreSQL --> AvailabilityService :
+Availability Result
+
+AvailabilityService --> RuleEngine :
+Available
+
+RuleEngine -> PostgreSQL :
+Create Reservation
+
+PostgreSQL --> RuleEngine :
+Reservation Created
+
+RuleEngine -> WhatsApp :
+Send Confirmation
+
+WhatsApp -> Customer :
+Reservation Confirmed
+
+@enduml

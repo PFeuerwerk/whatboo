@@ -1,0 +1,57 @@
+@startuml
+
+title Clean Architecture
+
+package Presentation {
+
+  class ReservationController
+
+  class WhatsAppWebhookController
+
+}
+
+package Application {
+
+  class CreateReservationUseCase
+
+  class CancelReservationUseCase
+
+  class ModifyReservationUseCase
+
+}
+
+package Domain {
+
+  class Reservation
+
+  class AvailabilityService
+
+  class ReservationPolicy
+
+}
+
+package Infrastructure {
+
+  class PrismaReservationRepository
+
+  class WhatsAppProvider
+
+  class RedisCache
+
+}
+
+ReservationController --> CreateReservationUseCase
+
+ReservationController --> CancelReservationUseCase
+
+ReservationController --> ModifyReservationUseCase
+
+CreateReservationUseCase --> Reservation
+
+CreateReservationUseCase --> AvailabilityService
+
+PrismaReservationRepository ..> Reservation
+
+WhatsAppProvider ..> CreateReservationUseCase
+
+@enduml

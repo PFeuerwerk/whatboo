@@ -1,0 +1,47 @@
+@startuml
+
+title WhatsApp Processing Engine
+
+start
+
+:Receive Message;
+
+:Normalize Text;
+
+:Detect Intent;
+
+if (Intent Found?) then (Yes)
+
+  :Extract Data;
+
+  if (Data Complete?) then (Yes)
+
+      :Check Availability;
+
+      if (Available?) then (Yes)
+
+          :Create Reservation;
+
+          :Send Confirmation;
+
+      else (No)
+
+          :Suggest Alternatives;
+
+      endif
+
+  else (No)
+
+      :Request Missing Data;
+
+  endif
+
+else (No)
+
+  :Fallback Flow;
+
+endif
+
+stop
+
+@enduml

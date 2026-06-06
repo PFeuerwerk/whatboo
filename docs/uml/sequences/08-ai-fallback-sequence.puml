@@ -1,0 +1,52 @@
+@startuml
+
+title AI Fallback
+
+actor Customer
+
+participant WhatsApp
+participant RuleEngine
+participant AIService
+participant ReservationService
+database PostgreSQL
+
+Customer -> WhatsApp :
+Complex Request
+
+WhatsApp -> RuleEngine
+
+RuleEngine -> RuleEngine :
+Parse Message
+
+RuleEngine -> RuleEngine :
+Confidence Score
+
+alt confidence >= 90
+
+RuleEngine -> ReservationService :
+Normal Flow
+
+else confidence < 90
+
+RuleEngine -> AIService :
+Interpret Message
+
+AIService --> RuleEngine :
+Structured Data
+
+RuleEngine -> ReservationService :
+Continue Processing
+
+end
+
+ReservationService -> PostgreSQL :
+Persist Data
+
+ReservationService --> RuleEngine
+
+RuleEngine -> WhatsApp :
+Send Response
+
+WhatsApp -> Customer
+
+@enduml

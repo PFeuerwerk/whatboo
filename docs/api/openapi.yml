@@ -1,0 +1,625 @@
+openapi: 3.1.0
+
+info:
+title: Restaurant Booking SaaS API
+version: 1.0.0
+description: |
+Multi-tenant Restaurant Booking SaaS Platform.
+
+```
+Features:
+
+- WhatsApp Reservation Automation
+- Reservation Management
+- Availability Engine
+- Waitlist Management
+- Reminder Scheduling
+- Customer Management
+- Multi-Tenant Isolation
+```
+
+servers:
+
+* url: /api/v1
+  description: Production API
+
+tags:
+
+* name: Authentication
+* name: Restaurants
+* name: Users
+* name: Customers
+* name: Reservations
+* name: Availability
+* name: Waitlist
+* name: Dashboard
+* name: WhatsApp
+* name: Health
+
+security:
+
+* bearerAuth: []
+
+paths:
+
+/auth/login:
+
+```
+post:
+  tags:
+    - Authentication
+
+  summary: Login
+
+  security: []
+
+  requestBody:
+    required: true
+
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/LoginRequest'
+
+  responses:
+
+    '200':
+      description: Authenticated
+
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LoginResponse'
+```
+
+/auth/refresh:
+
+```
+post:
+  tags:
+    - Authentication
+
+  security: []
+
+  summary: Refresh token
+
+  responses:
+
+    '200':
+      description: Token refreshed
+```
+
+/auth/me:
+
+```
+get:
+  tags:
+    - Authentication
+
+  summary: Current user
+
+  responses:
+
+    '200':
+      description: Current authenticated user
+
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserResponse'
+```
+
+/reservations:
+
+```
+get:
+  tags:
+    - Reservations
+
+  summary: List reservations
+
+  parameters:
+
+    - $ref: '#/components/parameters/Page'
+
+    - $ref: '#/components/parameters/PageSize'
+
+    - name: status
+      in: query
+      schema:
+        $ref: '#/components/schemas/ReservationStatus'
+
+    - name: date
+      in: query
+      schema:
+        type: string
+        format: date
+
+  responses:
+
+    '200':
+      description: Reservation list
+
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaginatedReservations'
+
+post:
+  tags:
+    - Reservations
+
+  summary: Create reservation
+
+  parameters:
+
+    - $ref: '#/components/parameters/IdempotencyKey'
+
+  requestBody:
+    required: true
+
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/CreateReservationRequest'
+
+  responses:
+
+    '201':
+      description: Reservation created
+
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReservationResponse'
+```
+
+/reservations/{id}:
+
+```
+get:
+  tags:
+    - Reservations
+
+  summary: Reservation details
+
+  parameters:
+
+    - $ref: '#/components/parameters/ReservationId'
+
+  responses:
+
+    '200':
+      description: Reservation details
+
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReservationResponse'
+
+patch:
+  tags:
+    - Reservations
+
+  summary: Update reservation
+
+  parameters:
+
+    - $ref: '#/components/parameters/ReservationId'
+
+  responses:
+
+    '200':
+      description: Reservation updated
+
+delete:
+  tags:
+    - Reservations
+
+  summary: Cancel reservation
+
+  parameters:
+
+    - $ref: '#/components/parameters/ReservationId'
+
+  responses:
+
+    '204':
+      description: Reservation cancelled
+```
+
+/availability:
+
+```
+get:
+  tags:
+    - Availability
+
+  summary: Check availability
+
+  parameters:
+
+    - name: date
+      in: query
+      required: true
+      schema:
+        type: string
+        format: date
+
+    - name: time
+      in: query
+      required: true
+      schema:
+        type: string
+
+    - name: guestCount
+      in: query
+      required: true
+      schema:
+        type: integer
+
+  responses:
+
+    '200':
+      description: Availability result
+
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AvailabilityResponse'
+```
+
+/customers:
+
+```
+get:
+  tags:
+    - Customers
+
+  summary: Customer list
+
+  responses:
+
+    '200':
+      description: Customer list
+```
+
+/waitlist:
+
+```
+get:
+  tags:
+    - Waitlist
+
+  summary: List waitlist entries
+
+  responses:
+
+    '200':
+      description: Waitlist entries
+
+post:
+  tags:
+    - Waitlist
+
+  summary: Create waitlist entry
+
+  responses:
+
+    '201':
+      description: Waitlist entry created
+```
+
+/dashboard/summary:
+
+```
+get:
+  tags:
+    - Dashboard
+
+  summary: Dashboard summary
+
+  responses:
+
+    '200':
+      description: Dashboard metrics
+
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DashboardSummary'
+```
+
+/whatsapp/webhook:
+
+```
+post:
+  tags:
+    - WhatsApp
+
+  security: []
+
+  summary: Meta webhook
+
+  responses:
+
+    '200':
+      description: Webhook accepted
+
+get:
+  tags:
+    - WhatsApp
+
+  security: []
+
+  summary: Meta verification endpoint
+
+  responses:
+
+    '200':
+      description: Verification successful
+```
+
+/health:
+
+```
+get:
+  tags:
+    - Health
+
+  security: []
+
+  summary: Health check
+
+  responses:
+
+    '200':
+      description: Service healthy
+```
+
+components:
+
+securitySchemes:
+
+```
+bearerAuth:
+
+  type: http
+  scheme: bearer
+  bearerFormat: JWT
+```
+
+parameters:
+
+```
+ReservationId:
+
+  name: id
+  in: path
+  required: true
+
+  schema:
+    type: string
+    format: uuid
+
+Page:
+
+  name: page
+  in: query
+
+  schema:
+    type: integer
+    minimum: 1
+
+PageSize:
+
+  name: pageSize
+  in: query
+
+  schema:
+    type: integer
+    minimum: 1
+    maximum: 100
+
+IdempotencyKey:
+
+  name: Idempotency-Key
+  in: header
+
+  required: false
+
+  schema:
+    type: string
+```
+
+schemas:
+
+```
+LoginRequest:
+
+  type: object
+
+  required:
+    - email
+    - password
+
+  properties:
+
+    email:
+      type: string
+      format: email
+
+    password:
+      type: string
+
+LoginResponse:
+
+  type: object
+
+  properties:
+
+    success:
+      type: boolean
+
+    data:
+
+      type: object
+
+      properties:
+
+        accessToken:
+          type: string
+
+        refreshToken:
+          type: string
+
+UserResponse:
+
+  type: object
+
+  properties:
+
+    id:
+      type: string
+      format: uuid
+
+    email:
+      type: string
+
+    role:
+      type: string
+
+CreateReservationRequest:
+
+  type: object
+
+  required:
+    - customerId
+    - reservationStart
+    - guestCount
+
+  properties:
+
+    customerId:
+      type: string
+      format: uuid
+
+    reservationStart:
+      type: string
+      format: date-time
+
+    guestCount:
+      type: integer
+      minimum: 1
+
+    notes:
+      type: string
+
+ReservationResponse:
+
+  type: object
+
+  properties:
+
+    id:
+      type: string
+      format: uuid
+
+    status:
+      $ref: '#/components/schemas/ReservationStatus'
+
+    guestCount:
+      type: integer
+
+ReservationStatus:
+
+  type: string
+
+  enum:
+    - PENDING
+    - CONFIRMED
+    - WAITLISTED
+    - CANCELLED
+    - COMPLETED
+    - NO_SHOW
+
+PaginatedReservations:
+
+  type: object
+
+  properties:
+
+    items:
+
+      type: array
+
+      items:
+        $ref: '#/components/schemas/ReservationResponse'
+
+    total:
+      type: integer
+
+    page:
+      type: integer
+
+    pageSize:
+      type: integer
+
+AvailabilityResponse:
+
+  type: object
+
+  properties:
+
+    available:
+      type: boolean
+
+    alternativeSlots:
+
+      type: array
+
+      items:
+        type: string
+
+DashboardSummary:
+
+  type: object
+
+  properties:
+
+    todayReservations:
+      type: integer
+
+    tomorrowReservations:
+      type: integer
+
+    occupancyPercentage:
+      type: number
+
+    cancelledToday:
+      type: integer
+
+    noShows:
+      type: integer
+
+ErrorResponse:
+
+  type: object
+
+  properties:
+
+    success:
+      type: boolean
+
+    error:
+
+      type: object
+
+      properties:
+
+        code:
+          type: string
+
+        message:
+          type: string
+```

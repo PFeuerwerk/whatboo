@@ -1,0 +1,47 @@
+@startuml
+
+title Deployment Diagram
+
+node "Cloud Run / Azure Container Apps" {
+
+  node "Angular Frontend" {
+
+    artifact Frontend
+
+  }
+
+  node "NestJS Backend" {
+
+    artifact API
+
+  }
+
+  node "Worker Service" {
+
+    artifact BullMQWorker
+
+  }
+
+}
+
+database PostgreSQL
+
+collections Redis
+
+cloud WhatsAppBusinessPlatform
+
+Frontend --> API
+
+API --> PostgreSQL
+
+API --> Redis
+
+API --> WhatsAppBusinessPlatform
+
+BullMQWorker --> Redis
+
+BullMQWorker --> PostgreSQL
+
+BullMQWorker --> WhatsAppBusinessPlatform
+
+@enduml

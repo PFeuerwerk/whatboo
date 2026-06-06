@@ -1,0 +1,44 @@
+@startuml
+
+title Waitlist Flow
+
+actor Customer
+
+participant WhatsApp
+participant RuleEngine
+participant AvailabilityService
+participant WaitlistService
+database PostgreSQL
+
+Customer -> WhatsApp :
+Table for 8 at 21:00
+
+WhatsApp -> RuleEngine
+
+RuleEngine -> AvailabilityService :
+Check Availability
+
+AvailabilityService -> PostgreSQL
+
+PostgreSQL --> AvailabilityService :
+No Availability
+
+AvailabilityService --> RuleEngine
+
+RuleEngine -> WaitlistService :
+Offer Waitlist
+
+WaitlistService -> PostgreSQL :
+Create Waitlist Entry
+
+PostgreSQL --> WaitlistService
+
+WaitlistService --> RuleEngine
+
+RuleEngine -> WhatsApp :
+Added To Waitlist
+
+WhatsApp -> Customer :
+Waitlist Confirmation
+
+@enduml
