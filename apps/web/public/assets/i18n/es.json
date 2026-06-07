@@ -1,0 +1,113 @@
+{
+  "COMMON": {
+    "LOADING": "Cargando...",
+    "SAVE": "Guardar",
+    "CANCEL": "Cancelar",
+    "DELETE": "Eliminar",
+    "EDIT": "Editar",
+    "CREATE": "Crear",
+    "SEARCH": "Buscar",
+    "FILTER": "Filtrar",
+    "EXPORT": "Exportar",
+    "CONFIRM": "Confirmar",
+    "BACK": "Volver",
+    "NEXT": "Siguiente",
+    "YES": "Sí",
+    "NO": "No",
+    "STATUS": "Estado",
+    "ACTIONS": "Acciones",
+    "DATE": "Fecha",
+    "TIME": "Hora",
+    "NAME": "Nombre",
+    "PHONE": "Teléfono",
+    "EMAIL": "Email",
+    "NOTES": "Notas",
+    "ERROR": "Error",
+    "SUCCESS": "Éxito"
+  },
+  "AUTH": {
+    "LOGIN": "Iniciar sesión",
+    "LOGOUT": "Cerrar sesión",
+    "EMAIL": "Email",
+    "PASSWORD": "Contraseña",
+    "RESTAURANT": "Restaurante",
+    "LOGIN_BUTTON": "Entrar",
+    "INVALID_CREDENTIALS": "Credenciales incorrectas",
+    "ACCOUNT_LOCKED": "Cuenta bloqueada temporalmente"
+  },
+  "NAV": {
+    "DASHBOARD": "Panel",
+    "RESERVATIONS": "Reservas",
+    "CUSTOMERS": "Clientes",
+    "SETTINGS": "Configuración",
+    "USERS": "Usuarios",
+    "CALENDAR": "Calendario"
+  },
+  "DASHBOARD": {
+    "TITLE": "Panel de control",
+    "TODAY_RESERVATIONS": "Reservas de hoy",
+    "TOTAL_CUSTOMERS": "Total clientes",
+    "OCCUPANCY": "Ocupación",
+    "PENDING": "Pendientes",
+    "WELCOME": "Bienvenido"
+  },
+  "RESERVATIONS": {
+    "TITLE": "Reservas",
+    "NEW": "Nueva reserva",
+    "GUEST_COUNT": "Comensales",
+    "TABLE": "Mesa",
+    "START": "Inicio",
+    "END": "Fin",
+    "STATUS": {
+      "PENDING": "Pendiente",
+      "CONFIRMED": "Confirmada",
+      "CANCELLED": "Cancelada",
+      "COMPLETED": "Completada",
+      "NO_SHOW": "No presentado"
+    },
+    "SOURCE": {
+      "WHATSAPP": "WhatsApp",
+      "DASHBOARD": "Dashboard",
+      "PHONE": "Teléfono",
+      "WALK_IN": "Sin reserva",
+      "API": "API"
+    },
+    "CONFIRMATION_CODE": "Código de confirmación",
+    "NO_RESERVATIONS": "No hay reservas para este día"
+  },
+  "CUSTOMERS": {
+    "TITLE": "Clientes",
+    "NEW": "Nuevo cliente",
+    "FIRST_NAME": "Nombre",
+    "LAST_NAME": "Apellido",
+    "TOTAL_RESERVATIONS": "Total reservas",
+    "LAST_VISIT": "Última visita",
+    "VIP": "VIP",
+    "NO_CUSTOMERS": "No hay clientes registrados"
+  },
+  "SETTINGS": {
+    "TITLE": "Configuración",
+    "RESTAURANT": "Restaurante",
+    "OPENING_HOURS": "Horarios",
+    "TABLES": "Mesas",
+    "TIMEZONE": "Zona horaria",
+    "CURRENCY": "Moneda",
+    "SAVE_SUCCESS": "Configuración guardada correctamente"
+  },
+  "USERS": {
+    "TITLE": "Usuarios",
+    "NEW": "Nuevo usuario",
+    "ROLE": {
+      "OWNER": "Propietario",
+      "MANAGER": "Gerente",
+      "STAFF": "Personal"
+    }
+  },
+  "ERRORS": {
+    "GENERIC": "Ha ocurrido un error inesperado",
+    "NETWORK": "Error de conexión",
+    "UNAUTHORIZED": "No autorizado",
+    "NOT_FOUND": "No encontrado",
+    "VALIDATION": "Error de validación"
+  }
+}
