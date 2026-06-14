@@ -5,6 +5,8 @@ export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: {
     path: 'prisma/migrations',
+    // Inyección de siembra transaccional compatible con Prisma v7 y TS-Node
+    seed: 'npx ts-node ./prisma/seeds/seed.ts',
   },
   datasource: {
     url: env('DATABASE_URL'),

@@ -4,7 +4,6 @@ import * as bcrypt from 'bcrypt';
 export async function seedPlatformAdmin(prisma: PrismaClient) {
   console.log('🌱 Iniciando siembra perimetral de administración global...');
 
-  // 1. Aprovisionamiento del Tenant Maestro de control del SaaS
   const mainTenant = await prisma.restaurant.upsert({
     where: { slug: 'platform-master-control' },
     update: {},
@@ -23,19 +22,18 @@ export async function seedPlatformAdmin(prisma: PrismaClient) {
     },
   });
 
-  // 2. Criptografía: Hash síncrono seguro para la credencial maestra
   const hashedPassword = await bcrypt.hash('WhatBooMasterPass2026!', 10);
 
-  // 3. Inyección atómica del Administrador Global con rol estricto de plataforma
+  // Alineado a la clave compuesta restaurantId_email y passwordHash exacta de tu esquema
   await prisma.user.upsert({
-    where: { email: 'admin@whatboo.com' },
+    where: { restaurantId_email: { restaurantId: mainTenant.id, email: 'admin@whatboo.com' } },
     update: {},
     create: {
       email: 'admin@whatboo.com',
       firstName: 'Rene',
       lastName: 'Platform Admin',
-      password: hashedPassword,
-      role: 'PLATFORM_ADMIN' as any, // Mapeado al Enum relacional de producción
+      passwordHash: hashedPassword,
+      role: 'PLATFORM_ADMIN' as any,
       restaurantId: mainTenant.id,
       isActive: true,
     },
