@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { seedPlatformAdmin } from './platform-admin.seed';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -11,9 +12,16 @@ const adapter = new PrismaPg({
 const prisma = new PrismaClient({ adapter });
 
 async function main(): Promise<void> {
-  console.log('Seeding database...');
+  console.log('🚀 Iniciando proceso de siembra consolidado...');
 
-  // 1. Create restaurant
+  // ============================================================================
+  // 1. INYECCIÓN DEL ADMINISTRADOR GLOBAL DE LA PLATAFORMA (SECURE DEVSECOPS)
+  // ============================================================================
+  await seedPlatformAdmin(prisma);
+
+  // ============================================================================
+  // 2. SIEMBRA DEL RESTAURANTE DE SIMULACIÓN COMERCIAL (TENANT DEMO)
+  // ============================================================================
   const restaurant = await prisma.restaurant.upsert({
     where: { slug: 'la-bella-italia' },
     update: {},
@@ -32,29 +40,47 @@ async function main(): Promise<void> {
     },
   });
 
-  console.log(`Restaurant created: ${restaurant.name} (${restaurant.id})`);
+  console.log(`✅ Restaurante Demo Creado: ${restaurant.name} (${restaurant.id})`);
 
-  // 2. Create tables
+  // ============================================================================
+  // 3. CREACIÓN DE LAS ZONAS FÍSICAS (ALGORITMO TETRIS INTEGRITY)
+  // ============================================================================
+  const zoneSalon = await prisma.restaurantZone.upsert({
+    where: { restaurantId_name: { restaurantId: restaurant.id, name: 'Salón Principal' } },
+    update: {},
+    create: { restaurantId: restaurant.id, name: 'Salón Principal', priority: 1, active: true }
+  });
+
+  const zoneTerraza = await prisma.restaurantZone.upsert({
+    where: { restaurantId_name: { restaurantId: restaurant.id, name: 'Terraza' } },
+    update: {},
+    create: { restaurantId: restaurant.id, name: 'Terraza', priority: 2, active: true }
+  });
+
+  // ============================================================================
+  // 4. INYECCIÓN DE MESAS OPERATIVAS VINCULADAS POR INTEGRIDAD REFERENCIAL
+  // ============================================================================
   const tables = [
-    { name: 'Table 1', capacity: 2, zone: 'Main Hall' },
-    { name: 'Table 2', capacity: 2, zone: 'Main Hall' },
-    { name: 'Table 3', capacity: 4, zone: 'Main Hall' },
-    { name: 'Table 4', capacity: 4, zone: 'Main Hall' },
-    { name: 'Table 5', capacity: 6, zone: 'Terrace' },
-    { name: 'Table 6', capacity: 8, zone: 'Private Room' },
+    { name: 'Mesa 1', capacity: 2, zoneId: zoneSalon.id },
+    { name: 'Mesa 2', capacity: 2, zoneId: zoneSalon.id },
+    { name: 'Mesa 3', capacity: 4, zoneId: zoneSalon.id },
+    { name: 'Mesa 4', capacity: 4, zoneId: zoneSalon.id },
+    { name: 'Mesa 5', capacity: 6, zoneId: zoneTerraza.id },
   ];
 
   for (const table of tables) {
     await prisma.restaurantTable.upsert({
       where: { restaurantId_name: { restaurantId: restaurant.id, name: table.name } },
       update: {},
-      create: { restaurantId: restaurant.id, ...table, active: true },
+      create: { restaurantId: restaurant.id, name: table.name, capacity: table.capacity, zoneId: table.zoneId, active: true },
     });
   }
 
-  console.log(`${tables.length} tables created`);
+  console.log(`✅ ${tables.length} mesas relacionales inyectadas de forma exitosa.`);
 
-  // 3. Create opening hours (Mon-Sat, closed Sunday)
+  // ============================================================================
+  // 5. PARAMETRIZACIÓN DE HORARIOS DE ATENCIÓN DE LA API
+  // ============================================================================
   const openDays = [
     { dayOfWeek: 'MONDAY',    openTime: '12:00', closeTime: '23:00' },
     { dayOfWeek: 'TUESDAY',   openTime: '12:00', closeTime: '23:00' },
@@ -80,16 +106,18 @@ async function main(): Promise<void> {
     });
   }
 
-  console.log('Opening hours created');
+  console.log('✅ Horarios operativos de slots guardados.');
 
-  // 4. Create owner user
+  // ============================================================================
+  // 6. CREACIÓN DEL USUARIO DUEÑO DEMO (OWNER ATÓMICO)
+  // ============================================================================
   await prisma.user.upsert({
-    where: { restaurantId_email: { restaurantId: restaurant.id, email: 'viras_user@labellaitaliatest.com' } },
+    where: { email: 'viras_user@labellaitaliatest.com' },
     update: {},
     create: {
       restaurantId: restaurant.id,
       email: 'viras_user@labellaitaliatest.com',
-      passwordHash: '$2b$10$placeholderhashneveruseinprod',
+      password: '$2b$10$placeholderhashneveruseinprod', // Corregido a la columna real 'password'
       firstName: 'Viras',
       lastName: 'User',
       role: 'OWNER',
@@ -97,10 +125,8 @@ async function main(): Promise<void> {
     },
   });
 
-  console.log('Owner user created');
-  console.log('');
-  console.log('Seed complete.');
-  console.log(`Restaurant ID: ${restaurant.id}`);
+  console.log('✅ Usuario OWNER de prueba inyectado.');
+  console.log('\n🎉 Proceso de siembra completado con éxito absoluto al 100%.');
 }
 
 main()
