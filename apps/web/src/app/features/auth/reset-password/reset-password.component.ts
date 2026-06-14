@@ -82,10 +82,13 @@ export class ResetPasswordComponent implements OnInit {
         finalize(() => this.isSubmitting.set(false))
       )
       .subscribe((response) => {
-        if (response) {
-          this.isSuccess.set(true);
-          this.form.disable();
-        }
+          if (response) {
+            this.isSuccess.set(true);
+            this.form.disable();
+            setTimeout(() => {
+              this.router.navigate(["/auth/login"]);
+            }, 3000);
+          }
       });
   }
 }
