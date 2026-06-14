@@ -1,0 +1,75 @@
+<div class="p-6 max-w-7xl mx-auto space-y-6">
+  <!-- Encabezado de Gestión de Personal -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 pb-5">
+    <div>
+      <h1 class="text-2xl font-black text-gray-900 tracking-tight">{{ 'STAFF.TITLE' | translate }}</h1>
+      <p class="text-sm text-gray-500 font-medium">{{ 'STAFF.SUBTITLE' | translate }}</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Formulario: Alta de Miembros del Equipo -->
+    <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-xs h-fit space-y-4">
+      <h2 class="text-lg font-bold text-gray-900">{{ 'STAFF.FORM_TITLE' | translate }}</h2>
+      <form [formGroup]="staffForm" (ngSubmit)="onSubmitStaff()" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">{{ 'STAFF.FIRST_NAME' | translate }}</label>
+          <input type="text" formControlName="firstName" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">{{ 'STAFF.LAST_NAME' | translate }}</label>
+          <input type="text" formControlName="lastName" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">{{ 'STAFF.EMAIL' | translate }}</label>
+          <input type="email" formControlName="email" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">{{ 'STAFF.ROLE' | translate }}</label>
+          <select formControlName="role" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-blue-500">
+            <option value="STAFF">STAFF (Maître básico)</option>
+            <option value="MANAGER">MANAGER (Administración de turnos)</option>
+            <option value="OWNER">OWNER (Control total comercial)</option>
+          </select>
+        </div>
+        <button type="submit" [disabled]="staffForm.invalid || isLoading()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-colors disabled:opacity-50">
+          {{ 'STAFF.SAVE_BUTTON' | translate }}
+        </button>
+      </form>
+    </div>
+
+    <!-- Tabla Control de Miembros Activos -->
+    <div class="lg:col-span-2 bg-white border border-gray-100 shadow-sm rounded-2xl overflow-hidden">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-wider select-none">
+            <th class="p-4">{{ 'STAFF.NAME' | translate }}</th>
+            <th class="p-4">{{ 'STAFF.EMAIL' | translate }}</th>
+            <th class="p-4">{{ 'STAFF.ROLE_LABEL' | translate }}</th>
+            <th class="p-4 text-right">{{ 'STAFF.STATUS' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50 text-sm font-semibold text-gray-700">
+          @for (user of staffList(); track user.id) {
+            <tr class="hover:bg-gray-50/50 transition-colors">
+              <td class="p-4 text-gray-900 font-bold">{{ user.firstName }} {{ user.lastName }}</td>
+              <td class="p-4 font-medium text-gray-500">{{ user.email }}</td>
+              <td class="p-4">
+                <select [value]="user.role" (change)="onChangeRole(user.id, $any($event.target).value)" class="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-xs font-bold focus:outline-none">
+                  <option value="STAFF">STAFF</option>
+                  <option value="MANAGER">MANAGER</option>
+                  <option value="OWNER">OWNER</option>
+                </select>
+              </td>
+              <td class="p-4 text-right">
+                <button (click)="onToggleStatus(user.id, user.active)" [class]="user.active ? 'text-green-600 bg-green-50 border-green-100' : 'text-red-600 bg-red-50 border-red-100'" class="px-2.5 py-1 text-xs font-black rounded-lg border transition-all">
+                  {{ user.active ? ('STAFF.ACTIVE' | translate) : ('STAFF.INACTIVE' | translate) }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

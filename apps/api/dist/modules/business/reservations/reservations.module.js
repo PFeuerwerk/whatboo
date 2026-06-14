@@ -13,12 +13,13 @@ const reservation_engine_service_1 = require("./services/reservation-engine.serv
 const reservations_controller_1 = require("./controllers/reservations.controller");
 const availability_module_1 = require("../availability/availability.module");
 const customers_module_1 = require("../customers/customers.module");
+const restaurants_module_1 = require("../restaurants/restaurants.module");
 let ReservationsModule = class ReservationsModule {
 };
 exports.ReservationsModule = ReservationsModule;
 exports.ReservationsModule = ReservationsModule = __decorate([
     (0, common_1.Module)({
-        imports: [availability_module_1.AvailabilityModule, customers_module_1.CustomersModule],
+        imports: [availability_module_1.AvailabilityModule, customers_module_1.CustomersModule, restaurants_module_1.RestaurantsModule],
         controllers: [reservations_controller_1.ReservationsController],
         providers: [reservation_repository_1.ReservationRepository, reservation_engine_service_1.ReservationEngineService],
         exports: [reservation_repository_1.ReservationRepository, reservation_engine_service_1.ReservationEngineService],

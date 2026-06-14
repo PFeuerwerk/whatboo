@@ -6,5 +6,6 @@ export declare class AvailabilityRepository extends BaseRepository {
     findOpeningHours(restaurantId: string): Promise<OpeningHour[]>;
     findActiveTables(restaurantId: string): Promise<RestaurantTable[]>;
     findBlockedDates(restaurantId: string, date: Date): Promise<BlockedDate[]>;
-    findAvailableTables(restaurantId: string, start: Date, end: Date, partySize: number): Promise<RestaurantTable[]>;
+    findAvailableTables(restaurantId: string, start: Date, end: Date, partySize: number, excludeReservationId?: string): Promise<RestaurantTable[]>;
+    findAvailableSlots(restaurantId: string, requestedDate: Date, partySize: number, durationMinutes?: number): Promise<string[]>;
 }

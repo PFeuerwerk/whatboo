@@ -442,6 +442,7 @@ LoginRequest:
   required:
     - email
     - password
+    - restaurantSlug
 
   properties:
 
@@ -452,26 +453,20 @@ LoginRequest:
     password:
       type: string
 
+    restaurantSlug:
+      type: string
+
 LoginResponse:
 
   type: object
 
+  required:
+    - accessToken
+
   properties:
 
-    success:
-      type: boolean
-
-    data:
-
-      type: object
-
-      properties:
-
-        accessToken:
-          type: string
-
-        refreshToken:
-          type: string
+    accessToken:
+      type: string
 
 UserResponse:
 

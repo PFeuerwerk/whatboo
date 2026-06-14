@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { BaseRepository } from '../../../../infrastructure/database/repositories/base.repository';
 import { Customer } from '@prisma/client';
+import { normalizePhone } from "../../../../common/phone/phone-normalizer.util";
 
 @Injectable()
 export class CustomerRepository extends BaseRepository {
@@ -10,10 +11,14 @@ export class CustomerRepository extends BaseRepository {
   }
 
   async findByPhone(restaurantId: string, phone: string): Promise<Customer | null> {
-    this.requireRestaurantId(restaurantId);
-    return this.prisma.customer.findUnique({
-      where: { restaurantId_phone: { restaurantId, phone } },
-    });
+      return this.prisma.customer.findUnique({
+        where: {
+          restaurantId_phone: {
+            restaurantId,
+            phone: normalizePhone(phone).normalizedPhone,
+          },
+        },
+      });
   }
 
   async findById(restaurantId: string, id: string): Promise<Customer | null> {
@@ -24,12 +29,17 @@ export class CustomerRepository extends BaseRepository {
   }
 
   async findAll(restaurantId: string): Promise<Customer[]> {
-    this.requireRestaurantId(restaurantId);
     return this.prisma.customer.findMany({
-      where: { restaurantId, active: true },
-      orderBy: { createdAt: 'desc' },
+      where: { 
+        restaurantId,
+        active: true 
+      },
+      orderBy: { 
+        totalReservations: 'desc' // Ordenar por fidelización por defecto
+      }
     });
   }
+
 
   async findOrCreate(
     restaurantId: string,
@@ -38,14 +48,19 @@ export class CustomerRepository extends BaseRepository {
   ): Promise<Customer> {
     this.requireRestaurantId(restaurantId);
     return this.prisma.customer.upsert({
-      where: { restaurantId_phone: { restaurantId, phone } },
-      update: {},
-      create: {
-        restaurantId,
-        phone,
-        firstName: data?.firstName,
-        lastName: data?.lastName,
-      },
+        where: {
+          restaurantId_phone: {
+            restaurantId,
+            phone: normalizePhone(phone).normalizedPhone,
+          },
+        },
+        update: {},
+        create: {
+          restaurantId,
+          phone: normalizePhone(phone).normalizedPhone,
+          firstName: data?.firstName,
+          lastName: data?.lastName,
+        },
     });
   }
 

@@ -22,6 +22,15 @@ let RestaurantRepository = class RestaurantRepository extends base_repository_1.
             where: { id },
         });
     }
+    async findSettings(id) {
+        return this.prisma.restaurant.findUnique({
+            where: { id },
+            select: {
+                timezone: true,
+                locale: true,
+            },
+        });
+    }
     async findBySlug(slug) {
         return this.prisma.restaurant.findUnique({
             where: { slug },

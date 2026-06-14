@@ -20,15 +20,26 @@ let AvailabilityRepository = class AvailabilityRepository extends base_repositor
     async findOpeningHours(restaurantId) {
         this.requireRestaurantId(restaurantId);
         return this.prisma.openingHour.findMany({
-            where: { restaurantId, active: true, deletedAt: null },
-            orderBy: { dayOfWeek: 'asc' },
+            where: {
+                restaurantId,
+                active: true,
+                deletedAt: null,
+            },
+            orderBy: {
+                dayOfWeek: 'asc',
+            },
         });
     }
     async findActiveTables(restaurantId) {
         this.requireRestaurantId(restaurantId);
         return this.prisma.restaurantTable.findMany({
-            where: { restaurantId, active: true, deletedAt: null },
-            orderBy: { capacity: 'asc' },
+            where: {
+                restaurantId,
+                active: true,
+            },
+            orderBy: {
+                capacity: 'asc',
+            },
         });
     }
     async findBlockedDates(restaurantId, date) {
@@ -38,27 +49,91 @@ let AvailabilityRepository = class AvailabilityRepository extends base_repositor
         const endOfDay = new Date(date);
         endOfDay.setHours(23, 59, 59, 999);
         return this.prisma.blockedDate.findMany({
-            where: { restaurantId, active: true, deletedAt: null, date: { gte: startOfDay, lte: endOfDay } },
+            where: {
+                restaurantId,
+                active: true,
+                deletedAt: null,
+                date: {
+                    gte: startOfDay,
+                    lte: endOfDay,
+                },
+            },
         });
     }
-    async findAvailableTables(restaurantId, start, end, partySize) {
+    async findAvailableTables(restaurantId, start, end, partySize, excludeReservationId) {
         this.requireRestaurantId(restaurantId);
         const booked = await this.prisma.reservationTable.findMany({
             where: {
                 reservation: {
                     restaurantId,
-                    status: { in: ['PENDING', 'CONFIRMED'] },
-                    reservationStart: { lt: end },
-                    reservationEnd: { gt: start },
+                    id: excludeReservationId
+                        ? { not: excludeReservationId }
+                        : undefined,
+                    status: {
+                        in: [
+                            'PENDING',
+                            'CONFIRMED',
+                        ],
+                    },
+                    reservationStart: {
+                        lt: end,
+                    },
+                    reservationEnd: {
+                        gt: start,
+                    },
                 },
             },
-            select: { tableId: true },
+            select: {
+                tableId: true,
+            },
         });
         const bookedIds = booked.map((r) => r.tableId);
+        const maxCapacityThreshold = partySize + 3;
         return this.prisma.restaurantTable.findMany({
-            where: { restaurantId, active: true, deletedAt: null, capacity: { gte: partySize }, id: { notIn: bookedIds } },
-            orderBy: { capacity: 'asc' },
+            where: {
+                restaurantId,
+                active: true,
+                capacity: {
+                    gte: partySize,
+                    lte: maxCapacityThreshold,
+                },
+                id: {
+                    notIn: bookedIds,
+                },
+            },
+            orderBy: [
+                {
+                    zone: {
+                        priority: "asc",
+                    },
+                },
+                {
+                    capacity: "asc",
+                },
+            ],
         });
+    }
+    async findAvailableSlots(restaurantId, requestedDate, partySize, durationMinutes = 90) {
+        const suggestions = [];
+        for (let offset = -180; offset <= 180; offset += 30) {
+            if (offset === 0) {
+                continue;
+            }
+            const start = new Date(requestedDate);
+            start.setMinutes(start.getMinutes() +
+                offset);
+            const end = new Date(start);
+            end.setMinutes(end.getMinutes() +
+                durationMinutes);
+            const tables = await this.findAvailableTables(restaurantId, start, end, partySize);
+            if (tables.length > 0) {
+                suggestions.push(start.toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                }));
+            }
+        }
+        return [...new Set(suggestions)];
     }
 };
 exports.AvailabilityRepository = AvailabilityRepository;

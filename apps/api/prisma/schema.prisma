@@ -64,6 +64,7 @@ model Restaurant {
   openingHours  OpeningHour[]
   blockedDates  BlockedDate[]
   capacityRules CapacityRule[]
+  zones         RestaurantZone[]
   @@map("restaurants")
 }
 
@@ -102,9 +103,31 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relación inversa con el token de recuperación
+  passwordResetTokens PasswordResetToken[]
+
   @@unique([restaurantId, email])
   @@index([restaurantId])
   @@map("users")
+}
+
+/* =========================
+   PASSWORD RESET TOKENS (Granular B2B)
+========================= */
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique // Hash del token para mitigar filtraciones si la base de datos se compromete
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade) // Borrado automático inteligente
+
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([tokenHash, expiresAt]) // Índice compuesto para búsquedas de validación optimizadas
+  @@map("password_reset_tokens")
 }
 
 /* =========================
@@ -224,7 +247,8 @@ model RestaurantTable {
   name String
   capacity Int
 
-  zone String?
+  zoneId String?
+    zone   RestaurantZone? @relation(fields: [zoneId], references: [id])
 
   active Boolean @default(true)
 
@@ -234,6 +258,7 @@ model RestaurantTable {
   @@unique([restaurantId, name])
   reservations   ReservationTable[]
   @@index([restaurantId])
+  @@index([zoneId])
   @@map("restaurant_tables")
 }
 
@@ -352,4 +377,45 @@ model ReservationTable {
   @@id([reservationId, tableId])
   @@index([tableId])
   @@map("reservation_tables")
+}
+
+/* =========================
+
+/* =========================
+   WHATSAPP AUDIT LOGS (Failed Attempts)
+========================= */
+model WhatsappInboundLog {
+  id              String   @id @default(uuid())
+  rawPhoneNumber  String
+  isValid         Boolean  @default(false)
+  reason          String
+  errorMessage    String
+  payload         Json
+  createdAt       DateTime @default(now())
+
+  @@index([rawPhoneNumber])
+  @@index([createdAt])
+  @@map("whatsapp_inbound_logs")
+}
+
+/* =========================
+   RESTAURANT ZONES (Floor Plan Layout)
+========================= */
+model RestaurantZone {
+  id           String   @id @default(uuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  
+  name         String
+  priority     Int      @default(1) // Permite priorizar qué zonas llenar primero (ej: 1 = Salón, 2 = Terraza)
+  active       Boolean  @default(true)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tables       RestaurantTable[]
+
+  @@unique([restaurantId, name])
+  @@index([restaurantId])
+  @@map("restaurant_zones")
 }

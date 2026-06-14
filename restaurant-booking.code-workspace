@@ -1,0 +1,29 @@
+{
+  "folders": [
+    {
+      "path": ".",
+      "name": "restaurant-booking-saas (root)"
+    },
+    {
+      "path": "apps/web",
+      "name": "web (Angular app)"
+    },
+    {
+      "path": "apps/api",
+      "name": "api (NestJS backend)"
+    }
+  ],
+  "settings": {
+    "typescript.tsdk": "apps/web/node_modules/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "[typescript]": {
+      "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
+    "[javascript]": {
+      "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  }
+}

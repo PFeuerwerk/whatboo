@@ -23,7 +23,9 @@ async function bootstrap(): Promise<void> {
   );
 
   const port = process.env.PORT ?? 3000;
-  await app.listen(port);
+  
+  // Corregido: Escuchar en todas las interfaces de red para enlazar WSL2 con Windows
+  await app.listen(port, '0.0.0.0');
 
   console.log(`Application running on: http://localhost:${port}/api/v1`);
 }

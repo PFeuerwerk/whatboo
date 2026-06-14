@@ -9,50 +9,213 @@ export class AvailabilityRepository extends BaseRepository {
     super(prisma);
   }
 
-  async findOpeningHours(restaurantId: string): Promise<OpeningHour[]> {
-    this.requireRestaurantId(restaurantId);
+  async findOpeningHours(
+    restaurantId: string,
+  ): Promise<OpeningHour[]> {
+    this.requireRestaurantId(
+      restaurantId,
+    );
+
     return this.prisma.openingHour.findMany({
-      where: { restaurantId, active: true, deletedAt: null },
-      orderBy: { dayOfWeek: 'asc' },
-    });
-  }
-
-  async findActiveTables(restaurantId: string): Promise<RestaurantTable[]> {
-    this.requireRestaurantId(restaurantId);
-    return this.prisma.restaurantTable.findMany({
-      where: { restaurantId, active: true, deletedAt: null },
-      orderBy: { capacity: 'asc' },
-    });
-  }
-
-  async findBlockedDates(restaurantId: string, date: Date): Promise<BlockedDate[]> {
-    this.requireRestaurantId(restaurantId);
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
-    return this.prisma.blockedDate.findMany({
-      where: { restaurantId, active: true, deletedAt: null, date: { gte: startOfDay, lte: endOfDay } },
-    });
-  }
-
-  async findAvailableTables(restaurantId: string, start: Date, end: Date, partySize: number): Promise<RestaurantTable[]> {
-    this.requireRestaurantId(restaurantId);
-    const booked = await this.prisma.reservationTable.findMany({
       where: {
-        reservation: {
-          restaurantId,
-          status: { in: ['PENDING', 'CONFIRMED'] },
-          reservationStart: { lt: end },
-          reservationEnd: { gt: start },
+        restaurantId,
+        active: true,
+        deletedAt: null,
+      },
+      orderBy: {
+        dayOfWeek: 'asc',
+      },
+    });
+  }
+
+  async findActiveTables(
+    restaurantId: string,
+  ): Promise<RestaurantTable[]> {
+    this.requireRestaurantId(
+      restaurantId,
+    );
+
+    return this.prisma.restaurantTable.findMany({
+      where: {
+        restaurantId,
+        active: true,
+      },
+      orderBy: {
+        capacity: 'asc',
+      },
+    });
+  }
+
+  async findBlockedDates(
+    restaurantId: string,
+    date: Date,
+  ): Promise<BlockedDate[]> {
+    this.requireRestaurantId(
+      restaurantId,
+    );
+
+    const startOfDay =
+      new Date(date);
+
+    startOfDay.setHours(
+      0,
+      0,
+      0,
+      0,
+    );
+
+    const endOfDay =
+      new Date(date);
+
+    endOfDay.setHours(
+      23,
+      59,
+      59,
+      999,
+    );
+
+    return this.prisma.blockedDate.findMany({
+      where: {
+        restaurantId,
+        active: true,
+        deletedAt: null,
+        date: {
+          gte: startOfDay,
+          lte: endOfDay,
         },
       },
-      select: { tableId: true },
     });
-    const bookedIds = booked.map((r) => r.tableId);
-    return this.prisma.restaurantTable.findMany({
-      where: { restaurantId, active: true, deletedAt: null, capacity: { gte: partySize }, id: { notIn: bookedIds } },
-      orderBy: { capacity: 'asc' },
-    });
+  }
+
+  async findAvailableTables(
+    restaurantId: string,
+    start: Date,
+    end: Date,
+    partySize: number,
+      excludeReservationId?: string,
+  ): Promise<RestaurantTable[]> {
+    this.requireRestaurantId(
+      restaurantId,
+    );
+
+    const booked =
+      await this.prisma.reservationTable.findMany({
+        where: {
+          reservation: {
+            restaurantId,
+              id: excludeReservationId
+                ? { not: excludeReservationId }
+                : undefined,
+            status: {
+              in: [
+                'PENDING',
+                'CONFIRMED',
+              ],
+            },
+            reservationStart: {
+              lt: end,
+            },
+            reservationEnd: {
+              gt: start,
+            },
+          },
+        },
+        select: {
+          tableId: true,
+        },
+      });
+
+    const bookedIds =
+      booked.map(
+        (r) => r.tableId,
+      );
+
+
+      const maxCapacityThreshold = partySize + 3;
+
+      return this.prisma.restaurantTable.findMany({
+        where: {
+          restaurantId,
+          active: true,
+          capacity: {
+            gte: partySize,
+            lte: maxCapacityThreshold,
+          },
+          id: {
+            notIn: bookedIds,
+          },
+        },
+        orderBy: [
+          {
+            zone: {
+              priority: "asc",
+            },
+          },
+          {
+            capacity: "asc",
+          },
+        ],
+      });
+  }
+
+  async findAvailableSlots(
+    restaurantId: string,
+    requestedDate: Date,
+    partySize: number,
+    durationMinutes = 90,
+  ): Promise<string[]> {
+    const suggestions: string[] = [];
+
+    for (
+      let offset = -180;
+      offset <= 180;
+      offset += 30
+    ) {
+      if (offset === 0) {
+        continue;
+      }
+
+      const start =
+        new Date(
+          requestedDate,
+        );
+
+      start.setMinutes(
+        start.getMinutes() +
+          offset,
+      );
+
+      const end =
+        new Date(start);
+
+      end.setMinutes(
+        end.getMinutes() +
+          durationMinutes,
+      );
+
+      const tables =
+        await this.findAvailableTables(
+          restaurantId,
+          start,
+          end,
+          partySize,
+        );
+
+      if (
+        tables.length > 0
+      ) {
+        suggestions.push(
+          start.toLocaleTimeString(
+            'es-ES',
+            {
+              hour: '2-digit',
+              minute: '2-digit',
+            },
+          ),
+        );
+      }
+    }
+
+    return [...new Set(suggestions)];
   }
 }

@@ -1,0 +1,87 @@
+<div class="p-6 max-w-4xl mx-auto space-y-6">
+  <!-- Encabezado de Parámetros Comerciales -->
+  <div class="border-b border-gray-100 pb-5">
+    <h1 class="text-2xl font-black text-gray-900 tracking-tight">{{ 'SETTINGS.TITLE' | translate }}</h1>
+    <p class="text-sm text-gray-500 font-medium">{{ 'SETTINGS.SUBTITLE' | translate }}</p>
+  </div>
+
+  <!-- Formulario de Control Operativo Multitenant -->
+  <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-xs">
+    <form [formGroup]="settingsForm" (ngSubmit)="onSaveSettings()" class="space-y-6">
+      
+      <!-- Sección: Límites de Capacidad y Aforos de la API -->
+      <div class="space-y-4">
+        <h2 class="text-sm font-black text-gray-400 uppercase tracking-wider border-b border-gray-50 pb-1">
+          {{ 'SETTINGS.SECTION_CAPACITY' | translate }}
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">{{ 'SETTINGS.MAX_CAPACITY' | translate }}</label>
+            <input type="number" formControlName="maxCapacity" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-blue-500" min="1">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">{{ 'SETTINGS.DEFAULT_DURATION' | translate }} (Minutos)</label>
+            <input type="number" formControlName="defaultReservationDuration" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-blue-500" min="1">
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Algoritmo de Distribución y Tiempos de Colas (BullMQ / Slots) -->
+      <div class="space-y-4">
+        <h2 class="text-sm font-black text-gray-400 uppercase tracking-wider border-b border-gray-50 pb-1">
+          {{ 'SETTINGS.SECTION_ALGORITHM' | translate }}
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">{{ 'SETTINGS.SLOT_INTERVAL' | translate }} (Minutos)</label>
+            <select formControlName="slotIntervalMinutes" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-blue-500">
+              <option [value]="15">15 Minutos</option>
+              <option [value]="30">30 Minutos</option>
+              <option [value]="45">45 Minutos</option>
+              <option [value]="60">60 Minutos</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">{{ 'SETTINGS.BUFFER_TIME' | translate }} (Minutos)</label>
+            <input type="number" formControlName="bufferTimeMinutes" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-blue-500" min="0">
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Interruptores de Flujos de Automatización de Meta (WhatsApp Rules) -->
+      <div class="space-y-4">
+        <h2 class="text-sm font-black text-gray-400 uppercase tracking-wider border-b border-gray-50 pb-1">
+          {{ 'SETTINGS.SECTION_AUTOMATION' | translate }}
+        </h2>
+        <div class="flex flex-col gap-3">
+          <label class="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100 cursor-pointer select-none">
+            <input type="checkbox" formControlName="autoConfirm" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+            <div>
+              <span class="block text-sm font-bold text-gray-800">{{ 'SETTINGS.AUTO_CONFIRM' | translate }}</span>
+              <span class="block text-xs text-gray-400 font-medium">{{ 'SETTINGS.AUTO_CONFIRM_HELP' | translate }}</span>
+            </div>
+          </label>
+          
+          <label class="flex items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100 cursor-pointer select-none">
+            <input type="checkbox" formControlName="allowWaitlist" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+            <div>
+              <span class="block text-sm font-bold text-gray-800">{{ 'SETTINGS.ALLOW_WAITLIST' | translate }}</span>
+              <span class="block text-xs text-gray-400 font-medium">{{ 'SETTINGS.ALLOW_WAITLIST_HELP' | translate }}</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Botón Transaccional de Persistencia en Bloque -->
+      <div class="pt-4 border-t border-gray-50 flex justify-end">
+        <button 
+          type="submit" 
+          [disabled]="settingsForm.invalid || isLoading()" 
+          class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl text-xs uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+          {{ 'SETTINGS.SAVE_CHANGES' | translate }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>

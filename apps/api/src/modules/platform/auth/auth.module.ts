@@ -6,10 +6,12 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { EmailModule } from '../../../integrations/email/email.module';
 
 @Module({
   imports: [
     PassportModule,
+    EmailModule, // Integración limpia del módulo Open Source de mensajería
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

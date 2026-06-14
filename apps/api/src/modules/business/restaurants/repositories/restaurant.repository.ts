@@ -15,6 +15,22 @@ export class RestaurantRepository extends BaseRepository {
     });
   }
 
+  async findSettings(
+    id: string,
+  ): Promise<{
+    timezone: string;
+    locale: string;
+  } | null> {
+    return this.prisma.restaurant.findUnique({
+      where: { id },
+      select: {
+        timezone: true,
+        locale: true,
+      },
+    });
+  }
+
+
   async findBySlug(slug: string): Promise<Restaurant | null> {
     return this.prisma.restaurant.findUnique({
       where: { slug },

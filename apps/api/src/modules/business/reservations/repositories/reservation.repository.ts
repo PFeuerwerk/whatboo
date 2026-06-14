@@ -32,6 +32,31 @@ export class ReservationRepository extends BaseRepository {
     });
   }
 
+  async findActiveByCustomer(
+    restaurantId: string,
+    customerId: string,
+  ): Promise<Reservation[]> {
+    this.requireRestaurantId(restaurantId);
+
+    return this.prisma.reservation.findMany({
+      where: {
+        restaurantId,
+        customerId,
+        deletedAt: null,
+        status: {
+          in: ["PENDING", "CONFIRMED"],
+        },
+          confirmationCode: {
+            not: null,
+          },
+      },
+      orderBy: {
+        reservationStart: "asc",
+      },
+    });
+  }
+
+
   async findByDateRange(restaurantId: string, start: Date, end: Date): Promise<Reservation[]> {
     this.requireRestaurantId(restaurantId);
     return this.prisma.reservation.findMany({
@@ -90,6 +115,35 @@ export class ReservationRepository extends BaseRepository {
     return this.prisma.reservation.update({
       where: { id },
       data: { status, ...timestamps },
+    });
+  }
+
+
+  async reschedule(
+    restaurantId: string,
+    id: string,
+    reservationStart: Date,
+    reservationEnd: Date,
+    tableId?: string,
+  ): Promise<Reservation> {
+    this.requireRestaurantId(restaurantId);
+
+    return this.prisma.reservation.update({
+      where: { id },
+      data: {
+        reservationDate: reservationStart,
+        reservationStart,
+        reservationEnd,
+        assignedTables: tableId
+          ? {
+              deleteMany: {},
+              create: {
+                tableId,
+                autoAssigned: true,
+              },
+            }
+          : undefined,
+      },
     });
   }
 

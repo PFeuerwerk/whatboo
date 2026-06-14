@@ -13,14 +13,19 @@ exports.CustomerRepository = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../../../infrastructure/database/prisma.service");
 const base_repository_1 = require("../../../../infrastructure/database/repositories/base.repository");
+const phone_normalizer_util_1 = require("../../../../common/phone/phone-normalizer.util");
 let CustomerRepository = class CustomerRepository extends base_repository_1.BaseRepository {
     constructor(prisma) {
         super(prisma);
     }
     async findByPhone(restaurantId, phone) {
-        this.requireRestaurantId(restaurantId);
         return this.prisma.customer.findUnique({
-            where: { restaurantId_phone: { restaurantId, phone } },
+            where: {
+                restaurantId_phone: {
+                    restaurantId,
+                    phone: (0, phone_normalizer_util_1.normalizePhone)(phone).normalizedPhone,
+                },
+            },
         });
     }
     async findById(restaurantId, id) {
@@ -30,20 +35,29 @@ let CustomerRepository = class CustomerRepository extends base_repository_1.Base
         });
     }
     async findAll(restaurantId) {
-        this.requireRestaurantId(restaurantId);
         return this.prisma.customer.findMany({
-            where: { restaurantId, active: true },
-            orderBy: { createdAt: 'desc' },
+            where: {
+                restaurantId,
+                active: true
+            },
+            orderBy: {
+                totalReservations: 'desc'
+            }
         });
     }
     async findOrCreate(restaurantId, phone, data) {
         this.requireRestaurantId(restaurantId);
         return this.prisma.customer.upsert({
-            where: { restaurantId_phone: { restaurantId, phone } },
+            where: {
+                restaurantId_phone: {
+                    restaurantId,
+                    phone: (0, phone_normalizer_util_1.normalizePhone)(phone).normalizedPhone,
+                },
+            },
             update: {},
             create: {
                 restaurantId,
-                phone,
+                phone: (0, phone_normalizer_util_1.normalizePhone)(phone).normalizedPhone,
                 firstName: data?.firstName,
                 lastName: data?.lastName,
             },

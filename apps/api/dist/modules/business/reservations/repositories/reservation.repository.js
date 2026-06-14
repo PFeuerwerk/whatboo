@@ -37,6 +37,25 @@ let ReservationRepository = class ReservationRepository extends base_repository_
             orderBy: { reservationStart: 'desc' },
         });
     }
+    async findActiveByCustomer(restaurantId, customerId) {
+        this.requireRestaurantId(restaurantId);
+        return this.prisma.reservation.findMany({
+            where: {
+                restaurantId,
+                customerId,
+                deletedAt: null,
+                status: {
+                    in: ["PENDING", "CONFIRMED"],
+                },
+                confirmationCode: {
+                    not: null,
+                },
+            },
+            orderBy: {
+                reservationStart: "asc",
+            },
+        });
+    }
     async findByDateRange(restaurantId, start, end) {
         this.requireRestaurantId(restaurantId);
         return this.prisma.reservation.findMany({
@@ -84,6 +103,26 @@ let ReservationRepository = class ReservationRepository extends base_repository_
         return this.prisma.reservation.update({
             where: { id },
             data: { status, ...timestamps },
+        });
+    }
+    async reschedule(restaurantId, id, reservationStart, reservationEnd, tableId) {
+        this.requireRestaurantId(restaurantId);
+        return this.prisma.reservation.update({
+            where: { id },
+            data: {
+                reservationDate: reservationStart,
+                reservationStart,
+                reservationEnd,
+                assignedTables: tableId
+                    ? {
+                        deleteMany: {},
+                        create: {
+                            tableId,
+                            autoAssigned: true,
+                        },
+                    }
+                    : undefined,
+            },
         });
     }
     async softDelete(restaurantId, id) {

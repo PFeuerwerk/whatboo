@@ -1,0 +1,108 @@
+<div class="p-6 max-w-7xl mx-auto space-y-6">
+  <!-- Encabezado de Gestión de Aforo -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 pb-5">
+    <div>
+      <h1 class="text-2xl font-black text-gray-900 tracking-tight">{{ 'TABLES.MANAGEMENT_TITLE' | translate }}</h1>
+      <p class="text-sm text-gray-500 font-medium">{{ 'TABLES.MANAGEMENT_SUBTITLE' | translate }}</p>
+    </div>
+    
+    <!-- Métricas Rápidas de la Planta en Tiempo Real -->
+    <div class="flex flex-wrap gap-3">
+      <div class="bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-center min-w-[100px]">
+        <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider">{{ 'TABLES.TOTAL_ZONES' | translate }}</span>
+        <span class="text-xl font-extrabold text-gray-800">{{ zones().length }}</span>
+      </div>
+      <div class="bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-center min-w-[100px]">
+        <span class="block text-xs font-bold text-gray-400 uppercase tracking-wider">{{ 'TABLES.TOTAL_TABLES' | translate }}</span>
+        <span class="text-xl font-extrabold text-gray-800">{{ tables().length }}</span>
+      </div>
+      <div class="bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5 text-center min-w-[120px]">
+        <span class="block text-xs font-bold text-blue-400 uppercase tracking-wider">{{ 'TABLES.TOTAL_CAPACITY' | translate }}</span>
+        <span class="text-xl font-extrabold text-blue-700">{{ totalCapacity() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Columna de Formularios Operativos -->
+    <div class="space-y-6">
+      <!-- Formulario: Gestión de Zonas (Prioridad Tetris) -->
+      <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-xs h-fit space-y-4">
+        <h2 class="text-lg font-bold text-gray-900">{{ 'TABLES.ZONE_FORM_TITLE' | translate }}</h2>
+        <form [formGroup]="zoneForm" (ngSubmit)="onSubmitZone()" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">{{ 'TABLES.ZONE_NAME' | translate }}</label>
+            <input type="text" formControlName="name" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-blue-500" placeholder="Ej: Terraza, Salón VIP">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">{{ 'TABLES.ZONE_PRIORITY' | translate }} (Tetris)</label>
+            <input type="number" formControlName="priority" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-blue-500" min="1">
+          </div>
+          <button type="submit" [disabled]="zoneForm.invalid" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ 'TABLES.SAVE_ZONE_BUTTON' | translate }}
+          </button>
+        </form>
+      </div>
+
+      <!-- Formulario: Alta/Edición de Mesas con Tipado Estricto -->
+      <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-xs h-fit space-y-4">
+        <h2 class="text-lg font-bold text-gray-900">{{ 'TABLES.FORM_TITLE' | translate }}</h2>
+        <form [formGroup]="tableForm" (ngSubmit)="onSubmitTable()" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">{{ 'TABLES.FIELD_NAME' | translate }}</label>
+            <input type="text" formControlName="name" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-blue-500" placeholder="Ej: Mesa 10, Terraza 2">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">{{ 'TABLES.FIELD_CAPACITY' | translate }}</label>
+            <input type="number" formControlName="capacity" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-blue-500" min="1">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">{{ 'TABLES.FIELD_ZONE' | translate }}</label>
+            <select formControlName="zoneId" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-blue-500">
+              <option [value]="null">{{ 'TABLES.NO_ZONE_ASSIGNED' | translate }}</option>
+              @for (zone of zones(); track zone.id) {
+                <option [value]="zone.id">{{ zone.name }} ({{ 'TABLES.PRIORITY' | translate }}: {{ zone.priority }})</option>
+              }
+            </select>
+          </div>
+          <button type="submit" [disabled]="tableForm.invalid" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ 'TABLES.SAVE_BUTTON' | translate }}
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Panel Cuadrícula: Visualización de Planta por Zonas -->
+    <div class="lg:col-span-2 space-y-6">
+      @for (zone of zones(); track zone.id) {
+        <div class="bg-white border border-gray-100 rounded-2xl p-5 shadow-xs space-y-3">
+          <div class="flex justify-between items-center border-b border-gray-50 pb-2">
+            <h3 class="font-black text-gray-800 text-base flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+              {{ zone.name }}
+            </h3>
+            <span class="text-xs font-bold text-gray-400 bg-gray-50 px-2.5 py-1 rounded-md">
+              {{ 'TABLES.PRIORITY_LABEL' | translate }}: {{ zone.priority }}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            @for (table of getTablesByZone(zone.id); track table.id) {
+              <div class="border border-gray-100 bg-gray-50/50 rounded-xl p-3 text-center flex flex-col justify-between group relative transition-all hover:border-blue-200 hover:bg-white">
+                <span class="block text-sm font-bold text-gray-800">{{ table.name }}</span>
+                <span class="inline-block mt-1 mx-auto text-[10px] font-extrabold px-2 py-0.5 bg-gray-200/60 text-gray-600 rounded-md">
+                  Pax: {{ table.capacity }}
+                </span>
+                <button (click)="onDeleteTable(table.id)" class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:text-red-700 transition-opacity">
+                  <svg xmlns="http://w3.org" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+              </div>
+            } @empty {
+              <p class="text-xs text-gray-400 italic col-span-full py-2">{{ 'TABLES.NO_TABLES_IN_ZONE' | translate }}</p>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

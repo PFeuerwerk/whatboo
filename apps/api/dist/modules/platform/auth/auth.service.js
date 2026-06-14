@@ -45,12 +45,80 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
+const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../../../infrastructure/database/prisma.service");
+const email_service_1 = require("../../../integrations/email/email.service");
 const bcrypt = __importStar(require("bcrypt"));
+const crypto = __importStar(require("crypto"));
 let AuthService = class AuthService {
-    constructor(prisma, jwtService) {
+    constructor(prisma, jwtService, configService, emailService) {
         this.prisma = prisma;
         this.jwtService = jwtService;
+        this.configService = configService;
+        this.emailService = emailService;
+    }
+    async handleResetPassword(dto) {
+        const { token, newPassword } = dto;
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+        const resetToken = await this.prisma.passwordResetToken.findFirst({
+            where: {
+                tokenHash,
+                isUsed: false,
+                expiresAt: { gt: new Date() },
+            },
+            include: { user: true },
+        });
+        if (!resetToken || !resetToken.user || !resetToken.user.isActive) {
+            throw new common_1.BadRequestException('El enlace de recuperación es inválido o ha expirado.');
+        }
+        const saltRounds = 10;
+        const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+        await this.prisma.$transaction([
+            this.prisma.user.update({
+                where: { id: resetToken.userId },
+                data: {
+                    passwordHash,
+                    failedLoginAttempts: 0,
+                    lockedUntil: null,
+                },
+            }),
+            this.prisma.passwordResetToken.update({
+                where: { id: resetToken.id },
+                data: { isUsed: true },
+            }),
+        ]);
+    }
+    async handleForgotPassword(dto) {
+        const { restaurantSlug, email } = dto;
+        const restaurant = await this.prisma.restaurant.findUnique({
+            where: { slug: restaurantSlug },
+        });
+        if (!restaurant) {
+            throw new common_1.NotFoundException('El restaurante especificado no existe.');
+        }
+        const user = await this.prisma.user.findFirst({
+            where: {
+                email: email.toLowerCase().trim(),
+                restaurantId: restaurant.id,
+                isActive: true,
+            },
+        });
+        if (!user) {
+            throw new common_1.NotFoundException('El usuario no pertenece al restaurante especificado.');
+        }
+        const rawResetToken = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(rawResetToken).digest('hex');
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+        await this.prisma.passwordResetToken.create({
+            data: {
+                tokenHash,
+                userId: user.id,
+                expiresAt,
+            },
+        });
+        const webAppUrl = this.configService.get('WEB_APP_URL', 'http://localhost:4200');
+        const resetLink = `${webAppUrl}/auth/reset-password?token=${rawResetToken}`;
+        await this.emailService.sendPasswordResetMail(user.email, restaurant.name, resetLink);
     }
     async login(email, password, restaurantSlug) {
         const restaurant = await this.prisma.restaurant.findUnique({
@@ -102,6 +170,8 @@ exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        jwt_1.JwtService])
+        jwt_1.JwtService,
+        config_1.ConfigService,
+        email_service_1.EmailService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

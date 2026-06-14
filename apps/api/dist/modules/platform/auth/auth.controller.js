@@ -16,12 +16,33 @@ exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const auth_service_1 = require("./auth.service");
 const login_dto_1 = require("./dto/login.dto");
+const forgot_password_dto_1 = require("./dto/forgot-password.dto");
+const reset_password_dto_1 = require("./dto/reset-password.dto");
 let AuthController = class AuthController {
     constructor(authService) {
         this.authService = authService;
     }
     async login(dto) {
         return this.authService.login(dto.email, dto.password, dto.restaurantSlug);
+    }
+    async forgotPassword(dto) {
+        try {
+            await this.authService.handleForgotPassword(dto);
+        }
+        catch (error) {
+            if (!(error instanceof common_1.NotFoundException)) {
+                throw error;
+            }
+        }
+        return {
+            message: 'Si el correo electrónico coincide con un restaurante registrado, se enviará un enlace de restauración.',
+        };
+    }
+    async resetPassword(dto) {
+        await this.authService.handleResetPassword(dto);
+        return {
+            message: 'Tu contraseña ha sido restaurada con éxito. Ya puedes iniciar sesión en tu panel.',
+        };
     }
 };
 exports.AuthController = AuthController;
@@ -33,6 +54,22 @@ __decorate([
     __metadata("design:paramtypes", [login_dto_1.LoginDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
+__decorate([
+    (0, common_1.Post)('forgot-password'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [forgot_password_dto_1.ForgotPasswordDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "forgotPassword", null);
+__decorate([
+    (0, common_1.Post)('reset-password'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [reset_password_dto_1.ResetPasswordDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "resetPassword", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

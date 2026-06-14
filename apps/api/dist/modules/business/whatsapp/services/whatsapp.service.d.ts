@@ -1,9 +1,37 @@
+import { ConfigService } from '@nestjs/config';
 import { ReservationEngineService } from '../../reservations/services/reservation-engine.service';
+import { PrismaService } from '../../../../infrastructure/database/prisma.service';
+import { WhatsappClientService } from './whatsapp-client.service';
+import { AiService } from '../../../../integrations/ai/application/services/ai.service';
+import { AvailabilityRepository } from '../../availability/repositories/availability.repository';
+import { CustomerRepository } from "../../customers/repositories/customer.repository";
+import { ReservationRepository } from "../../reservations/repositories/reservation.repository";
+import { ConversationStateService } from '../../../../integrations/ai/application/services/conversation-state.service';
+import { PhoneValidationService } from "../../../../common/phone/phone-validation.service";
+import { GroqService } from "../../../../integrations/ai/infrastructure/providers/groq.service";
 export declare class WhatsappService {
     private readonly reservationEngine;
+    private readonly configService;
+    private readonly prisma;
+    private readonly whatsappClient;
+    private readonly aiService;
+    private readonly conversationStateService;
+    private readonly availabilityRepository;
+    private readonly customerRepository;
+    private readonly reservationRepository;
+    private readonly phoneValidationService;
+    private readonly groqService;
+    private normalizePhone;
+    private safePhone;
     private readonly logger;
-    constructor(reservationEngine: ReservationEngineService);
+    constructor(reservationEngine: ReservationEngineService, configService: ConfigService, prisma: PrismaService, whatsappClient: WhatsappClientService, aiService: AiService, conversationStateService: ConversationStateService, availabilityRepository: AvailabilityRepository, customerRepository: CustomerRepository, reservationRepository: ReservationRepository, phoneValidationService: PhoneValidationService, groqService: GroqService);
     handleIncoming(body: Record<string, unknown>, signature: string): Promise<void>;
+    validateSignature(body: Record<string, unknown>, signature: string): void;
     private extractMessage;
     private processMessage;
+    private createReservationAndReply;
+    private buildMissingFieldQuestion;
+    private buildHelpText;
+    private buildReservationDate;
+    private parseReservationText;
 }
