@@ -15,8 +15,16 @@ export class TenantInterceptor implements NestInterceptor {
     const host = request.headers.host || '';
     const tenantSlugHeader = request.headers['x-tenant-slug'] as string;
     
-    // Extracción atómica del identificador Multi-Tenant
-    let slug = tenantSlugHeader || (host.includes('.') ? host.split('.')[0] : null);
+    // 1. Extracción atómica priorizando la cabecera limpia enviada por el Frontend
+    let slug: string | null = tenantSlugHeader || null;
+
+    // 2. Fallback de subdominio elástico controlado para producción (Evita colapsos por IPs)
+    if (!slug && host && host.includes('.') && !/^[0-9.:]+$/.test(host)) {
+      const parts = host.split('.');
+      if (parts.length > 2 && parts[0] !== 'www' && parts[0] !== 'app') {
+        slug = parts[0];
+      }
+    }
 
     // Bypass perimetral seguro para pasarelas globales sin inquilino asignado
     if (request.url.includes('/auth/register-tenant') || request.url.includes('/health')) {
@@ -24,13 +32,13 @@ export class TenantInterceptor implements NestInterceptor {
     }
 
     if (!slug) {
-      throw new BadRequestException('No se ha podido determinar el inquilino (Tenant Slug ausente).');
+      throw new BadRequestException('No se ha podido determinar el inquilino (Cabecera X-Tenant-Slug ausente o inválida).');
     }
 
     const cacheKey = `tenant:slug:${slug}`;
     let restaurantId: string | null = null;
 
-    // Tolerancia a fallos: Intenta leer de Redis protegiendo el hilo ante diferencias en la API de ioredis
+    // Tolerancia a fallos: Lectura blindada de la caché de Redis
     try {
       const redisClient = (this.redis as any).client || (this.redis as any).getDriver?.() || this.redis;
       if (redisClient && typeof redisClient.get === 'function') {
@@ -40,7 +48,7 @@ export class TenantInterceptor implements NestInterceptor {
       console.warn('⚠️ Alerta de Caché: Falló la lectura en Redis, recurriendo a PostgreSQL de respaldo.');
     }
 
-    // Fallback elástico: Si no está en caché, valida e indexa desde PostgreSQL
+    // Fallback elástico a PostgreSQL con validación estricta de estado corporativo
     if (!restaurantId) {
       const restaurant = await this.prisma.restaurant.findUnique({
         where: { slug, status: 'ACTIVE' },
@@ -48,12 +56,12 @@ export class TenantInterceptor implements NestInterceptor {
       });
 
       if (!restaurant) {
-        throw new BadRequestException(`El restaurante solicitado "${slug}" no existe o se encuentra inactivo.`);
+        throw new BadRequestException(`El restaurante solicitado "${slug}" no existe, se encuentra inactivo o ha sido suspendido.`);
       }
 
       restaurantId = restaurant.id;
 
-      // Intenta escribir el registro de alta velocidad en Redis de fondo de forma asíncrona
+      // Persistencia asíncrona de alta velocidad en Redis
       try {
         const redisClient = (this.redis as any).client || (this.redis as any).getDriver?.() || this.redis;
         if (redisClient && typeof redisClient.set === 'function') {
@@ -62,9 +70,9 @@ export class TenantInterceptor implements NestInterceptor {
       } catch (e) {}
     }
 
-    // Aislamiento de contexto: Inyectar identificadores en el objeto request (Fase A)
-    request.tenantId = restaurantId;
-    request.tenantSlug = slug;
+    // 3. Aislamiento de contexto inmutable compatible con el tipado de compilación de Express/NestJS
+    request['tenantId'] = restaurantId;
+    request['tenantSlug'] = slug;
 
     return next.handle();
   }
