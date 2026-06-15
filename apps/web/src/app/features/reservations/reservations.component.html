@@ -1,16 +1,69 @@
-<div class="dashboard-wrapper"><div class="header-block">
-  <h1 class="title-main">{{ 'RESERVATIONS.TITLE' | translate }}</h1>
-  <p class="subtitle-main">{{ 'RESERVATIONS.SUBTITLE' | translate }}</p>
-</div>
+<div class="dashboard-wrapper animate-fade-in">
+  
+  <div class="header-block">
+    <h1 class="title-main">{{ 'RESERVATIONS.TITLE' | translate }}</h1>
+    <p class="subtitle-main">{{ 'RESERVATIONS.SUBTITLE' | translate }}</p>
+  </div>
 
-<div class="filter-bar">
-  <button class="filter-btn filter-btn-active">{{ 'STATUS.ALL' | translate }}</button>
-  <button class="filter-btn">{{ 'RESERVATIONS.STATUS.PENDING' | translate }}</button>
-  <button class="filter-btn">{{ 'RESERVATIONS.STATUS.CONFIRMED' | translate }}</button>
-</div>
+  <!-- TARJETAS ANALÍTICAS FLASH -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Cubiertos Asignados</div>
+      <div class="metric-value">12 <span class="text-xs text-slate-400 font-bold">Pax</span></div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Turnos en Espera</div>
+      <div class="metric-value">0</div>
+    </div>
+  </div>
 
-<div class="empty-state-card">
-  <div class="empty-icon">📭</div>
-  <h3 class="empty-title">{{ 'RESERVATIONS.NO_RESERVATIONS' | translate }}</h3>
-  <p class="empty-desc">Las solicitudes entrantes de la Meta API de WhatsApp impactarán este cuadrante mediante BullMQ de fondo.</p>
-</div></div>
+  <!-- CONTROL DE FILTRADO INTERACTIVO -->
+  <div class="filter-bar">
+    <button (click)="setFilter('ALL')" [class.filter-btn-active]="activeFilter() === 'ALL'" class="filter-btn">
+      {{ 'STATUS.ALL' | translate }}
+    </button>
+    <button (click)="setFilter('CONFIRMED')" [class.filter-btn-active]="activeFilter() === 'CONFIRMED'" class="filter-btn">
+      {{ 'RESERVATIONS.STATUS.CONFIRMED' | translate }}
+    </button>
+  </div>
+
+  <!-- GRILLA DE COMENSALES DEL DÍA -->
+  <div class="table-card">
+    @if (filteredReservations().length > 0) {
+      <table class="b2b-table">
+        <thead>
+          <tr>
+            <th class="th-item">Comensal</th>
+            <th class="th-item">Pax</th>
+            <th class="th-item">Horario</th>
+            <th class="th-item">Estado</th>
+            <th class="th-item" style="text-align: right;">Acciones de Planta</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (res of filteredReservations(); track res.id) {
+            <tr>
+              <td class="td-item font-bold text-slate-900">{{ res.customerName }}</td>
+              <td class="td-item">{{ res.pax }} Personas</td>
+              <td class="td-item"><span class="font-bold text-blue-600">{{ res.timeSlot }}</span></td>
+              <td class="td-item">
+                <span class="status-badge" [ngClass]="res.status === 'CONFIRMED' ? 'badge-confirmed' : 'badge-pending'">
+                  {{ res.status }}
+                </span>
+              </td>
+              <td class="td-item" style="text-align: right;">
+                <button (click)="updateStatus(res.id, 'COMPLETED')" class="action-btn">🪑 Sentar</button>
+                <button (click)="updateStatus(res.id, 'CANCELLED')" class="action-btn" style="color: #ef4444; border-color: rgba(239,68,68,0.2)">❌ Cancelar</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <div class="empty-state">
+        <p>📭 {{ 'RESERVATIONS.NO_RESERVATIONS' | translate }}</p>
+      </div>
+    }
+  </div>
+
+</div>
