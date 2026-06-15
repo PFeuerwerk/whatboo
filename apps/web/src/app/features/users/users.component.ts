@@ -1,68 +1,74 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
-import { UserHttpService, StaffUser } from '../../core/services/user-http.service';
-import { UserRole } from '../../core/models/restaurant.interfaces';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+
+export interface StaffMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: 'OWNER' | 'MANAGER' | 'STAFF';
+  isActive: boolean;
+}
 
 @Component({
   selector: 'app-users',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
-  templateUrl: './users.component.html'
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './users.component.html',
+  styleUrls: ['./users.component.css']
 })
 export class UsersComponent implements OnInit {
-  private readonly userService = inject(UserHttpService);
+  private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
 
-  public readonly staffList = signal<StaffUser[]>([]);
-  public readonly isLoading = signal<boolean>(false);
+  public readonly staffList = signal<StaffMember[]>([]);
+  public readonly isSaving = signal(false);
   public staffForm!: FormGroup;
 
   public ngOnInit(): void {
-    this.initForm();
-    this.loadStaffData();
-  }
-
-  private initForm(): void {
     this.staffForm = this.fb.group({
-      firstName: ['', [Validators.required, Validators.minLength(2)]],
-      lastName: ['', [Validators.required, Validators.minLength(2)]],
+      firstName: ['', [Validators.required]],
+      lastName: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       role: ['STAFF', [Validators.required]]
     });
+
+    this.loadStaffList();
   }
 
-  private loadStaffData(): void {
-    this.isLoading.set(true);
-    this.userService.getStaff().subscribe({
-      next: (data) => {
-        this.staffList.set(data);
-        this.isLoading.set(false);
-      },
-      error: () => this.isLoading.set(false)
-    });
+  public loadStaffList(): void {
+    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
+    this.http.get<StaffMember[]>(`${environment.apiUrl}/restaurants/${slug}/staff`)
+      .subscribe(res => {
+        this.staffList.set(res);
+      });
   }
 
-  public onSubmitStaff(): void {
-    if (this.staffForm.invalid) return;
-    this.isLoading.set(true);
-    this.userService.createStaff(this.staffForm.value).subscribe({
-      next: () => {
-        this.loadStaffData();
-        this.staffForm.reset({ role: 'STAFF' });
-      },
-      error: () => this.isLoading.set(false)
-    });
-  }
+  public onCreateStaff(): void {
+    if (this.staffForm.invalid || this.isSaving()) return;
+    this.isSaving.set(true);
 
-  public onChangeRole(userId: string, newRole: UserRole): void {
-    this.userService.updateStaffRole(userId, newRole).subscribe();
-  }
+    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
+    
+    // Contrato alineado al DTO de creación del Backend
+    const body = {
+      ...this.staffForm.value,
+      password: 'TemporaryPass123!' // Contraseña temporal genérica requerida por el modelo de datos
+    };
 
-  public onToggleStatus(userId: string, currentStatus: boolean): void {
-    this.userService.toggleStaffStatus(userId, !currentStatus).subscribe({
-      next: () => this.loadStaffData()
-    });
+    this.http.post(`${environment.apiUrl}/restaurants/${slug}/staff`, body)
+      .subscribe({
+        next: () => {
+          this.isSaving.set(false);
+          this.staffForm.reset({ role: 'STAFF' });
+          this.loadStaffList(); // Actualización reactiva inmediata
+        },
+        error: () => {
+          this.isSaving.set(false);
+        }
+      });
   }
 }
