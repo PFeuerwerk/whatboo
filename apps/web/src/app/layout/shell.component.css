@@ -25,7 +25,7 @@
 /* CONTENEDOR LATERAL FIJO COMPACTO SLATE */
 .b2b-sidebar {
   width: 16rem;
-  background-color: #0f172a; /* Slate 900 */
+  background-color: #0f172a;
   border-right: 1px solid #1e293b;
   display: flex;
   flex-direction: column;
@@ -36,7 +36,6 @@
   user-select: none;
 }
 
-/* CABECERA DEL BRANDING CORPORATIVO */
 .sidebar-brand {
   display: flex;
   align-items: center;
@@ -75,7 +74,6 @@
   margin-left: 0.15rem;
 }
 
-/* MENÚ DE ENLACES DE NAVEGACIÓN COMPACTO */
 .sidebar-nav {
   display: flex;
   flex-direction: column;
@@ -100,7 +98,6 @@
   color: #cbd5e1;
 }
 
-/* CLASE ACTIVA DE ÁRBOL DE RUTAS DE ANGULAR */
 .nav-link-active {
   background-color: rgba(255, 255, 255, 0.08) !important;
   color: #ffffff !important;
@@ -112,7 +109,6 @@
   filter: grayscale(20%);
 }
 
-/* TARJETA INFORMATIVA DEL STAFF / INQUILINO */
 .sidebar-user {
   background-color: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -144,7 +140,6 @@
   letter-spacing: 0.025em;
 }
 
-/* BOTÓN DE DESCONEXIÓN SECOPS */
 .logout-button {
   width: 100%;
   background: transparent;
@@ -170,7 +165,6 @@
   border-color: rgba(239, 68, 68, 0.4);
 }
 
-/* LIENZO DE PANTALLAS DINÁMICAS (WORKSPACE COMPACTO) */
 .b2b-main {
   flex: 1;
   overflow-y: auto;
@@ -179,7 +173,6 @@
   background-color: #f8fafc;
 }
 
-/* RESPONSIVE CABECERA MÓVIL */
 .mobile-header {
   display: none;
 }
@@ -199,4 +192,38 @@
   }
   .mobile-brand { display: flex; align-items: center; gap: 0.5rem; font-weight: 800; font-size: 0.875rem; }
   .mobile-logout { background: none; border: none; color: #ef4444; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; cursor: pointer; }
+}
+
+/* ============================================================================
+   FORZADO ENCAPSULADO CRÍTICO DE IMPRESIÓN (ELIMINACIÓN DE SIDEBAR)
+   ============================================================================ */
+@media print {
+  /* 1. Pulverizar la barra lateral y elementos de cabecera directamente desde su propio Shadow DOM */
+  .b2b-sidebar,
+  .mobile-header {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+  }
+
+  /* 2. Forzar al cuerpo transaccional a tomar el control absoluto del papel */
+  .b2b-main {
+    width: 100% !important;
+    max-width: 100% !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: #ffffff !important;
+  }
+
+  .b2b-layout {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+  }
 }
