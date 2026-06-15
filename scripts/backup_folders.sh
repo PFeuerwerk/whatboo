@@ -19,8 +19,25 @@ echo "=================================================="
 
 echo "[1/8] Verifying project structure..."
 
-REQUIRED_DIRS=("apps/api" "apps/web" "packages" "docs" "infrastructure")
-REQUIRED_FILES=("apps/api/package.json" "apps/web/package.json" "package.json" "pnpm-workspace.yaml")
+# Definir la raíz absoluta del proyecto usando $HOME
+PROYECTO_DIR="$HOME/restaurant-booking-saas"
+
+# Directorios con rutas absolutas
+REQUIRED_DIRS=(
+  "$PROYECTO_DIR/apps/api"
+  "$PROYECTO_DIR/apps/web"
+  "$PROYECTO_DIR/packages"
+  "$PROYECTO_DIR/docs"
+  "$PROYECTO_DIR/infrastructure"
+)
+
+# Archivos con rutas absolutas
+REQUIRED_FILES=(
+  "$PROYECTO_DIR/apps/api/package.json"
+  "$PROYECTO_DIR/apps/web/package.json"
+  "$PROYECTO_DIR/package.json"
+  "$PROYECTO_DIR/pnpm-workspace.yaml"
+)
 
 for dir in "${REQUIRED_DIRS[@]}"; do
     if [ ! -d "$dir" ]; then
@@ -62,14 +79,13 @@ echo "OK -> Required tools verified"
 echo "[3/8] Creating temporary clean workspace..."
 
 DATE=$(date +"%d-%m-%Y")
-BACKUP_NAME="backup_${DATE}.tar.gz"
+BACKUP_DIR="$HOME/restaurant-booking-saas/backups"
+mkdir -p "$BACKUP_DIR"
+BACKUP_NAME="$BACKUP_DIR/backup_${DATE}.tar.gz"
 
 TEMP_DIR="/tmp/clean_backup"
-
 rm -rf "$TEMP_DIR"
-
 mkdir -p "$TEMP_DIR"
-
 echo "OK -> Temporary workspace created"
 
 # ---------------------------------------------------------

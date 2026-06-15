@@ -1,33 +1,36 @@
-import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
-import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
-async function bootstrap(): Promise<void> {
+async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
+  // 1. Configuración Robusta de Seguridad Perimetral CORS
+  app.enableCors({
+    origin: ['http://localhost:4200', 'http://127.0.0.1:4200'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-Tenant-Slug'],
+  });
+
+  // 2. Prefijo Global de Endpoints Transaccionales
   app.setGlobalPrefix('api/v1');
 
-  app.useGlobalFilters(new GlobalExceptionFilter());
-
+  // 3. Tubería de Validación Global para DTOs Estrictos
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: true,
       transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
+      forbidNonWhitelisted: true,
     }),
   );
 
-  const port = process.env.PORT ?? 3000;
-  
-  // Corregido: Escuchar en todas las interfaces de red para enlazar WSL2 con Windows
-  await app.listen(port, '0.0.0.0');
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('PORT', 3000);
 
-  console.log(`Application running on: http://localhost:${port}/api/v1`);
+  await app.listen(port);
+  logger.log(`🚀 API en ejecución de forma inmutable sobre: http://localhost:${port}/api/v1`);
 }
-
 bootstrap();

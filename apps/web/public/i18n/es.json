@@ -14,6 +14,27 @@
     "COMPLETED": "Sentadas",
     "NO_SHOW": "No Presentado"
   },
+  "AUTH": {
+    "HERO_BADGE": "SaaS de Reservas Multi-Tenant v1.0",
+    "HERO_SUBHEAD": "Gestión inteligente de aforos con automatización por WhatsApp.",
+    "LOGIN_TITLE": "Ingresar al Panel de Control",
+    "LOGIN_DESCRIPTION": "Introduzca sus credenciales operativas de restaurante para acceder a la gestión de planta.",
+    "OWNER_ROLE": "Dueño de Restaurante",
+    "OWNER_HIGHLIGHT": "Acceso total a aforos, horarios y reglas financieras.",
+    "MANAGER_ROLE": "Manager de Turno",
+    "MANAGER_HIGHLIGHT": "Control intermedio de asignación de mesas y personal.",
+    "STAFF_LOGIN": "Acceso Maître / Staff",
+    "STAFF_LOGIN_HELP": "Visualización básica de agenda diaria de comensales.",
+    "RESTAURANT_SLUG_LABEL": "Identificador del Restaurante (Slug)",
+    "RESTAURANT_SLUG_PLACEHOLDER": "ej: la-bella-italia",
+    "EMAIL_LABEL": "Correo Electrónico",
+    "EMAIL_PLACEHOLDER": "ej: viras_user@labellaitaliatest.com",
+    "PASSWORD_LABEL": "Contraseña de Acceso",
+    "PASSWORD_PLACEHOLDER": "••••••••",
+    "LOGIN_SUBMIT": "Autenticar e Ingresar",
+    "NEED_HELP": "¿Necesita asistencia técnica?",
+    "FORGOT_PASSWORD": "¿Olvidó su contraseña?"
+  },
   "TABLES": {
     "MANAGEMENT_TITLE": "Diseño de Planta y Aforos",
     "MANAGEMENT_SUBTITLE": "Parametrice las mesas físicas del restaurante y defina la prioridad de llenado algorítmico.",

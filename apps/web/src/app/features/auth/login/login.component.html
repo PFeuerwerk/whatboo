@@ -1,90 +1,84 @@
-<main class="min-h-screen bg-slate-950 text-slate-100 px-4 py-8 sm:px-6 lg:px-8">
-  <div class="mx-auto max-w-5xl">
-    <section class="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-      
-      <!-- Panel de Información -->
-      <div class="space-y-6 sm:space-y-8">
-        <div class="flex flex-col gap-3 rounded-full border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-xs uppercase tracking-[0.24em] text-amber-200 sm:flex-row sm:items-center sm:justify-between">
-          <span>{{ 'AUTH.HERO_BADGE' | translate }}</span>
-          <app-language-selector [currentLang]="translate.currentLang" (langChange)="setLanguage($event)"></app-language-selector>
-        </div>
-        
-        <div class="space-y-4">
-          <p class="text-sm uppercase tracking-[0.3em] text-slate-500">{{ 'AUTH.HERO_SUBHEAD' | translate }}</p>
-          <h1 class="text-4xl font-semibold tracking-tight text-slate-50 sm:text-5xl">{{ 'AUTH.LOGIN_TITLE' | translate }}</h1>
-          <p class="max-w-2xl text-slate-400 sm:text-lg">{{ 'AUTH.LOGIN_DESCRIPTION' | translate }}</p>
-        </div>
-        
-        <div class="grid gap-4 sm:grid-cols-2">
-          <div class="rounded-3xl border border-slate-800/80 bg-slate-900/80 p-5 shadow-[0_18px_45px_-22px_rgba(15,23,42,0.9)]">
-            <p class="text-xs uppercase tracking-[0.3em] text-slate-500">{{ 'AUTH.OWNER_ROLE' | translate }}</p>
-            <p class="mt-3 text-xl font-semibold text-slate-100">{{ 'AUTH.OWNER_HIGHLIGHT' | translate }}</p>
+<div class="auth-container">
+  
+  <!-- PANEL DE MARCA E INFORMACIÓN B2B -->
+  <div class="auth-sidebar">
+    <div class="brand-header">
+      <div class="brand-logo">W</div>
+      <span class="brand-name">WhatBoo <span class="brand-badge">SaaS</span></span>
+    </div>
+
+    <div class="hero-content">
+      <span class="hero-tag">{{ 'AUTH.HERO_BADGE' | translate }}</span>
+      <h2 class="hero-title">{{ 'AUTH.LOGIN_TITLE' | translate }}</h2>
+      <p class="hero-subtitle">{{ 'AUTH.HERO_SUBHEAD' | translate }}</p>
+
+      <div class="role-cards">
+        <div class="role-card">
+          <div class="role-icon">👑</div>
+          <div>
+            <h4 class="role-name">{{ 'AUTH.OWNER_ROLE' | translate }}</h4>
+            <p class="role-desc">{{ 'AUTH.OWNER_HIGHLIGHT' | translate }}</p>
           </div>
-          <div class="rounded-3xl border border-slate-800/80 bg-slate-900/80 p-5 shadow-[0_18px_45px_-22px_rgba(15,23,42,0.9)]">
-            <p class="text-xs uppercase tracking-[0.3em] text-slate-500">{{ 'AUTH.MANAGER_ROLE' | translate }}</p>
-            <p class="mt-3 text-xl font-semibold text-slate-100">{{ 'AUTH.MANAGER_HIGHLIGHT' | translate }}</p>
+        </div>
+        <div class="role-card">
+          <div class="role-icon">💼</div>
+          <div>
+            <h4 class="role-name">{{ 'AUTH.MANAGER_ROLE' | translate }}</h4>
+            <p class="role-desc">{{ 'AUTH.MANAGER_HIGHLIGHT' | translate }}</p>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Formulario Seguro -->
-      <div class="w-full rounded-[2rem] border border-slate-800/80 bg-slate-900/90 p-6 shadow-[0_40px_120px_-35px_rgba(15,23,42,0.8)] sm:p-8 md:p-10">
-        <div class="mb-8">
-          <p class="text-sm font-semibold uppercase tracking-[0.32em] text-amber-300/90">{{ 'AUTH.STAFF_LOGIN' | translate }}</p>
-          <p class="mt-2 text-slate-400">{{ 'AUTH.STAFF_LOGIN_HELP' | translate }}</p>
-        </div>
-
-        <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
-          <!-- Campo: Slug -->
-          <div class="grid gap-3">
-            <label class="block text-sm font-medium text-slate-300" [class.text-rose-300]="restaurantSlug.invalid && (restaurantSlug.dirty || restaurantSlug.touched)">{{ 'AUTH.RESTAURANT_SLUG_LABEL' | translate }}</label>
-            <input formControlName="restaurantSlug" [attr.aria-invalid]="restaurantSlug.invalid && (restaurantSlug.dirty || restaurantSlug.touched)" [attr.aria-describedby]="restaurantSlugHintId" placeholder="{{ 'AUTH.RESTAURANT_SLUG_PLACEHOLDER' | translate }}" class="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20 invalid:border-rose-400" />
-            <div *ngIf="restaurantSlug.invalid && (restaurantSlug.dirty || restaurantSlug.touched)" [id]="restaurantSlugHintId" class="text-xs text-rose-300" role="alert" aria-live="polite">
-              {{ restaurantSlug.hasError('required') ? ('AUTH.RESTAURANT_REQUIRED' | translate) : '' }}
-            </div>
-          </div>
-
-          <!-- Campo: Email -->
-          <div class="grid gap-3">
-            <label class="block text-sm font-medium text-slate-300" [class.text-rose-300]="email.invalid && (email.dirty || email.touched)">{{ 'AUTH.EMAIL_LABEL' | translate }}</label>
-            <input formControlName="email" type="email" [attr.aria-invalid]="email.invalid && (email.dirty || email.touched)" [attr.aria-describedby]="emailHintId" placeholder="{{ 'AUTH.EMAIL_PLACEHOLDER' | translate }}" class="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20 invalid:border-rose-400" />
-            <div *ngIf="email.invalid && (email.dirty || email.touched)" [id]="emailHintId" class="text-xs text-rose-300" role="alert" aria-live="polite">
-              <span *ngIf="email.hasError('required')">{{ 'AUTH.EMAIL_REQUIRED' | translate }}</span>
-              <span *ngIf="email.hasError('email')">{{ 'AUTH.EMAIL_INVALID' | translate }}</span>
-            </div>
-          </div>
-
-          <!-- Campo: Password -->
-          <div class="grid gap-3">
-            <label class="block text-sm font-medium text-slate-300" [class.text-rose-300]="password.invalid && (password.dirty || password.touched)">{{ 'AUTH.PASSWORD_LABEL' | translate }}</label>
-            <input formControlName="password" type="password" [attr.aria-invalid]="password.invalid && (password.dirty || password.touched)" [attr.aria-describedby]="passwordHintId" placeholder="{{ 'AUTH.PASSWORD_PLACEHOLDER' | translate }}" class="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20 invalid:border-rose-400" />
-            <div *ngIf="password.invalid && (password.dirty || password.touched)" [id]="passwordHintId" class="text-xs text-rose-300" role="alert" aria-live="polite">
-              <span *ngIf="password.hasError('required')">{{ 'AUTH.PASSWORD_REQUIRED' | translate }}</span>
-              <span *ngIf="password.hasError('minlength')">{{ 'AUTH.PASSWORD_MINLENGTH' | translate }}</span>
-            </div>
-          </div>
-
-          <!-- Errores Backend -->
-          <div *ngIf="serverErrorValue" class="rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100" role="alert" aria-live="assertive">
-            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-rose-200">{{ 'AUTH.LOGIN_ERROR_TITLE' | translate }}</p>
-            <ul *ngIf="isServerErrorArray(); else singleError" class="mt-2 list-disc space-y-1 pl-4 text-rose-100">
-              <li *ngFor="let err of serverErrorArray">{{ err }}</li>
-            </ul>
-            <ng-template #singleError><p class="mt-2">{{ serverErrorValue }}</p></ng-template>
-            <p *ngIf="serverErrorRecoverable()" class="mt-3 text-xs text-rose-200/90">{{ 'AUTH.LOGIN_ERROR_RECOVERABLE' | translate }}</p>
-          </div>
-
-          <!-- Acciones -->
-          <button type="submit" [disabled]="isSubmitting() || form.invalid" class="w-full justify-center inline-flex rounded-2xl bg-amber-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:opacity-50 disabled:cursor-not-allowed">
-            {{ (isSubmitting() ? 'AUTH.SIGNING_IN' : 'AUTH.LOGIN_SUBMIT') | translate }}
-          </button>
-
-          <div class="flex flex-col gap-3 pt-2 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-            <a href="mailto:support&#64;restaurant-booking.local?subject=Reset" class="hover:text-slate-200 transition focus:outline-none">{{ 'AUTH.NEED_HELP' | translate }}</a>
-            <a routerLink="/auth/forgot-password" class="hover:text-slate-200 transition focus:outline-none cursor-pointer font-medium text-amber-400">{{ 'AUTH.FORGOT_PASSWORD' | translate }}</a>
-          </div>
-        </form>
-      </div>
-    </section>
+    <div class="sidebar-footer">
+      <span>&copy; 2026 WhatBoo Platform Enterprise Inc.</span>
+      <a href="#" class="footer-link">{{ 'AUTH.NEED_HELP' | translate }}</a>
+    </div>
   </div>
-</main>
+
+  <!-- PANEL DERECHO: FORMULARIO ULTRA-CENTRADO MATEMÁTICAMENTE -->
+  <div class="auth-form-wrapper">
+    <div class="form-container">
+      <div class="form-header">
+        <h3 class="form-title-desktop">{{ 'AUTH.LOGIN_TITLE' | translate }}</h3>
+        <app-language-selector></app-language-selector>
+        <p class="form-description">{{ 'AUTH.LOGIN_DESCRIPTION' | translate }}</p>
+      </div>
+
+      @if (serverError()) {
+        <div class="alert-error">
+          <div class="alert-icon">!</div>
+          <span class="alert-text">{{ serverError() }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="login-form">
+        <div class="input-group">
+          <label class="input-label">{{ 'AUTH.RESTAURANT_SLUG_LABEL' | translate }}</label>
+          <input type="text" formControlName="restaurantSlug" class="form-input" placeholder="{{ 'AUTH.RESTAURANT_SLUG_PLACEHOLDER' | translate }}">
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">{{ 'AUTH.EMAIL_LABEL' | translate }}</label>
+          <input type="email" formControlName="email" class="form-input" placeholder="{{ 'AUTH.EMAIL_PLACEHOLDER' | translate }}">
+        </div>
+
+        <div class="input-group">
+          <div class="label-row">
+            <label class="input-label">{{ 'AUTH.PASSWORD_LABEL' | translate }}</label>
+            <a routerLink="/auth/forgot-password" class="forgot-link">{{ 'AUTH.FORGOT_PASSWORD' | translate }}</a>
+          </div>
+          <input type="password" formControlName="password" class="form-input" placeholder="{{ 'AUTH.PASSWORD_PLACEHOLDER' | translate }}">
+        </div>
+
+        <button type="submit" [disabled]="form.invalid || isSubmitting()" class="submit-button">
+          @if (isSubmitting()) {
+            <span class="spinner"></span>
+          }
+          {{ 'AUTH.LOGIN_SUBMIT' | translate }}
+        </button>
+      </form>
+    </div>
+  </div>
+
+</div>

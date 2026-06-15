@@ -46,19 +46,36 @@ set -Eeuo pipefail
 # CONFIGURATION
 # ==============================================================================
 
-DB_NAME="viras_db"
+DB_NAME="restaurant_booking_dev"
 DB_USER="viras_user"
 DB_PASSWORD="vati"
 DB_HOST="localhost"
 DB_PORT="5432"
 
-CURRENT_DATE=$(date +"%d-%m-%Y")
+# ==============================================================================
+# PROJECT BASE PATH
+# ==============================================================================
+# Always resolve project path from script location.
+# This allows execution from anywhere.
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(dirname "${SCRIPT_DIR}")"
+
+# ==============================================================================
+# BACKUP CONFIGURATION
+# ==============================================================================
+
+CURRENT_DATE=$(date +"%d-%m-%Y_%H-%M-%S")
+BACKUP_DIR="${PROJECT_DIR}/backups"
 BACKUP_FILENAME="db_bckp-${CURRENT_DATE}.dump"
-
-BACKUP_DIR="./"
-
 LOG_FILE="${BACKUP_DIR}/backup_${CURRENT_DATE}.log"
+
+# ==============================================================================
+# SECURITY
+# ==============================================================================
+
+# Restrict generated files permissions
+umask 077
 
 # ==============================================================================
 # COLORS

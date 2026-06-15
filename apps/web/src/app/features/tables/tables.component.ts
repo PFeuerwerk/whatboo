@@ -1,79 +1,64 @@
-import { Component, OnInit, inject, computed } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
-import { RestaurantConfigService } from '../../core/services/restaurant-config.service';
-import { RestaurantTable } from '../../core/models/restaurant.interfaces';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+import { Zone, Table } from '../../core/models/booking-models';
 
 @Component({
-  selector: 'app-tables-management',
+  selector: 'app-tables',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './tables.component.html',
-  styles: []
+  styleUrls: ['./tables.component.css']
 })
 export class TablesComponent implements OnInit {
-  private readonly configService = inject(RestaurantConfigService);
+  private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
 
-  // Exposición limpia de estados basados en Signals globales
-  public readonly zones = this.configService.zones;
-  public readonly tables = this.configService.tables;
-
-  // Signal computada para auditoría de aforo en la UI
-  public readonly totalCapacity = computed(() => 
-    this.tables().reduce((acc, t) => acc + (t.active ? t.capacity : 0), 0)
-  );
-
-  // Formularios reactivos fuertemente validados
+  public readonly zones = signal<Zone[]>([]);
+  public readonly tables = signal<Table[]>([]);
   public tableForm!: FormGroup;
-  public zoneForm!: FormGroup;
-  private dummyRestaurantId = 'default-tenant-id';
 
   public ngOnInit(): void {
-    this.initForms();
+    this.tableForm = this.fb.group({
+      name: ['', [Validators.required]],
+      capacity: [4, [Validators.required, Validators.min(1)]],
+      zoneId: ['', [Validators.required]]
+    });
+
     this.loadPlantaData();
   }
 
-  private initForms(): void {
-    this.tableForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(2)]],
-      capacity: [2, [Validators.required, Validators.min(1)]],
-      zoneId: [null]
+  public loadPlantaData(): void {
+    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
+    
+    // 1. Obtener zonas físicas del restaurante
+    this.http.get<Zone[]>(`${environment.apiUrl}/restaurants/${slug}/zones`).subscribe(res => {
+      this.zones.set(res);
+      if (res.length > 0) {
+        this.tableForm.patchValue({ zoneId: res[0].id });
+      }
     });
 
-    this.zoneForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(2)]],
-      priority: [1, [Validators.required, Validators.min(1)]]
-    });
-  }
-
-  private loadPlantaData(): void {
-    this.configService.getZones(this.dummyRestaurantId).subscribe();
-    this.configService.getTables(this.dummyRestaurantId).subscribe();
-  }
-
-  public getTablesByZone(zoneId: string): RestaurantTable[] {
-    return this.tables().filter(t => t.zoneId === zoneId && t.active);
-  }
-
-  public onSubmitZone(): void {
-    if (this.zoneForm.invalid) return;
-    this.configService.createZone(this.dummyRestaurantId, this.zoneForm.value).subscribe({
-      next: () => this.zoneForm.reset({ priority: 1 })
+    // 2. Obtener inventario de mesas operativas
+    this.http.get<Table[]>(`${environment.apiUrl}/restaurants/${slug}/tables`).subscribe(res => {
+      this.tables.set(res);
     });
   }
 
-  public onSubmitTable(): void {
+  public getTablesByZone(zoneId: string): Table[] {
+    return this.tables().filter(t => t.zoneId === zoneId);
+  }
+
+  public onCreateTable(): void {
     if (this.tableForm.invalid) return;
-    this.configService.createTable(this.dummyRestaurantId, this.tableForm.value).subscribe({
-      next: () => this.tableForm.reset({ capacity: 2, zoneId: null })
-    });
-  }
+    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
 
-  public onDeleteTable(tableId: string): void {
-    if (confirm('¿Confirmas la baja de esta mesa del aforo operativo?')) {
-      this.configService.deleteTable(this.dummyRestaurantId, tableId).subscribe();
-    }
+    this.http.post(`${environment.apiUrl}/restaurants/${slug}/tables`, this.tableForm.value)
+      .subscribe(() => {
+        this.tableForm.get('name')?.reset();
+        this.loadPlantaData(); // Recarga reactiva en caliente desde PostgreSQL
+      });
   }
 }

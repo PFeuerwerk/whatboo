@@ -1,3 +1,4 @@
+import { PhoneValidationModule } from '../../../common/phone/phone-validation.module';
 import { Module } from '@nestjs/common';
 import { ReservationRepository } from './repositories/reservation.repository';
 import { ReservationEngineService } from './services/reservation-engine.service';
@@ -8,7 +9,8 @@ import { RestaurantsModule } from "../restaurants/restaurants.module";
 
 
 @Module({
-  imports: [AvailabilityModule, CustomersModule, RestaurantsModule],
+  imports: [
+    PhoneValidationModule,AvailabilityModule, CustomersModule, RestaurantsModule],
   controllers: [ReservationsController],
   providers: [ReservationRepository, ReservationEngineService],
   exports: [ReservationRepository, ReservationEngineService],

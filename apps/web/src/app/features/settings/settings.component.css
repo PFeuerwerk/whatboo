@@ -1,0 +1,190 @@
+/* ============================================================================
+   DISEÑO PREMIUM ENTERPRISE B2B - ASISTENTE DE CONFIGURACIÓN API
+   ============================================================================ */
+@import url('https://googleapis.com');
+
+.settings-wrapper {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+.header-block {
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.title-main { 
+  font-size: 1.75rem; 
+  font-weight: 800; 
+  color: #0f172a; 
+  margin: 0; 
+  letter-spacing: -0.03em; 
+}
+
+.subtitle-main { 
+  font-size: 0.85rem; 
+  color: #64748b; 
+  margin: 0.35rem 0 0 0; 
+  font-weight: 500; 
+}
+
+.panel-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  padding: 2rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  max-width: 48rem;
+  margin: 0;
+}
+
+.section-block { 
+  margin-bottom: 2rem; 
+}
+
+.section-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.row-inputs {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .row-inputs { grid-template-columns: 1fr 1fr; }
+}
+
+.input-group { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0.4rem; 
+}
+
+.input-label { 
+  font-size: 0.725rem; 
+  font-weight: 700; 
+  color: #334155; 
+  text-transform: uppercase; 
+  letter-spacing: 0.025em; 
+}
+
+.form-select, .form-input {
+  width: 100%;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.8rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+  outline: none;
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus, .form-select:focus {
+  border-color: #2563eb;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.toggle-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 1.25rem;
+  border-radius: 1rem;
+}
+
+.toggle-info {
+  max-width: 80%;
+}
+
+.toggle-title { 
+  font-size: 0.875rem; 
+  font-weight: 700; 
+  color: #0f172a; 
+  margin: 0; 
+}
+
+.toggle-desc { 
+  font-size: 0.75rem; 
+  color: #64748b; 
+  margin: 0.2rem 0 0 0; 
+  font-weight: 500; 
+  line-height: 1.4;
+}
+
+.checkbox-custom {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+  accent-color: #2563eb;
+}
+
+.footer-row {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1.5rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.save-btn {
+  background-color: #2563eb;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 0.875rem 1.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.775rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.save-btn:hover { 
+  background-color: #1d4ed8; 
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* MENSAJE DE ÉXITO */
+.toast-success {
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  color: #065f46;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
