@@ -6,7 +6,6 @@
       <h1 class="title-main">{{ 'RESERVATIONS.TITLE' | translate }}</h1>
       <p class="subtitle-main">{{ 'RESERVATIONS.SUBTITLE' | translate }}</p>
     </div>
-    <!-- Botón Maestro Adicionado para la Operación Diaria -->
     <button (click)="onPrintAgenda()" class="print-btn">
       <span>🖨️</span> Imprimir Lista de Hoy
     </button>
@@ -22,6 +21,15 @@
       <div class="metric-label">Turnos en Espera</div>
       <div class="metric-value">0</div>
     </div>
+  </div>
+
+  <!-- SECCIÓN INTEGRADA DE ALTA FIDELIDAD: REJILLA INTERACTIVA DRAG & DROP -->
+  <div class="mb-6">
+    <app-reservations-grid 
+      [tables]="tables()" 
+      [reservations]="reservations()"
+      (onGridUpdated)="loadAgendaDiaria()">
+    </app-reservations-grid>
   </div>
 
   <!-- CONTROL DE FILTRADO INTERACTIVO -->

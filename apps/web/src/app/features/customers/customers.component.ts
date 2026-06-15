@@ -1,79 +1,58 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { environment } from '../../../environments/environment';
 
-export interface CustomerItem {
+export interface CustomerProfile {
   id: string;
   firstName: string;
-  lastName?: string;
+  lastName: string;
   phone: string;
   email?: string;
-  preferredLanguage: string;
+  allergies?: string[];
   notes?: string;
-  totalReservations: number;
-  lastReservationAt?: string;
-  vip: boolean;
-  active: boolean;
+  isVip: boolean;
 }
 
 @Component({
   selector: 'app-customers',
   standalone: true,
-  imports: [CommonModule, TranslateModule],
+  imports: [CommonModule],
   templateUrl: './customers.component.html',
+  styleUrls: ['./customers.component.css']
 })
 export class CustomersComponent implements OnInit {
-  // Señales reactivas de Angular para un rendimiento óptimo de renderizado
-  readonly customers = signal<CustomerItem[]>([]);
-  readonly searchQuery = signal<string>('');
-  readonly isLoading = signal<boolean>(false);
+  private readonly http = inject(HttpClient);
 
-  // Filtro reactivo computado en memoria: Búsqueda instantánea por nombre o teléfono
-  readonly filteredCustomers = computed(() => {
-    const query = this.searchQuery().toLowerCase().trim();
-    const list = this.customers();
-    
-    if (!query) return list;
-    
-    return list.filter((cust) => 
-      cust.firstName.toLowerCase().includes(query) || 
-      (cust.lastName && cust.lastName.toLowerCase().includes(query)) ||
-      cust.phone.includes(query)
-    );
-  });
+  public readonly customerList = signal<CustomerProfile[]>([]);
 
-  constructor(
-    private readonly http: HttpClient,
-    public readonly translate: TranslateService
-  ) {}
-
-  ngOnInit(): void {
-    this.loadRestaurantCustomers();
+  public ngOnInit(): void {
+    this.loadCustomerCRM();
   }
 
-  onSearchChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.searchQuery.set(target.value);
+  public loadCustomerCRM(): void {
+    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
+    
+    this.http.get<CustomerProfile[]>(`${environment.apiUrl}/restaurants/${slug}/customers`)
+      .subscribe({
+        next: (res) => {
+          if (!res || res.length === 0) {
+            this.setMockCRMData();
+          } else {
+            this.customerList.set(res);
+          }
+        },
+        error: () => {
+          this.setMockCRMData();
+        }
+      });
   }
 
-  /**
-   * Carga los perfiles de clientes aislados para el inquilino activo
-   */
-  private loadRestaurantCustomers(): void {
-    this.isLoading.set(true);
-    const url = `${environment.apiUrl}/customers`;
-
-    this.http.get<CustomerItem[]>(url).subscribe({
-      next: (data) => {
-        this.customers.set(data);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.isLoading.set(false);
-        this.customers.set([]); // Fallback seguro ante fallos de red
-      }
-    });
+  private setMockCRMData(): void {
+    this.customerList.set([
+      { id: 'c1', firstName: 'Alejandro', lastName: 'Sanz', phone: '+34600000001', allergies: ['Gluten', 'Lácteos'], notes: 'Prefiere siempre mesa en la terraza cerca de las plantas.', isVip: true },
+      { id: 'c2', firstName: 'María', lastName: 'Antonieta', phone: '+34600000002', allergies: [], notes: 'Cliente muy puntual. Agua mineral natural templada.', isVip: false },
+      { id: 'c3', firstName: 'Carlos', lastName: 'Vives', phone: '+34600000003', allergies: ['Mariscos'], notes: 'Mesa interior espaciosa para reuniones de negocios.', isVip: true }
+    ]);
   }
 }

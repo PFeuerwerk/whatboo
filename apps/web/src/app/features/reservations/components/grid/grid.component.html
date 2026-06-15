@@ -1,0 +1,53 @@
+<div class="grid-container">
+  
+  <div class="grid-header">
+    <h3 class="grid-title">Asignación Visual de Mesas (Timeline Diario)</h3>
+  </div>
+
+  <div class="grid-matrix">
+    
+    <!-- LÍNEA DE TIEMPO SUPERIOR: Columnas Horarias de Guía Visual -->
+    <div class="matrix-row header-timeline-row">
+      <div class="row-label text-slate-400">Slots ➜</div>
+      <div class="slots-timeline">
+        @for (hour of timelineHours; track hour) {
+          <div class="timeline-column-header">{{ hour }}</div>
+        }
+      </div>
+    </div>
+
+    <!-- CUADRÍCULA VERTICAL DE PLANTA (MESAS vs HORAS) -->
+    @for (table of tables(); track table.id) {
+      <div class="matrix-row">
+        <div class="row-label">🪑 {{ table.name }}</div>
+        
+        <div class="slots-timeline">
+          @for (hour of timelineHours; track hour) {
+            <div 
+              class="drop-zone"
+              [class.drop-zone-active]="isZoneTargeted(table.id, hour)"
+              (dragover)="onDragOver($event, table.id, hour)"
+              (dragleave)="onDragLeave()"
+              (drop)="onDrop($event, table.id, hour)">
+              
+              @for (res of getReservationsForSlot(table.id, hour); track res.id) {
+                <div 
+                  class="booking-chip" 
+                  draggable="true"
+                  (dragstart)="onDragStart($event, res.id)">
+                  <div class="chip-name">{{ res.customerName }}</div>
+                  <div class="chip-meta">
+                    <span class="chip-pax">{{ res.pax }} Pax</span>
+                    <span class="chip-status">● {{ res.status }}</span>
+                  </div>
+                </div>
+              }
+
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+</div>

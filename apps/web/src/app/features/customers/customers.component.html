@@ -1,103 +1,50 @@
-<div class="p-4 sm:p-6 lg:p-8 min-h-screen bg-slate-950 text-slate-100">
+<div class="crm-wrapper animate-fade-in">
   
-  <!-- Encabezado de la Sección -->
-  <header class="mb-6 sm:mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight text-slate-50 sm:text-3xl">
-        {{ 'CUSTOMERS.TITLE' | translate }}
-      </h1>
-      <p class="mt-1 text-sm text-slate-400">
-        Base de datos unificada de comensales y perfiles de fidelización.
-      </p>
-    </div>
-  </header>
-
-  <!-- Buscador Interactivo y Accesible -->
-  <div class="mb-6 max-w-md">
-    <div class="relative">
-      <input
-        type="text"
-        [value]="searchQuery()"
-        (input)="onSearchChange($event)"
-        placeholder="Buscar por nombre o número de teléfono..."
-        class="w-full rounded-2xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 transition focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20"
-        aria-label="Buscar clientes"
-      />
-    </div>
+  <div class="header-block">
+    <h1 class="title-main">Fidelización e Historial de Clientes</h1>
+    <p class="subtitle-main">Audite la libreta de contactos recurrentes, identifique preferencias y gestione notas críticas de alérgenos.</p>
   </div>
 
-  <!-- Estado de Carga (Spinner) -->
-  @if (isLoading()) {
-    <div class="flex flex-col items-center justify-center py-12" role="status" aria-live="polite">
-      <div class="h-8 w-8 animate-spin rounded-full border-4 border-slate-800 border-t-amber-400"></div>
-      <p class="mt-3 text-sm text-slate-400">{{ 'COMMON.LOADING' | translate }}</p>
-    </div>
-  } @else {
-
-    <!-- Grid Fully Responsive de Clientes -->
-    @if (filteredCustomers().length === 0) {
-      <div class="rounded-3xl border border-dashed border-slate-800 bg-slate-900/40 p-12 text-center">
-        <p class="text-slate-400 text-sm font-medium">{{ 'CUSTOMERS.NO_CUSTOMERS' | translate }}</p>
-      </div>
-    } @else {
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        
-        @for (item of filteredCustomers(); track item.id) {
-          <div class="relative rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-sm transition hover:border-slate-700">
-            
-            <!-- Encabezado de Tarjeta: Nombre y Badge VIP -->
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <h2 class="font-semibold text-slate-100 text-base flex items-center gap-2">
-                  {{ item.firstName }} {{ item.lastName || '' }}
-                </h2>
-                <p class="text-xs text-slate-400 font-mono mt-0.5">{{ item.phone }}</p>
-                @if (item.email) {
-                  <p class="text-xs text-slate-500 truncate max-w-[200px] mt-0.5">{{ item.email }}</p>
+  <!-- GRILLA PRINCIPAL DE EXPEDIENTES CRM -->
+  <div class="table-card">
+    <table class="b2b-table">
+      <thead>
+        <tr>
+          <th class="th-item">Comensal</th>
+          <th class="th-item">Teléfono / WhatsApp</th>
+          <th class="th-item">Alérgenos / Restricciones</th>
+          <th class="th-item">Preferencias / Notas de Sala</th>
+          <th class="th-item">Categoría</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (client of customerList(); track client.id) {
+          <tr>
+            <td class="td-item font-bold text-slate-900">{{ client.firstName }} {{ client.lastName }}</td>
+            <td class="td-item text-slate-500 font-mono text-xs">{{ client.phone }}</td>
+            <td class="td-item">
+              @if (client.allergies && client.allergies.length > 0) {
+                @for (allergy of client.allergies; track allergy) {
+                  <span class="allergy-pill">⚠️ {{ allergy }}</span>
                 }
-              </div>
-
-              <!-- Indicador VIP de Fidelización -->
-              @if (item.vip) {
-                <span class="rounded-full bg-amber-400/10 px-2.5 py-0.5 text-xs font-semibold text-amber-400 border border-amber-400/20 uppercase tracking-wider">
-                  {{ 'CUSTOMERS.VIP' | translate }}
-                </span>
+              } @else {
+                <span class="text-slate-400 font-medium text-xs">Ninguna</span>
               }
-            </div>
-
-            <!-- Métricas de Historial de Consumo -->
-            <div class="mt-4 grid grid-cols-2 gap-3 border-t border-slate-800/60 pt-3 text-sm text-slate-300">
-              <div class="flex flex-col gap-0.5">
-                <span class="text-xs text-slate-500 font-medium uppercase tracking-wider">{{ 'CUSTOMERS.TOTAL_RESERVATIONS' | translate }}</span>
-                <span class="font-semibold text-slate-200 text-base">{{ item.totalReservations }}</span>
-              </div>
-              <div class="flex flex-col gap-0.5">
-                <span class="text-xs text-slate-500 font-medium uppercase tracking-wider">{{ 'CUSTOMERS.LAST_VISIT' | translate }}</span>
-                <span class="font-medium text-slate-200">
-                  @if (item.lastReservationAt) {
-                    {{ item.lastReservationAt | date:'dd/MM/yyyy' }}
-                  } @else {
-                    --
-                  }
-                </span>
-              </div>
-            </div>
-
-            <!-- Preferencias de Idioma de WhatsApp -->
-            <div class="mt-4 pt-3 border-t border-slate-800/40 flex items-center justify-between text-xs text-slate-500">
-              <span>Idioma preferido: <span class="font-semibold text-slate-400 uppercase font-mono">{{ item.preferredLanguage }}</span></span>
-            </div>
-
-            <!-- Notas de Preferencias del Comensal -->
-            @if (item.notes) {
-              <div class="mt-3 rounded-xl bg-slate-950/60 p-2.5 text-xs text-slate-400 border border-slate-900 italic line-clamp-2">
-                "{{ item.notes }}"
-              </div>
-            }
-          </div>
+            </td>
+            <td class="td-item notes-text">{{ client.notes || 'Sin anotaciones particulares.' }}</td>
+            <td class="td-item">
+              <span class="vip-tag" [ngClass]="client.isVip ? 'tag-vip' : 'tag-regular'">
+                {{ client.isVip ? 'VIP Gold' : 'Frecuente' }}
+              </span>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="td-item text-center text-slate-400 p-8">No hay expedientes de clientes registrados en el SaaS local.</td>
+          </tr>
         }
+      </tbody>
+    </table>
+  </div>
 
-      </div>
-    }
-  }
 </div>

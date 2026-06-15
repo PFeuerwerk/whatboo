@@ -1,5 +1,5 @@
 /* ============================================================================
-   DISEÑO PREMIUM ENTERPRISE B2B - AGENDA DIARIA COMPACTA
+   DISEÑO PREMIUM ENTERPRISE B2B - AGENDA DIARIA COMPACTA SANADA
    ============================================================================ */
 @import url('https://googleapis.com');
 
@@ -32,7 +32,6 @@
   font-weight: 500;
 }
 
-/* REPLICACIÓN EXACTA: BOTÓN DE ACCIÓN ACCESIBLE PREMIUM */
 .print-btn {
   background-color: #0f172a;
   color: #ffffff;
@@ -56,12 +55,11 @@
   background-color: #1e293b;
 }
 
-/* BLOQUE DE METRICAS FLASH */
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem; /* Margen incrementado para dar aire */
 }
 
 .metric-card {
@@ -75,11 +73,13 @@
 .metric-label { font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
 .metric-value { font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-top: 0.25rem; tracking: -0.02em; }
 
-/* BARRA DE FILTRADO */
+/* REPOSITORIO DE CONTROL DE SECCIONES CON DIVISION DE AIRE DE SEGURIDAD */
 .filter-bar {
   display: flex;
   gap: 0.5rem;
+  margin-top: 2.5rem !important;    /* Forzar separacion drástica del bloque Drag & Drop superior */
   margin-bottom: 1.25rem;
+  clear: both;                      /* Pulveriza cualquier colisión flotante */
 }
 
 .filter-btn {
@@ -98,7 +98,6 @@
 .filter-btn:hover { background-color: #f8fafc; border-color: #cbd5e1; }
 .filter-btn-active { background-color: #2563eb; color: #ffffff; border-color: #2563eb; }
 
-/* TABLA DE RESERVAS DEL TURNO */
 .table-card {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
@@ -107,21 +106,19 @@
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }
 
-.b2b-table { width: 100%; border-collapse: collapse; text-align: left; }
+.b2b-table { width: 100%; border-collapse: collapse; text-collapse: collapse; text-align: left; }
 .th-item { background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 1rem; font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
 .td-item { padding: 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.825rem; font-weight: 600; color: #334155; }
 
-/* ACCIONES DE ESTADO */
 .status-badge { inline-flex: true; padding: 0.2rem 0.5rem; border-radius: 0.5rem; font-size: 0.675rem; font-weight: 800; uppercase: true; }
 .badge-confirmed { background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
-.badge-pending { background-color: #fefbc3; color: #854d0e; border: 1px solid #fef08a; }
 
 .action-btn {
   background-color: #f8fafc;
   border: 1px solid #e2e8f0;
   padding: 0.35rem 0.75rem;
   border-radius: 0.5rem;
-  font-size: 0.7rem;
+  font-size: 0.7 foolproof;
   font-weight: 700;
   color: #475569;
   cursor: pointer;

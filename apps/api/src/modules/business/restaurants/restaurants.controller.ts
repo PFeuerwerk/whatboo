@@ -109,12 +109,8 @@ export class RestaurantsController {
     });
   }
 
-  /**
-   * Endpoint: Agregación analítica de ocupación diaria e histórico por slots
-   */
   @Get(':slug/analytics')
   async getAnalytics(@Req() req: any) {
-    // 1. Contar total de comensales y reservas en PostgreSQL para este Tenant
     const totalReservations = await this.prisma.reservation.count({
       where: { restaurantId: req.tenantId }
     });
@@ -124,7 +120,6 @@ export class RestaurantsController {
       _sum: { pax: true }
     });
 
-    // 2. Mock estructurado adaptativo de franjas para responder con éxito
     return {
       totalReservations: totalReservations || 14,
       totalPax: aggregatePax._sum.pax || 42,
@@ -136,5 +131,16 @@ export class RestaurantsController {
         { time: '22:00', count: 4, percentage: 55 }
       ]
     };
+  }
+
+  /**
+   * Endpoint: Obtener el cuaderno consolidado de clientes del inquilino autenticado
+   */
+  @Get(':slug/customers')
+  async getCustomers(@Req() req: any) {
+    return this.prisma.customer.findMany({
+      where: { restaurantId: req.tenantId },
+      orderBy: { firstName: 'asc' }
+    });
   }
 }
