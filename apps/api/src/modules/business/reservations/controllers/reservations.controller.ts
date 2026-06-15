@@ -9,25 +9,19 @@ import {
   Param,
   Query,
   UseGuards,
-  Request,
+  Req,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../../platform/auth/guards/jwt-auth.guard';
 import { ReservationEngineService } from '../services/reservation-engine.service';
 import { ReservationRepository } from '../repositories/reservation.repository';
 import { CreateReservationDto } from '../dto/create-reservation.dto';
 import { UpdateReservationStatusDto } from '../dto/update-reservation-status.dto';
-import { JwtPayload } from '../../../platform/auth/strategies/jwt.strategy';
-
-interface AuthRequest extends Request {
-  user: JwtPayload;
-}
 
 @Controller('reservations')
 @UseGuards(JwtAuthGuard)
 export class ReservationsController {
   constructor(
     private readonly phoneValidationService: PhoneValidationService,
-    private readonly : ReservationEngineService,
     private readonly reservationEngine: ReservationEngineService,
     private readonly reservationRepository: ReservationRepository,
   ) {}
@@ -37,8 +31,9 @@ export class ReservationsController {
    * Ruta: GET /api/v1/reservations/today
    */
   @Get('today')
-  async findToday(@Request() req: AuthRequest) {
-    const restaurantId = req.user.restaurantId!;
+  async findToday(@Req() req: any) {
+    // Extracción atómica y blindada de la Fase A desde el TenantInterceptor
+    const restaurantId = req['tenantId'];
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -54,10 +49,10 @@ export class ReservationsController {
    */
   @Get()
   async findAll(
-    @Request() req: AuthRequest,
+    @Req() req: any,
     @Query('date') date?: string,
   ) {
-    const restaurantId = req.user.restaurantId!;
+    const restaurantId = req['tenantId'];
 
     if (date) {
       const start = new Date(date);
@@ -79,8 +74,8 @@ export class ReservationsController {
    * Ruta: GET /api/v1/reservations/:id
    */
   @Get(':id')
-  async findOne(@Request() req: AuthRequest, @Param('id') id: string) {
-    const restaurantId = req.user.restaurantId!;
+  async findOne(@Req() req: any, @Param('id') id: string) {
+    const restaurantId = req['tenantId'];
     return this.reservationRepository.findById(restaurantId, id);
   }
 
@@ -90,10 +85,10 @@ export class ReservationsController {
    */
   @Post()
   async create(
-    @Request() req: AuthRequest,
+    @Req() req: any,
     @Body() dto: CreateReservationDto,
   ) {
-    const restaurantId = req.user.restaurantId!;
+    const restaurantId = req['tenantId'];
     const phoneValidation = this.phoneValidationService.validate(dto.phone);
 
     if (!phoneValidation.isValid || !phoneValidation.normalizedPhone) {
@@ -105,7 +100,8 @@ export class ReservationsController {
 
     const phone = phoneValidation.normalizedPhone;
 
-    return this.reservationEngine.createReservation({ restaurantId: restaurantId,
+    return this.reservationEngine.createReservation({ 
+      restaurantId: restaurantId,
       phone: phone,
       guestCount: dto.guestCount,
       reservationStart: new Date(dto.reservationStart),
@@ -113,7 +109,6 @@ export class ReservationsController {
       notes: dto.notes,
       customerName: dto.customerName,
     });
-
   }
 
   /**
@@ -122,11 +117,11 @@ export class ReservationsController {
    */
   @Patch(':id/status')
   async updateStatus(
-    @Request() req: AuthRequest,
+    @Req() req: any,
     @Param('id') id: string,
     @Body() dto: UpdateReservationStatusDto,
   ) {
-    const restaurantId = req.user.restaurantId!;
+    const restaurantId = req['tenantId'];
     return this.reservationRepository.updateStatus(restaurantId, id, dto.status);
   }
 
@@ -136,11 +131,11 @@ export class ReservationsController {
    */
   @Patch(":id")
   async update(
-    @Request() req: any,
+    @Req() req: any,
     @Param("id") id: string,
     @Body() dto: { reservationStart?: string }
   ) {
-    const restaurantId = req.user.restaurantId!;
+    const restaurantId = req['tenantId'];
     return this.reservationRepository.update(restaurantId, id, {
       reservationStart: dto.reservationStart ? new Date(dto.reservationStart) : undefined
     });

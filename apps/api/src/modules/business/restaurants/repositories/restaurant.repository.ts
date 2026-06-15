@@ -30,7 +30,6 @@ export class RestaurantRepository extends BaseRepository {
     });
   }
 
-
   async findBySlug(slug: string): Promise<Restaurant | null> {
     return this.prisma.restaurant.findUnique({
       where: { slug },
@@ -64,6 +63,24 @@ export class RestaurantRepository extends BaseRepository {
     return this.prisma.restaurant.update({
       where: { id },
       data: { deletedAt: new Date() },
+    });
+  }
+
+  /**
+   * TRANSACTIONAL CONCURRENCY BLINDAJE (High Availability B2B Engine)
+   * Ejecuta un aislamiento pesimista FOR UPDATE bloqueando la fila del restaurante 
+   * en PostgreSQL para evitar sobre-reservas en ráfagas concurrentes desde Meta API.
+   */
+  async executeConcurrentBookingTx<T>(
+    restaurantId: string, 
+    callback: (tx: any) => Promise<T>
+  ): Promise<T> {
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Bloqueo Pesimista FOR UPDATE a nivel de fila en PostgreSQL para congelar el slot del inquilino
+      await tx.$executeRaw`SELECT id FROM "restaurants" WHERE id = ${restaurantId} FOR UPDATE`;
+      
+      // 2. Ejecutar la lógica de asignación y verificación de capacidad de forma segura y secuencial
+      return callback(tx);
     });
   }
 }
