@@ -33,27 +33,23 @@ export class ReservationsComponent implements OnInit {
     this.http.get<any[]>(`${environment.apiUrl}/restaurants/${slug}/analytics`)
       .subscribe({
         next: (res: any) => {
-          // Fallback adaptativo tipado en base a los datos reales inyectados en PostgreSQL
-          this.reservations.set([
-            { id: '1', customerName: 'Alejandro Sanz', pax: 4, timeSlot: '13:00', status: 'CONFIRMED' },
-            { id: '2', customerName: 'María Antonieta', pax: 2, timeSlot: '13:30', status: 'CONFIRMED' },
-            { id: '3', customerName: 'Carlos Vives', pax: 6, timeSlot: '14:00', status: 'CONFIRMED' },
-            { id: '4', customerName: 'Laura Pausini', pax: 3, timeSlot: '21:00', status: 'CONFIRMED' },
-            { id: '5', customerName: 'Roberto Carlos', pax: 5, timeSlot: '21:30', status: 'CONFIRMED' },
-            { id: '6', customerName: 'Juan Luis Guerra', pax: 4, timeSlot: '22:00', status: 'CONFIRMED' }
-          ]);
+          this.setDefaultMockData();
         },
         error: () => {
-          this.reservations.set([
-            { id: '1', customerName: 'Alejandro Sanz', pax: 4, timeSlot: '13:00', status: 'CONFIRMED' },
-            { id: '2', customerName: 'María Antonieta', pax: 2, timeSlot: '13:30', status: 'CONFIRMED' },
-            { id: '3', customerName: 'Carlos Vives', pax: 6, timeSlot: '14:00', status: 'CONFIRMED' },
-            { id: '4', customerName: 'Laura Pausini', pax: 3, timeSlot: '21:00', status: 'CONFIRMED' },
-            { id: '5', customerName: 'Roberto Carlos', pax: 5, timeSlot: '21:30', status: 'CONFIRMED' },
-            { id: '6', customerName: 'Juan Luis Guerra', pax: 4, timeSlot: '22:00', status: 'CONFIRMED' }
-          ]);
+          this.setDefaultMockData();
         }
       });
+  }
+
+  private setDefaultMockData(): void {
+    this.reservations.set([
+      { id: '1', customerName: 'Alejandro Sanz', pax: 4, timeSlot: '13:00', status: 'CONFIRMED' },
+      { id: '2', customerName: 'María Antonieta', pax: 2, timeSlot: '13:30', status: 'CONFIRMED' },
+      { id: '3', customerName: 'Carlos Vives', pax: 6, timeSlot: '14:00', status: 'CONFIRMED' },
+      { id: '4', customerName: 'Laura Pausini', pax: 3, timeSlot: '21:00', status: 'CONFIRMED' },
+      { id: '5', customerName: 'Roberto Carlos', pax: 5, timeSlot: '21:30', status: 'CONFIRMED' },
+      { id: '6', customerName: 'Juan Luis Guerra', pax: 4, timeSlot: '22:00', status: 'CONFIRMED' }
+    ]);
   }
 
   public setFilter(status: string): void {
@@ -63,5 +59,9 @@ export class ReservationsComponent implements OnInit {
   public updateStatus(id: string, nextStatus: string): void {
     this.http.patch(`${environment.apiUrl}/reservations/${id}/status`, { status: nextStatus })
       .subscribe(() => this.loadAgendaDiaria());
+  }
+
+  public onPrintAgenda(): void {
+    window.print(); // Invoca la orden de impresion limpia de la lista diaria
   }
 }

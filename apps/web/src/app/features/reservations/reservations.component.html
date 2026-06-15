@@ -1,8 +1,15 @@
 <div class="dashboard-wrapper animate-fade-in">
   
-  <div class="header-block">
-    <h1 class="title-main">{{ 'RESERVATIONS.TITLE' | translate }}</h1>
-    <p class="subtitle-main">{{ 'RESERVATIONS.SUBTITLE' | translate }}</p>
+  <!-- CABECERA CON BOTÓN MAESTRO DE CONTROL -->
+  <div class="header-block flex justify-between items-center border-b border-slate-200/80 pb-4 mb-5">
+    <div>
+      <h1 class="title-main">{{ 'RESERVATIONS.TITLE' | translate }}</h1>
+      <p class="subtitle-main">{{ 'RESERVATIONS.SUBTITLE' | translate }}</p>
+    </div>
+    <!-- Botón Maestro Adicionado para la Operación Diaria -->
+    <button (click)="onPrintAgenda()" class="print-btn">
+      <span>🖨️</span> Imprimir Lista de Hoy
+    </button>
   </div>
 
   <!-- TARJETAS ANALÍTICAS FLASH -->
@@ -47,7 +54,7 @@
               <td class="td-item">{{ res.pax }} Personas</td>
               <td class="td-item"><span class="font-bold text-blue-600">{{ res.timeSlot }}</span></td>
               <td class="td-item">
-                <span class="status-badge" [ngClass]="res.status === 'CONFIRMED' ? 'badge-confirmed' : 'badge-pending'">
+                <span class="status-badge badge-confirmed">
                   {{ res.status }}
                 </span>
               </td>
