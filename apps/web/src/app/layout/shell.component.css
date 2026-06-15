@@ -25,7 +25,7 @@
 /* CONTENEDOR LATERAL FIJO COMPACTO SLATE */
 .b2b-sidebar {
   width: 16rem;
-  background-color: #0f172a;
+  background-color: #0f172a; /* Slate 900 */
   border-right: 1px solid #1e293b;
   display: flex;
   flex-direction: column;
@@ -36,6 +36,7 @@
   user-select: none;
 }
 
+/* CABECERA DEL BRANDING CORPORATIVO */
 .sidebar-brand {
   display: flex;
   align-items: center;
@@ -74,6 +75,7 @@
   margin-left: 0.15rem;
 }
 
+/* MENÚ DE ENLACES DE NAVEGACIÓN COMPACTO */
 .sidebar-nav {
   display: flex;
   flex-direction: column;
@@ -98,6 +100,7 @@
   color: #cbd5e1;
 }
 
+/* CLASE ACTIVA DE ÁRBOL DE RUTAS DE ANGULAR */
 .nav-link-active {
   background-color: rgba(255, 255, 255, 0.08) !important;
   color: #ffffff !important;
@@ -109,6 +112,7 @@
   filter: grayscale(20%);
 }
 
+/* TARJETA INFORMATIVA DEL STAFF / INQUILINO */
 .sidebar-user {
   background-color: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -140,6 +144,7 @@
   letter-spacing: 0.025em;
 }
 
+/* BOTÓN DE DESCONEXIÓN SECOPS */
 .logout-button {
   width: 100%;
   background: transparent;
@@ -165,6 +170,7 @@
   border-color: rgba(239, 68, 68, 0.4);
 }
 
+/* LIENZO DE PANTALLAS DINÁMICAS (WORKSPACE COMPACTO) */
 .b2b-main {
   flex: 1;
   overflow-y: auto;
@@ -173,6 +179,7 @@
   background-color: #f8fafc;
 }
 
+/* RESPONSIVE CABECERA MÓVIL */
 .mobile-header {
   display: none;
 }
@@ -195,10 +202,10 @@
 }
 
 /* ============================================================================
-   FORZADO ENCAPSULADO CRÍTICO DE IMPRESIÓN (ELIMINACIÓN DE SIDEBAR)
+   FORZADO ENCAPSULADO CRÍTICO DE IMPRESIÓN (ELIMINACIÓN DE SIDEBAR Y SCROLL)
    ============================================================================ */
 @media print {
-  /* 1. Pulverizar la barra lateral y elementos de cabecera directamente desde su propio Shadow DOM */
+  /* 1. Pulverizar la barra lateral y elementos de cabecera directamente */
   .b2b-sidebar,
   .mobile-header {
     display: none !important;
@@ -209,21 +216,18 @@
     border: none !important;
   }
 
-  /* 2. Forzar al cuerpo transaccional a tomar el control absoluto del papel */
-  .b2b-main {
+  /* 2. Forzar al cuerpo transaccional principal a romper los límites de 100vh */
+  :host, .b2b-layout, .b2b-main {
     width: 100% !important;
     max-width: 100% !important;
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
+    height: auto !important; /* Desactiva la altura fija rígida de pantalla */
+    min-height: auto !important;
+    overflow: visible !important; /* Libera el desborde para permitir páginas infinitas */
+    overflow-y: visible !important;
+    position: relative !important;
+    display: block !important;
     margin: 0 !important;
     padding: 0 !important;
     background-color: #ffffff !important;
-  }
-
-  .b2b-layout {
-    display: block !important;
-    width: 100% !important;
-    height: auto !important;
   }
 }
