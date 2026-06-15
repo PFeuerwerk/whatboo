@@ -4,7 +4,8 @@
     "FLOOR_PLAN": "Mesas y Aforo",
     "CONFIG": "Configuración API",
     "STAFF": "Gestión de Personal",
-    "LOGOUT": "Cerrar Sesión"
+    "LOGOUT": "Cerrar Sesión",
+    "REPORTS": "Reportes y Ocupación"
   },
   "STATUS": {
     "ALL": "Todas",

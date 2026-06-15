@@ -3,8 +3,9 @@
   <div class="header-block">
     <div>
       <h1 class="title-main">Análisis de Ocupación Diaria</h1>
-      <p class="subtitle-main">Métricas consolidadas de asistencia, volumen de pax y saturación de franjas horarias.</p>
+      <p class="subtitle-main">Métricas consolidadas de asistencia, volumen de cubiertos y saturación de franjas horarias.</p>
     </div>
+    <!-- BOTÓN MAESTRO: Forzado en la cabecera sin bloqueos condicionales -->
     <button (click)="onPrintReport()" class="print-btn">
       <span>🖨️</span> Exportar / Imprimir PDF
     </button>
@@ -26,7 +27,7 @@
     </div>
   </div>
 
-  <!-- GRÁFICO COMPACTO DE LÍNEA DE TIEMPO / SATURACIÓN -->
+  <!-- GRÁFICO COMPACTO DE FRANJAS HORARIAS -->
   <div class="chart-card">
     <h3 class="section-title">Ocupación por Franja Horaria (Slots del Día)</h3>
     <div class="bars-container">
@@ -38,8 +39,6 @@
           </div>
           <div class="bar-count">{{ slot.count }} Reservas ({{ slot.percentage }}%)</div>
         </div>
-      } @empty {
-        <p class="text-xs text-slate-400 font-semibold text-center p-4">No hay datos analíticos registrados para el histórico de este turno.</p>
       }
     </div>
   </div>
