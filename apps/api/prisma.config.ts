@@ -1,15 +1,13 @@
-import 'dotenv/config'
-import { defineConfig, env } from 'prisma/config'
+import "dotenv/config";
+import { defineConfig } from "prisma/config";
 
 export default defineConfig({
-  schema: 'prisma/schema.prisma',
+  schema: "prisma/schema.prisma",
   migrations: {
-    path: 'prisma/migrations',
-    // Inyección de siembra transaccional compatible con Prisma v7 y TS-Node
-    seed: 'npx ts-node ./prisma/seeds/seed.ts',
+    path: "prisma/migrations",
+    seed: "ts-node prisma/seeds/restaurants.seed.ts",
   },
   datasource: {
-    url: env('DATABASE_URL'),
-    shadowDatabaseUrl: env('SHADOW_DATABASE_URL'),
+    url: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/whatboo?schema=public",
   },
-})
+});

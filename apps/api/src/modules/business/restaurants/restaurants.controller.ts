@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Patch, Body, UseInterceptors, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, UseInterceptors, Req } from '@nestjs/common';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { TenantInterceptor } from '../../../common/interceptors/tenant.interceptor';
 import * as bcrypt from 'bcrypt';
 
 @Controller('restaurants')
-@UseInterceptors(TenantInterceptor) // Fuerza el aislamiento multi-tenant por Request (Fase A)
+@UseInterceptors(TenantInterceptor) // Aislamiento multi-tenant por Request (Fase A)
 export class RestaurantsController {
   constructor(private readonly prisma: PrismaService) {}
 
@@ -25,7 +25,7 @@ export class RestaurantsController {
   }
 
   @Post('tables')
-  async createTable(@Req() req: any, @Body() dto: { name: string; capacity: number; zoneId: string }) {
+  async createTable(@Req() req: any, @Body() dto: any) {
     return this.prisma.restaurantTable.create({
       data: {
         name: dto.name,
@@ -46,6 +46,7 @@ export class RestaurantsController {
         defaultReservationDuration: true,
         slotIntervalMinutes: true,
         bufferTimeMinutes: true,
+        closingHourLimit: true, // Sincronizado en el Select
         autoConfirm: true,
         allowWaitlist: true
       }
@@ -53,22 +54,14 @@ export class RestaurantsController {
   }
 
   @Patch('settings')
-  async updateSettings(
-    @Req() req: any,
-    @Body() dto: { 
-      slotIntervalMinutes: number; 
-      bufferTimeMinutes: number; 
-      defaultReservationDuration: number; 
-      autoConfirm: boolean; 
-      allowWaitlist: boolean; 
-    }
-  ) {
+  async updateSettings(@Req() req: any, @Body() dto: any) {
     return this.prisma.restaurant.update({
       where: { id: req.tenantId },
       data: {
         slotIntervalMinutes: Number(dto.slotIntervalMinutes),
         bufferTimeMinutes: Number(dto.bufferTimeMinutes),
         defaultReservationDuration: Number(dto.defaultReservationDuration),
+        closingHourLimit: String(dto.closingHourLimit), // Persistencia de la hora personalizada
         autoConfirm: Boolean(dto.autoConfirm),
         allowWaitlist: Boolean(dto.allowWaitlist)
       }
@@ -85,6 +78,7 @@ export class RestaurantsController {
         lastName: true,
         email: true,
         role: true,
+        shift: true, // Select del turno laboral activo
         isActive: true
       },
       orderBy: { role: 'asc' }
@@ -103,6 +97,7 @@ export class RestaurantsController {
         lastName: dto.lastName,
         passwordHash,
         role: dto.role,
+        shift: dto.shift, // Persistencia estricta del enum de turnos
         restaurantId: req.tenantId,
         isActive: true
       }
@@ -114,12 +109,10 @@ export class RestaurantsController {
     const totalReservations = await this.prisma.reservation.count({
       where: { restaurantId: req.tenantId }
     });
-
     const aggregatePax = await this.prisma.reservation.aggregate({
       where: { restaurantId: req.tenantId },
       _sum: { pax: true }
     });
-
     return {
       totalReservations: totalReservations || 14,
       totalPax: aggregatePax._sum.pax || 42,
@@ -133,14 +126,35 @@ export class RestaurantsController {
     };
   }
 
-  /**
-   * Endpoint: Obtener el cuaderno consolidado de clientes del inquilino autenticado
-   */
   @Get(':slug/customers')
   async getCustomers(@Req() req: any) {
     return this.prisma.customer.findMany({
       where: { restaurantId: req.tenantId },
       orderBy: { firstName: 'asc' }
+    });
+  }
+
+  @Get(':slug/meta-credentials')
+  async getMetaCredentials(@Req() req: any) {
+    return this.prisma.restaurant.findUnique({
+      where: { id: req.tenantId },
+      select: { phoneNumberId: true, businessAccountId: true, accessToken: true, appSecret: true }
+    });
+  }
+
+  @Patch(':slug/meta-credentials')
+  async updateMetaCredentials(@Req() req: any, @Body() dto: any) {
+    return this.prisma.restaurant.update({
+      where: { id: req.tenantId },
+      data: { phoneNumberId: dto.phoneNumberId, businessAccountId: dto.businessAccountId, accessToken: dto.accessToken, appSecret: dto.appSecret }
+    });
+  }
+
+  @Patch(':slug/staff/:userId')
+  async updateStaffStatus(@Req() req: any, @Param('userId') userId: string, @Body() dto: { isActive: boolean }) {
+    return this.prisma.user.updateMany({
+      where: { id: userId, restaurantId: req.tenantId },
+      data: { isActive: Boolean(dto.isActive) }
     });
   }
 }

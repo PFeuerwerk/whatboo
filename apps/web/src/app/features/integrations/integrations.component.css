@@ -1,9 +1,9 @@
 /* ============================================================================
-   DISEÑO PREMIUM ENTERPRISE B2B - ASISTENTE DE CONFIGURACIÓN API SANADO
+   DISEÑO PREMIUM ENTERPRISE B2B - PASARELA DE INTEGRACIONES META API
    ============================================================================ */
 @import url('https://googleapis.com');
 
-.settings-wrapper {
+.integrations-wrapper {
   padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
@@ -57,25 +57,11 @@
   margin-bottom: 1.25rem;
 }
 
-.row-inputs {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-}
-
-@media (min-width: 768px) {
-  .row-inputs { grid-template-columns: 1fr 1fr; }
-}
-
-/* CLASE INYECTADA PARA FORZAR AIRE VERTICAL ANTI-SOLAPAMIENTO */
-.row-spacing-buffer {
-  margin-top: 1.25rem !important;
-}
-
 .input-group { 
   display: flex; 
   flex-direction: column; 
   gap: 0.4rem; 
+  margin-bottom: 1.25rem;
 }
 
 .input-label { 
@@ -86,7 +72,7 @@
   letter-spacing: 0.025em; 
 }
 
-.form-select, .form-input {
+.form-input {
   width: 100%;
   background-color: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -101,52 +87,39 @@
   transition: all 0.2s ease;
 }
 
-.form-input:focus, .form-select:focus {
+.form-input:focus {
   border-color: #2563eb;
   background-color: #ffffff;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }
 
-.toggle-container {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.toggle-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  padding: 1.25rem;
+.webhook-info-box {
+  background-color: #f0fdf4;
+  border: 1px dashed #bbf7d0;
+  padding: 1rem 1.25rem;
   border-radius: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.toggle-info {
-  max-width: 80%;
+.info-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #166534;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
-.toggle-title { 
-  font-size: 0.875rem; 
-  font-weight: 700; 
-  color: #0f172a; 
-  margin: 0; 
-}
-
-.toggle-desc { 
-  font-size: 0.75rem; 
-  color: #64748b; 
-  margin: 0.2rem 0 0 0; 
-  font-weight: 500; 
-  line-height: 1.4;
-}
-
-.checkbox-custom {
-  width: 1.25rem;
-  height: 1.25rem;
-  cursor: pointer;
-  accent-color: #2563eb;
+.info-url {
+  font-family: monospace;
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: #15803d;
+  background-color: rgba(255, 255, 255, 0.6);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  display: inline-block;
+  margin-top: 0.35rem;
+  border: 1px solid rgba(22, 101, 52, 0.1);
 }
 
 .footer-row {
@@ -170,14 +143,8 @@
   transition: background-color 0.2s ease;
 }
 
-.save-btn:hover { 
-  background-color: #1d4ed8; 
-}
-
-.save-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.save-btn:hover { background-color: #1d4ed8; }
+.save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .toast-success {
   background-color: #ecfdf5;

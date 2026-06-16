@@ -22,10 +22,18 @@ export const routes: Routes = [
         path: 'settings',
         loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent)
       },
-      // INYECCIÓN DE RUTA: Carga en caliente del Módulo de Reportes Analíticos de Ocupación
       {
         path: 'reports',
         loadComponent: () => import('./features/reports/reports.component').then(m => m.ReportsComponent)
+      },
+      {
+        path: 'integrations',
+        loadComponent: () => import('./features/integrations/integrations.component').then(m => m.IntegrationsComponent)
+      },
+      // INYECCIÓN DE RUTA: Módulo de Personal, Equipo y Miembros del Staff
+      {
+        path: 'users',
+        loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent)
       },
       {
         path: '',

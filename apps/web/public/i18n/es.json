@@ -3,9 +3,10 @@
     "RESERVATIONS": "Agenda Diaria",
     "FLOOR_PLAN": "Mesas y Aforo",
     "CONFIG": "Configuración API",
-    "STAFF": "Gestión de Personal",
+    "STAFF": "Equipo y Permisos",
     "LOGOUT": "Cerrar Sesión",
-    "REPORTS": "Reportes y Ocupación"
+    "REPORTS": "Reportes y Ocupación",
+    "INTEGRATIONS": "Integración WhatsApp"
   },
   "STATUS": {
     "ALL": "Todas",

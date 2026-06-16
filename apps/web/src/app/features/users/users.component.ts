@@ -9,7 +9,8 @@ export interface StaffMember {
   firstName: string;
   lastName: string;
   email: string;
-  role: 'OWNER' | 'MANAGER' | 'STAFF';
+  role: 'OWNER' | 'MANAGER' | 'MAITRE' | 'STAFF';
+  shift: 'LUNCH' | 'DINNER' | 'FULL_TIME';
   isActive: boolean;
 }
 
@@ -33,7 +34,8 @@ export class UsersComponent implements OnInit {
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
-      role: ['STAFF', [Validators.required]]
+      role: ['STAFF', [Validators.required]],
+      shift: ['FULL_TIME', [Validators.required]] // Campo de turno inicializado
     });
 
     this.loadStaffList();
@@ -52,22 +54,30 @@ export class UsersComponent implements OnInit {
     this.isSaving.set(true);
 
     const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
-    
-    // Contrato alineado al DTO de creación del Backend
     const body = {
       ...this.staffForm.value,
-      password: 'TemporaryPass123!' // Contraseña temporal genérica requerida por el modelo de datos
+      password: 'TemporaryPass123!'
     };
 
     this.http.post(`${environment.apiUrl}/restaurants/${slug}/staff`, body)
       .subscribe({
         next: () => {
           this.isSaving.set(false);
-          this.staffForm.reset({ role: 'STAFF' });
-          this.loadStaffList(); // Actualización reactiva inmediata
+          this.staffForm.reset({ role: 'STAFF', shift: 'FULL_TIME' });
+          this.loadStaffList();
         },
         error: () => {
           this.isSaving.set(false);
+        }
+      });
+  }
+
+  public onToggleStatus(userId: string, nextStatus: boolean): void {
+    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
+    this.http.patch(`${environment.apiUrl}/restaurants/${slug}/staff/${userId}`, { isActive: nextStatus })
+      .subscribe({
+        next: () => {
+          this.loadStaffList();
         }
       });
   }

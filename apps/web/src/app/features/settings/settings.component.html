@@ -15,71 +15,70 @@
 
     <form [formGroup]="settingsForm" (ngSubmit)="onSaveSettings()" class="space-y-6">
       
-      <!-- SECCIÓN 1: Distribución Horaria de Slots -->
+      <!-- SECCIÓN 1: Distribución Horaria de Slots y Madrugadas -->
       <div class="section-block">
-        <h3 class="section-title">Distribución de Slots y Tiempos</h3>
+        <h3 class="section-title">Distribución de Slots y Operación Horaria</h3>
         <div class="row-inputs">
           <div class="input-group">
             <label class="input-label">Intervalo de Bloques (Slots)</label>
             <select formControlName="slotIntervalMinutes" class="form-select">
               <option [value]="15">15 Minutos</option>
               <option [value]="30">30 Minutos</option>
-              <option [value]="45">45 Minutos</option>
               <option [value]="60">60 Minutos</option>
             </select>
           </div>
+          
+          <div class="input-group">
+            <label class="input-label">Hora Límite de Operación / Cierre</label>
+            <select formControlName="closingHourLimit" class="form-select">
+              <option value="00:00">00:00 AM (Medianoche)</option>
+              <option value="01:00">01:00 AM (Madrugada)</option>
+              <option value="02:00">02:00 AM (Madrugada)</option>
+              <option value="03:00">03:00 AM (Cierre Extendido)</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- SANEADO: Inyección de row-spacing-buffer para forzar el padding de aire vertical -->
+        <div class="row-inputs row-spacing-buffer">
           <div class="input-group">
             <label class="input-label">Tiempo de Buffer / Cortesía (Minutos)</label>
             <input type="number" formControlName="bufferTimeMinutes" class="form-input" min="0" max="60">
           </div>
-        </div>
-      </div>
-
-      <!-- SECCIÓN 2: Capacidades Máximas del Turno -->
-      <div class="section-block">
-        <h3 class="section-title">Control de Capacidades por Defecto</h3>
-        <div class="row-inputs">
           <div class="input-group">
             <label class="input-label">Duración Promedio de Mesa (Minutos)</label>
             <input type="number" formControlName="defaultReservationDuration" class="form-input" min="15" max="240">
           </div>
-          <div class="input-group" style="visibility: hidden; height: 0;">
-            <!-- Marcador de posición reservado para escalabilidad futura -->
-          </div>
         </div>
       </div>
 
-      <!-- SECCIÓN 3: Directivas Automatizadas de Meta Graph API -->
+      <!-- SECCIÓN 2: Directivas de WhatsApp -->
       <div class="section-block">
         <h3 class="section-title">Filtros y Automatización de WhatsApp</h3>
         <div class="toggle-container">
-          
           <div class="toggle-row">
             <div class="toggle-info">
               <h4 class="toggle-title">Confirmación Inmediata por WhatsApp</h4>
-              <p class="toggle-desc">El motor asíncrono procesará, validará el aforo en PostgreSQL y confirmará la reserva automáticamente sin intervención del staff.</p>
+              <p class="toggle-desc">El bot validará la capacidad física en PostgreSQL y confirmará la reserva autónomamente.</p>
             </div>
             <input type="checkbox" formControlName="autoConfirm" class="checkbox-custom">
           </div>
-
           <div class="toggle-row">
             <div class="toggle-info">
               <h4 class="toggle-title">Activar Lista de Espera Automática</h4>
-              <p class="toggle-desc">Permite encolar dinámicamente en Redis a los clientes mediante el bot de WhatsApp cuando las mesas del turno estén saturadas.</p>
+              <p class="toggle-desc">Encola comensales en Redis cuando el aforo del slot esté saturado.</p>
             </div>
             <input type="checkbox" formControlName="allowWaitlist" class="checkbox-custom">
           </div>
-
         </div>
       </div>
 
-      <!-- BOTÓN TRANSACCIONAL -->
       <div class="footer-row">
         <button type="submit" [disabled]="settingsForm.invalid || isSaving()" class="save-btn">
           @if (isSaving()) {
             <span>⏳</span>
           }
-          Persistir Cambios Globales
+          Persistir Configuración Personalizada
         </button>
       </div>
 

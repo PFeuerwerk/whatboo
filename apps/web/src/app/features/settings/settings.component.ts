@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { RestaurantSettings } from '../../core/models/booking-models';
 
 @Component({
   selector: 'app-settings',
@@ -25,6 +24,7 @@ export class SettingsComponent implements OnInit {
       slotIntervalMinutes: [30, [Validators.required]],
       bufferTimeMinutes: [15, [Validators.required, Validators.min(0)]],
       defaultReservationDuration: [90, [Validators.required, Validators.min(15)]],
+      closingHourLimit: ['03:00', [Validators.required]], // Campo inyectado
       autoConfirm: [true],
       allowWaitlist: [true]
     });
@@ -35,7 +35,7 @@ export class SettingsComponent implements OnInit {
   public loadRestaurantSettings(): void {
     const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
     
-    this.http.get<RestaurantSettings>(`${environment.apiUrl}/restaurants/${slug}/settings`)
+    this.http.get<any>(`${environment.apiUrl}/restaurants/${slug}/settings`)
       .subscribe({
         next: (res) => {
           if (res) {
@@ -43,6 +43,7 @@ export class SettingsComponent implements OnInit {
               slotIntervalMinutes: res.slotIntervalMinutes,
               bufferTimeMinutes: res.bufferTimeMinutes,
               defaultReservationDuration: res.defaultReservationDuration,
+              closingHourLimit: res.closingHourLimit || '03:00',
               autoConfirm: res.autoConfirm,
               allowWaitlist: res.allowWaitlist
             });
@@ -58,11 +59,11 @@ export class SettingsComponent implements OnInit {
 
     const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
     
-    // Mapeo de tipos estrictos numéricos para satisfacer el payload de NestJS
     const body = {
       slotIntervalMinutes: Number(this.settingsForm.value.slotIntervalMinutes),
       bufferTimeMinutes: Number(this.settingsForm.value.bufferTimeMinutes),
       defaultReservationDuration: Number(this.settingsForm.value.defaultReservationDuration),
+      closingHourLimit: String(this.settingsForm.value.closingHourLimit),
       autoConfirm: Boolean(this.settingsForm.value.autoConfirm),
       allowWaitlist: Boolean(this.settingsForm.value.allowWaitlist)
     };
@@ -71,10 +72,8 @@ export class SettingsComponent implements OnInit {
       .subscribe({
         next: () => {
           this.isSaving.set(false);
-          this.successMessage.set('Las reglas de negocio se han persistido con éxito en PostgreSQL.');
+          this.successMessage.set('Los parámetros horarios personalizados se han guardado con éxito.');
           this.loadRestaurantSettings();
-          
-          // Desvanecer el mensaje de éxito automáticamente a los 4 segundos
           setTimeout(() => this.successMessage.set(null), 4000);
         },
         error: () => {

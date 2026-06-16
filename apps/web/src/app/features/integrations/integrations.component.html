@@ -1,0 +1,63 @@
+<div class="integrations-wrapper animate-fade-in">
+  
+  <div class="header-block">
+    <h1 class="title-main">Integración de Meta Cloud API</h1>
+    <p class="subtitle-main">Vincule los identificadores oficiales de su suite de Facebook Developers para activar los bots automatizados de WhatsApp.</p>
+  </div>
+
+  <div class="panel-card">
+    
+    @if (successMessage()) {
+      <div class="toast-success">
+        <span>✅</span> {{ successMessage() }}
+      </div>
+    }
+
+    <div class="webhook-info-box">
+      <div class="info-title">🔗 URL de Callback para Meta Developers</div>
+      <div class="info-url">http://localhost:3000/api/v1/whatsapp/webhook</div>
+    </div>
+
+    <form [formGroup]="integrationsForm" (ngSubmit)="onSaveIntegrations()" class="space-y-6">
+      
+      <div class="section-block">
+        <h3 class="section-title">Credenciales de Acceso e Identificadores</h3>
+        
+        <div class="input-group">
+          <label class="input-label">WhatsApp Business Phone Number ID</label>
+          <input type="text" formControlName="phoneNumberId" class="form-input" placeholder="Ej: 109283746501928">
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">WhatsApp Business Account ID</label>
+          <input type="text" formControlName="businessAccountId" class="form-input" placeholder="Ej: 987654321012345">
+        </div>
+      </div>
+
+      <div class="section-block">
+        <h3 class="section-title">Tokens Criptográficos de Seguridad</h3>
+        
+        <div class="input-group">
+          <label class="input-label">Meta Permanent Access Token (Bearer Token)</label>
+          <input type="password" formControlName="accessToken" class="form-input" placeholder="Escriba el token permanente de Meta...">
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">WhatsApp App Secret</label>
+          <input type="password" formControlName="appSecret" class="form-input" placeholder="Escriba la clave secreta de la aplicación...">
+        </div>
+      </div>
+
+      <div class="footer-row">
+        <button type="submit" [disabled]="integrationsForm.invalid || isSaving()" class="save-btn">
+          @if (isSaving()) {
+            <span>⏳</span>
+          }
+          Persistir Tokens de Meta
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+</div>

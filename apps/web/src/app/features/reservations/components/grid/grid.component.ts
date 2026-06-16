@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, input, output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http'; // Importación canónica corregida
 import { environment } from '../../../../../environments/environment';
 
 @Component({
@@ -82,12 +82,24 @@ export class GridComponent implements OnInit {
     const reservationId = event.dataTransfer?.getData('text/plain');
     if (!reservationId) return;
 
-    // Mutación local inmediata para evitar latencia visual en la grilla
+    // 1. UI Optimista: Actualizar síncronamente la posición en memoria del cliente
     const found = this.reservations().find(r => r.id === reservationId);
     if (found) {
       found.tableId = tableId;
       found.timeSlot = hour;
-      this.onGridUpdated.emit();
     }
+
+    // 2. Persistencia asíncrona en PostgreSQL a través de la API NestJS
+    this.http.patch(`${environment.apiUrl}/reservations/${reservationId}`, {
+      tableId: tableId,
+      timeSlot: hour
+    }).subscribe({
+      next: () => {
+        this.onGridUpdated.emit(); // Rehidratación reactiva inmutable global
+      },
+      error: (err) => {
+        console.error('❌ Error en el guardado de red del Drag & Drop:', err);
+      }
+    });
   }
 }
