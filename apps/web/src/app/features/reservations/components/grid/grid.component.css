@@ -1,5 +1,5 @@
 /* ============================================================================
-   DISEÑO ENTERPRISE B2B - REJILLA INTERACTIVA VERTICAL DRAG & DROP
+   HOJA DE ESTILOS VERTICAL COMPACTA PROFESSIONAL - INVERSA (THEFORK STANDARD)
    ============================================================================ */
 @import url('https://googleapis.com');
 
@@ -18,127 +18,126 @@
   align-items: center;
   border-bottom: 1px solid #f1f5f9;
   padding-bottom: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
-.grid-title {
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: #0f172a;
-  letter-spacing: -0.02em;
-  margin: 0;
-}
+.grid-title { font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.02em; }
 
-.grid-matrix {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  overflow-x: auto;
+/* CONTROLES DE PAGINACIÓN */
+.pagination-controls { display: flex; align-items: center; gap: 1rem; }
+.btn-pager {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.5rem;
+  font-size: 0.725rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
+.btn-pager:hover:not(:disabled) { background-color: #f1f5f9; border-color: #cbd5e1; }
+.btn-pager:disabled { opacity: 0.4; cursor: not-allowed; }
+.pager-info { font-size: 0.725rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
 
-.matrix-row {
+/* ARQUITECTURA DE LA MATRIZ VERTICAL */
+.grid-matrix-vertical { display: flex; flex-direction: column; width: 100%; }
+
+.matrix-column-headers {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding-bottom: 0.35rem;
-}
-
-.header-timeline-row {
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 0.75rem;
+  gap: 1.5rem;
+  background-color: #f8fafc;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
   margin-bottom: 0.5rem;
+  border: 1px solid #f1f5f9;
 }
 
-.row-label {
-  width: 5.5rem;
-  font-size: 0.75rem;
+.time-axis-label {
+  width: 4.5rem;
+  font-size: 0.7rem;
   font-weight: 800;
-  color: #475569;
+  color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   flex-shrink: 0;
 }
 
-.slots-timeline {
-  display: flex;
+.columns-wrapper, .cells-wrapper {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)); /* 5 Columnas fijas compactas */
+  flex: 1;
   gap: 0.75rem;
-  flex-1: 1;
 }
 
-/* ENCABEZADOS HORARIOS SUPERIORES REJILLA */
-.timeline-column-header {
-  width: 10.5rem;
+.table-column-header {
   text-align: center;
-  font-size: 0.725rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+.cap-sub { font-size: 0.65rem; color: #64748b; font-weight: 600; }
+
+/* REJILLA DE FILAS HORARIAS */
+.matrix-rows-container { display: flex; flex-direction: column; gap: 0.35rem; }
+.time-row { display: flex; align-items: center; gap: 1.5rem; padding: 0.15rem 1rem; border-bottom: 1px solid #f8fafc; }
+
+.night-shift-divider {
+  border-top: 2px dashed #cbd5e1;
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.time-cell-label {
+  width: 4.5rem;
+  font-size: 0.775rem;
   font-weight: 800;
   color: #2563eb;
-  background-color: rgba(37, 99, 235, 0.06);
-  padding: 0.35rem 0;
-  border-radius: 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
   flex-shrink: 0;
 }
 
-/* CELDAS DE ASIGNACIÓN VERTICAL */
-.drop-zone {
-  width: 10.5rem;
-  min-height: 4.75rem;
+/* CASILLERO DROP INDIVIDUAL */
+.grid-drop-cell {
   background-color: #f8fafc;
-  border: 1px dashed #cbd5e1;
-  border-radius: 0.85rem;
-  padding: 0.4rem;
+  border: 1px solid #f1f5f9;
+  border-radius: 0.625rem;
+  min-height: 3.5rem;
+  padding: 0.35rem;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
+  justify-content: center;
+  transition: all 0.15s ease;
 }
 
-.drop-zone-active {
+.cell-targeted {
   background-color: #eff6ff;
   border-color: #3b82f6;
-  border-style: solid;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.05);
 }
 
-/* TARJETAS ARRASTRABLES */
-.booking-chip {
+/* TARJETA COMPACTA DEL COMENSAL */
+.booking-card-item {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
-  padding: 0.45rem 0.65rem;
-  border-radius: 0.625rem;
-  box-shadow: 0 2px 4px 0 rgba(15, 23, 42, 0.04);
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
   cursor: grab;
   user-select: none;
-}
-
-.chip-name {
-  font-size: 0.725rem;
-  font-weight: 800;
-  color: #0f172a;
-  truncate: true;
-}
-
-.chip-meta {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.2rem;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
-.chip-pax {
-  font-size: 0.625rem;
+.card-customer { font-size: 0.7rem; font-weight: 800; color: #0f172a; }
+.card-pax-badge {
+  align-self: flex-start;
+  font-size: 0.6rem;
   font-weight: 700;
   color: #2563eb;
   background-color: rgba(37, 99, 235, 0.05);
-  padding: 0.05rem 0.3rem;
+  padding: 0.02rem 0.25rem;
   border-radius: 0.25rem;
-}
-
-.chip-status {
-  font-size: 0.625rem;
-  font-weight: 700;
-  color: #16a34a;
 }

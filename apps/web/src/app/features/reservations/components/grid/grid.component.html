@@ -1,53 +1,57 @@
 <div class="grid-container">
   
   <div class="grid-header">
-    <h3 class="grid-title">Asignación Visual de Mesas (Timeline Diario)</h3>
+    <h3 class="grid-title">Plano Diario Estructurado por Turnos</h3>
+    
+    <div class="pagination-controls">
+      <button (click)="prevTables()" [disabled]="tablePage() === 0" class="btn-pager">◀ Anteriores</button>
+      <span class="pager-info">Vista {{ tablePage() + 1 }} de {{ totalPages() }}</span>
+      <button (click)="nextTables()" [disabled]="tablePage() >= totalPages() - 1" class="btn-pager">Siguientes ▶</button>
+    </div>
   </div>
 
-  <div class="grid-matrix">
+  <div class="grid-matrix-vertical">
     
-    <!-- LÍNEA DE TIEMPO SUPERIOR: Columnas Horarias de Guía Visual -->
-    <div class="matrix-row header-timeline-row">
-      <div class="row-label text-slate-400">Slots ➜</div>
-      <div class="slots-timeline">
-        @for (hour of timelineHours; track hour) {
-          <div class="timeline-column-header">{{ hour }}</div>
+    <div class="matrix-column-headers">
+      <div class="time-axis-label">Horarios</div>
+      <div class="columns-wrapper">
+        @for (table of paginatedTables(); track table.id) {
+          <div class="table-column-header">🪑 {{ table.name }} <span class="cap-sub">({{ table.capacity }} Pax)</span></div>
         }
       </div>
     </div>
 
-    <!-- CUADRÍCULA VERTICAL DE PLANTA (MESAS vs HORAS) -->
-    @for (table of tables(); track table.id) {
-      <div class="matrix-row">
-        <div class="row-label">🪑 {{ table.name }}</div>
-        
-        <div class="slots-timeline">
-          @for (hour of timelineHours; track hour) {
-            <div 
-              class="drop-zone"
-              [class.drop-zone-active]="isZoneTargeted(table.id, hour)"
-              (dragover)="onDragOver($event, table.id, hour)"
-              (dragleave)="onDragLeave()"
-              (drop)="onDrop($event, table.id, hour)">
-              
-              @for (res of getReservationsForSlot(table.id, hour); track res.id) {
-                <div 
-                  class="booking-chip" 
-                  draggable="true"
-                  (dragstart)="onDragStart($event, res.id)">
-                  <div class="chip-name">{{ res.customerName }}</div>
-                  <div class="chip-meta">
-                    <span class="chip-pax">{{ res.pax }} Pax</span>
-                    <span class="chip-status">● {{ res.status }}</span>
+    <div class="matrix-rows-container">
+      @for (hour of timelineHours; track hour) {
+        <div class="time-row" [class.night-shift-divider]="hour === '20:00'">
+          <div class="time-cell-label">{{ hour }}</div>
+          
+          <div class="cells-wrapper">
+            @for (table of paginatedTables(); track table.id) {
+              <div 
+                class="grid-drop-cell"
+                [class.cell-targeted]="isZoneTargeted(table.id, hour)"
+                (dragover)="onDragOver($event, table.id, hour)"
+                (dragleave)="onDragLeave()"
+                (drop)="onDrop($event, table.id, hour)">
+                
+                @for (res of getReservationsForSlot(table.id, hour); track res.id) {
+                  <div 
+                    class="booking-card-item" 
+                    draggable="true"
+                    (dragstart)="onDragStart($event, res.id)">
+                    <div class="card-customer truncate">{{ res.customerName }}</div>
+                    <div class="card-pax-badge">{{ res.pax }} Pax</div>
                   </div>
-                </div>
-              }
+                }
 
-            </div>
-          }
+              </div>
+            }
+          </div>
         </div>
-      </div>
-    }
+      }
+    </div>
+
   </div>
 
 </div>
