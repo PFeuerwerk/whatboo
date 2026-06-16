@@ -24,7 +24,7 @@ export class SettingsComponent implements OnInit {
       slotIntervalMinutes: [30, [Validators.required]],
       bufferTimeMinutes: [15, [Validators.required, Validators.min(0)]],
       defaultReservationDuration: [90, [Validators.required, Validators.min(15)]],
-      closingHourLimit: ['03:00', [Validators.required]], // Campo inyectado
+      closingHourLimit: ['03:00', [Validators.required]],
       autoConfirm: [true],
       allowWaitlist: [true]
     });
@@ -33,9 +33,8 @@ export class SettingsComponent implements OnInit {
   }
 
   public loadRestaurantSettings(): void {
-    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
-    
-    this.http.get<any>(`${environment.apiUrl}/restaurants/${slug}/settings`)
+    // SANEADO MULTI-TENANT: Consumir la ruta parametrizada atómica directa por sesión
+    this.http.get<any>(`${environment.apiUrl}/restaurants/settings`)
       .subscribe({
         next: (res) => {
           if (res) {
@@ -57,8 +56,6 @@ export class SettingsComponent implements OnInit {
     this.isSaving.set(true);
     this.successMessage.set(null);
 
-    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
-    
     const body = {
       slotIntervalMinutes: Number(this.settingsForm.value.slotIntervalMinutes),
       bufferTimeMinutes: Number(this.settingsForm.value.bufferTimeMinutes),
@@ -68,7 +65,7 @@ export class SettingsComponent implements OnInit {
       allowWaitlist: Boolean(this.settingsForm.value.allowWaitlist)
     };
 
-    this.http.patch(`${environment.apiUrl}/restaurants/${slug}/settings`, body)
+    this.http.patch(`${environment.apiUrl}/restaurants/settings`, body)
       .subscribe({
         next: () => {
           this.isSaving.set(false);

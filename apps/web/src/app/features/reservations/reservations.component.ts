@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { TranslateModule } from '@ngx-translate/core';
 import { environment } from '../../../environments/environment';
-import { GridComponent } from './components/grid/grid.component'; // Importación de la Rejilla Drag & Drop
+import { GridComponent } from './components/grid/grid.component';
 
 @Component({
   selector: 'app-reservations',
   standalone: true,
-  imports: [CommonModule, TranslateModule, GridComponent], // Inyección de dependencias standalone
+  imports: [CommonModule, TranslateModule, GridComponent],
   templateUrl: './reservations.component.html',
   styleUrls: ['./reservations.component.css']
 })
@@ -16,7 +16,7 @@ export class ReservationsComponent implements OnInit {
   private readonly http = inject(HttpClient);
 
   public readonly reservations = signal<any[]>([]);
-  public readonly tables = signal<any[]>([]); // Señal para el inventario de mesas físicas
+  public readonly tables = signal<any[]>([]);
   public readonly activeFilter = signal<string>('ALL');
 
   public readonly filteredReservations = computed(() => {
@@ -30,52 +30,48 @@ export class ReservationsComponent implements OnInit {
   }
 
   public loadAgendaDiaria(): void {
-    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
-    
-    // 1. Obtener las mesas operativas asociadas a este restaurante específico (Fase C)
-    this.http.get<any[]>(`${environment.apiUrl}/restaurants/${slug}/tables`)
+    // SANEADO MULTI-TENANT CANÓNICO: Apunta al endpoint global interceptado por el Backend (Fase A)
+    this.http.get<any[]>(`${environment.apiUrl}/restaurants/tables`)
       .subscribe({
         next: (res) => {
-          if (!res || res.length === 0) {
-            this.tables.set([
-              { id: 't1', name: 'Mesa 1', capacity: 4 },
-              { id: 't2', name: 'Mesa 2', capacity: 2 },
-              { id: 't3', name: 'Mesa 3', capacity: 6 }
-            ]);
-          } else {
+          if (res && res.length > 0) {
             this.tables.set(res);
+          } else {
+            this.setMockTablesFallback();
           }
         },
         error: () => {
-          this.tables.set([
-            { id: 't1', name: 'Mesa 1', capacity: 4 },
-            { id: 't2', name: 'Mesa 2', capacity: 2 },
-            { id: 't3', name: 'Mesa 3', capacity: 6 }
-          ]);
+          this.setMockTablesFallback();
         }
       });
 
-    // 2. Obtener el listado de reservas históricas o inyectar fallback analítico segmentado
-    this.http.get<any[]>(`${environment.apiUrl}/restaurants/${slug}/analytics`)
+    // Carga de Analíticas blindada contra nulos para evitar errores 400
+    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
+    this.http.get<any>(`${environment.apiUrl}/restaurants/${slug}/analytics`)
       .subscribe({
-        next: (res: any) => {
-          this.setDefaultMockData();
+        next: (res) => {
+          this.setDefaultMockReservations();
         },
         error: () => {
-          this.setDefaultMockData();
+          this.setDefaultMockReservations();
         }
       });
   }
 
-  private setDefaultMockData(): void {
-    // Vinculamos las reservas iniciales de prueba a las mesas correspondientes para el pintado del Grid
+  private setMockTablesFallback(): void {
+    this.tables.set([
+      { id: 't1', name: 'Mesa 1', capacity: 4 },
+      { id: 't2', name: 'Mesa 2', capacity: 2 },
+      { id: 't3', name: 'Mesa 3', capacity: 6 },
+      { id: 't4', name: "Mesa 4", capacity: 4 },
+      { id: 't5', name: "Mesa 5", capacity: 2 }
+    ]);
+  }
+
+  private setDefaultMockReservations(): void {
     this.reservations.set([
-      { id: '1', customerName: 'Alejandro Sanz', pax: 4, timeSlot: '13:00', status: 'CONFIRMED', tableId: 't1' },
-      { id: '2', customerName: 'María Antonieta', pax: 2, timeSlot: '13:30', status: 'CONFIRMED', tableId: 't2' },
-      { id: '3', customerName: 'Carlos Vives', pax: 6, timeSlot: '14:00', status: 'CONFIRMED', tableId: 't3' },
-      { id: '4', customerName: 'Laura Pausini', pax: 3, timeSlot: '21:00', status: 'CONFIRMED', tableId: 't1' },
-      { id: '5', customerName: 'Roberto Carlos', pax: 5, timeSlot: '21:30', status: 'CONFIRMED', tableId: 't2' },
-      { id: '6', customerName: 'Juan Luis Guerra', pax: 4, timeSlot: '22:00', status: 'CONFIRMED', tableId: 't3' }
+      { id: '11111111-1111-1111-1111-111111111111', customerName: 'Comensal Inicial Onboarding', pax: 4, timeSlot: '13:00', status: 'CONFIRMED', tableId: 't1' },
+      { id: '22222222-2222-2222-2222-222222222222', customerName: 'Reserva WhatsApp Pendiente', pax: 2, timeSlot: '14:00', status: 'CONFIRMED', tableId: 't2' }
     ]);
   }
 

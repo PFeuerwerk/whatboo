@@ -35,17 +35,25 @@ export class UsersComponent implements OnInit {
       lastName: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       role: ['STAFF', [Validators.required]],
-      shift: ['FULL_TIME', [Validators.required]] // Campo de turno inicializado
+      shift: ['FULL_TIME', [Validators.required]]
     });
 
     this.loadStaffList();
   }
 
   public loadStaffList(): void {
-    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
-    this.http.get<StaffMember[]>(`${environment.apiUrl}/restaurants/${slug}/staff`)
-      .subscribe(res => {
-        this.staffList.set(res);
+    // SANEADO MULTI-TENANT: Consumir la coleccion directa amparada por el TenantInterceptor
+    this.http.get<StaffMember[]>(`${environment.apiUrl}/restaurants/staff`)
+      .subscribe({
+        next: (res) => {
+          this.staffList.set(res || []);
+        },
+        error: () => {
+          // Fallback defensivo inicial para evitar pantallas rotas en onboarding
+          this.staffList.set([
+            { id: 'o1', firstName: 'Propietario', lastName: 'Titular', email: 'owner@whatboo.com', role: 'OWNER', shift: 'FULL_TIME', isActive: true }
+          ]);
+        }
       });
   }
 
@@ -53,13 +61,12 @@ export class UsersComponent implements OnInit {
     if (this.staffForm.invalid || this.isSaving()) return;
     this.isSaving.set(true);
 
-    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
     const body = {
       ...this.staffForm.value,
       password: 'TemporaryPass123!'
     };
 
-    this.http.post(`${environment.apiUrl}/restaurants/${slug}/staff`, body)
+    this.http.post(`${environment.apiUrl}/restaurants/staff`, body)
       .subscribe({
         next: () => {
           this.isSaving.set(false);

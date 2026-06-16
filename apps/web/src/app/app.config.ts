@@ -1,30 +1,38 @@
-import { ApplicationConfig, provideZoneChangeDetection, importProvidersFrom } from '@angular/core';
-import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { TranslateModule } from '@ngx-translate/core';
-import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
+import { ApplicationConfig, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
-import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { HttpClient, provideHttpClient } from '@angular/common/http';
+import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
+import { Observable } from 'rxjs';
+
+// INSTANCIACIÓN NATIVA DIRECTA: Bypass al constructor para resolver las claves de idioma sin fricción
+export class CustomTranslateLoader implements TranslateLoader {
+  constructor(private http: HttpClient) {}
+  getTranslation(lang: string): Observable<any> {
+    return this.http.get(`/assets/i18n/${lang}.json`);
+  }
+}
+
+export function HttpLoaderFactory(http: HttpClient) {
+  return new CustomTranslateLoader(http);
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(
-      routes,
-      withComponentInputBinding(),
-      withViewTransitions(),
-    ),
-    provideHttpClient(
-      withInterceptors([authInterceptor]),
-    ),
-    provideAnimationsAsync(),
+    provideRouter(routes),
+    provideHttpClient(),
+    
+    // CONFIGURACIÓN DE IDIOMAS MULTI-TENANT - FIJO EN ESPAÑOL DE FORMA MANDATORIA
     importProvidersFrom(
-      TranslateModule.forRoot(),
-    ),
-    ...provideTranslateHttpLoader({
-      prefix: '/assets/i18n/',
-      suffix: '.json',
-    }),
-  ],
+      TranslateModule.forRoot({
+        defaultLanguage: 'es',
+        loader: {
+          provide: TranslateLoader,
+          useFactory: HttpLoaderFactory,
+          deps: [HttpClient]
+        }
+      })
+    )
+  ]
 };

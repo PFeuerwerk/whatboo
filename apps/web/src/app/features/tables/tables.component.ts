@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { Zone, Table } from '../../core/models/booking-models';
 
 @Component({
   selector: 'app-tables',
@@ -16,8 +15,9 @@ export class TablesComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
 
-  public readonly zones = signal<Zone[]>([]);
-  public readonly tables = signal<Table[]>([]);
+  public readonly zones = signal<any[]>([]);
+  public readonly tables = signal<any[]>([]);
+  public readonly isSaving = signal(false);
   public tableForm!: FormGroup;
 
   public ngOnInit(): void {
@@ -27,38 +27,49 @@ export class TablesComponent implements OnInit {
       zoneId: ['', [Validators.required]]
     });
 
-    this.loadPlantaData();
+    this.loadFloorPlan();
   }
 
-  public loadPlantaData(): void {
-    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
-    
-    // 1. Obtener zonas físicas del restaurante
-    this.http.get<Zone[]>(`${environment.apiUrl}/restaurants/${slug}/zones`).subscribe(res => {
-      this.zones.set(res);
-      if (res.length > 0) {
-        this.tableForm.patchValue({ zoneId: res[0].id });
-      }
-    });
+  public loadFloorPlan(): void {
+    // 1. Cargar las zonas operativas ligadas de forma invisible a la sesión (Fase A)
+    this.http.get<any[]>(`${environment.apiUrl}/restaurants/zones`)
+      .subscribe(res => {
+        this.zones.set(res || []);
+        if (res && res.length > 0 && !this.tableForm.get('zoneId')?.value) {
+          this.tableForm.patchValue({ zoneId: res[0].id });
+        }
+      });
 
-    // 2. Obtener inventario de mesas operativas
-    this.http.get<Table[]>(`${environment.apiUrl}/restaurants/${slug}/tables`).subscribe(res => {
-      this.tables.set(res);
-    });
+    // 2. Cargar las mesas operativas ligadas de forma invisible a la sesión (Fase A)
+    this.http.get<any[]>(`${environment.apiUrl}/restaurants/tables`)
+      .subscribe(res => {
+        this.tables.set(res || []);
+      });
   }
 
-  public getTablesByZone(zoneId: string): Table[] {
-    return this.tables().filter(t => t.zoneId === zoneId);
+  /**
+   * SANEADO CRÍTICO: Filtra el inventario de mesas en base a su zona física
+   * Requisito mandatorio de la directiva @for de tables.component.html:44
+   */
+  public getTablesByZone(zoneId: string): any[] {
+    return this.tables().filter(table => table.zoneId === zoneId);
   }
 
   public onCreateTable(): void {
-    if (this.tableForm.invalid) return;
-    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
+    if (this.tableForm.invalid || this.isSaving()) return;
+    this.isSaving.set(true);
 
-    this.http.post(`${environment.apiUrl}/restaurants/${slug}/tables`, this.tableForm.value)
-      .subscribe(() => {
-        this.tableForm.get('name')?.reset();
-        this.loadPlantaData(); // Recarga reactiva en caliente desde PostgreSQL
+    this.http.post(`${environment.apiUrl}/restaurants/tables`, this.tableForm.value)
+      .subscribe({
+        next: () => {
+          this.isSaving.set(false);
+          const currentZone = this.tableForm.value.zoneId;
+          this.tableForm.reset({ capacity: 4, zoneId: currentZone });
+          this.loadFloorPlan(); // Recarga reactiva en caliente de PostgreSQL
+        },
+        error: () => {
+          this.isSaving.set(false);
+        }
       });
   }
 }

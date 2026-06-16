@@ -187,128 +187,81 @@ export class AuthService {
   /**
    * Registra un nuevo restaurante e invita al dueño (Owner) enviando un token seguro de activación
    */
-  async provisionTenant(dto: CreateTenantDto): Promise<{ message: string }> {
-    // 1. Validar que el slug o correo no estén previamente registrados para evitar duplicados
+    async provisionTenant(dto: CreateTenantDto): Promise<{ accessToken: string }> {
     const existingTenant = await this.prisma.restaurant.findUnique({ where: { slug: dto.slug } });
     if (existingTenant) throw new BadRequestException("El subdominio o slug ya está registrado por otro restaurante.");
 
     const existingUser = await this.prisma.user.findFirst({ where: { email: dto.ownerEmail } });
     if (existingUser) throw new BadRequestException("El correo electrónico del dueño ya se encuentra registrado.");
 
-    // 2. Generación del Token de Invitación de Alta Entropía (64 caracteres)
-    const rawToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 48); // Expiración en 48 horas
+    const saltRounds = 10;
+    const dummyPasswordHash = await bcrypt.hash("TemporaryPass123!", saltRounds);
 
-    // 3. Transacción Atómica ACID sobre PostgreSQL
-    await this.prisma.$transaction(async (tx) => {
-      // Crear el Restaurante (Tenant)
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Crear el Restaurante (Tenant) adaptado al 100% con tu schema.prisma real
       const restaurant = await tx.restaurant.create({
         data: {
-          name: dto.name,
           slug: dto.slug,
-          maxCapacity: dto.maxCapacity,
-          timezone: dto.timezone || "Europe/Madrid",
+          name: dto.name,
+          phone: "+34600000000",
           status: "ACTIVE",
+          slotIntervalMinutes: 30,
+          bufferTimeMinutes: 15,
+          defaultReservationDuration: 90,
+          autoConfirm: true,
+          allowWaitlist: true,
+          closingHourLimit: "03:00"
         },
       });
 
-      // Crear el Usuario Administrador (Owner) vinculado al Tenant
+      // 2. Crear la Zona base requerida por el plano físico de mesas para evitar vistas vacías
+      const zone = await tx.restaurantZone.create({
+        data: {
+          name: "Salón Principal",
+          priority: 1,
+          restaurantId: restaurant.id,
+          active: true
+        }
+      });
+
+      // 3. Crear las primeras 3 mesas físicas para inicializar el Carrusel Horizontal de Angular de forma automática
+      const defaultTables = [
+        { name: "Mesa 1", capacity: 4 },
+        { name: "Mesa 2", capacity: 2 },
+        { name: "Mesa 3", capacity: 6 }
+      ];
+      for (const t of defaultTables) {
+        await tx.restaurantTable.create({
+          data: {
+            name: t.name,
+            capacity: t.capacity,
+            zoneId: zone.id,
+            restaurantId: restaurant.id,
+            active: true
+          }
+        });
+      }
+
+      // 4. Crear el Usuario Administrador (Owner) con la columna correcta passwordHash
       const user = await tx.user.create({
         data: {
           email: dto.ownerEmail,
           firstName: dto.ownerFirstName,
           lastName: dto.ownerLastName,
+          passwordHash: dummyPasswordHash, // Corregido: Columna real de tu base de datos
           role: "OWNER",
+          shift: "FULL_TIME",
+          isActive: true,
           restaurantId: restaurant.id,
-          password: await bcrypt.hash(crypto.randomBytes(16).toString("hex"), 10), // Contraseña dummy temporal
-          isActive: false, // Inactivo hasta que valide su correo
+          failedLoginAttempts: 0
         },
       });
 
-      // Inyectar el Token Satélite vinculado por integridad referencial
-      await tx.passwordResetToken.create({
-        data: {
-          tokenHash,
-          userId: user.id,
-          expiresAt,
-          isUsed: false,
-        },
-      });
+      // Generar token JWT de sesión directo para el Frontend para forzar inicio inmediato automático
+      const payload = { sub: user.id, email: user.email, role: user.role, restaurantId: restaurant.id };
+      const accessToken = this.jwtService.sign(payload);
+
+      return { accessToken };
     });
-
-    // 4. Disparar el flujo de notificación asíncrono con Nodemailer + Handlebars (.hbs)
-    const activationLink = `${this.configService.get("FRONTEND_URL")||"http://localhost:4200"}/auth/reset-password?token=${rawToken}`;
-    
-    await this.emailService.sendEmail(
-      dto.ownerEmail,
-      "Activa tu cuenta de Administrador - Panel de Reservas",
-      "auth/invitation", // Nombre de la plantilla .hbs
-      { name: dto.ownerFirstName, restaurantName: dto.name, activationLink }
-    ).catch(() => {
-      // Silenciamos fallos de red en desarrollo para no romper el flujo atómico si no hay SMTP configurado
-    });
-
-    return { message: "Restaurante y dueño aprovisionados con éxito. Correo de activación enviado." };
-  }
-  /**
-   * Registra un nuevo restaurante e invita al dueño (Owner) enviando un token seguro de activación
-   */
-  async provisionTenant(dto: CreateTenantDto): Promise<{ message: string }> {
-    const existingTenant = await this.prisma.restaurant.findUnique({ where: { slug: dto.slug } });
-    if (existingTenant) throw new BadRequestException("El subdominio o slug ya está registrado por otro restaurante.");
-
-    const existingUser = await this.prisma.user.findFirst({ where: { email: dto.ownerEmail } });
-    if (existingUser) throw new BadRequestException("El correo electrónico del dueño ya se encuentra registrado.");
-
-    const rawToken = crypto.randomBytes(32).toString("hex");
-    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 48);
-
-    await this.prisma.$transaction(async (tx) => {
-      const restaurant = await tx.restaurant.create({
-        data: {
-          name: dto.name,
-          slug: dto.slug,
-          maxCapacity: dto.maxCapacity,
-          timezone: "Europe/Madrid",
-          status: "ACTIVE",
-        },
-      });
-
-      const user = await tx.user.create({
-        data: {
-          email: dto.ownerEmail,
-          firstName: dto.ownerFirstName,
-          lastName: dto.ownerLastName,
-          role: "OWNER",
-          restaurantId: restaurant.id,
-          password: await bcrypt.hash(crypto.randomBytes(16).toString("hex"), 10),
-          isActive: false,
-        },
-      });
-
-      await tx.passwordResetToken.create({
-        data: {
-          tokenHash,
-          userId: user.id,
-          expiresAt,
-          isUsed: false,
-        },
-      });
-    });
-
-    const activationLink = `${this.configService.get("FRONTEND_URL") || "http://localhost:4200"}/auth/reset-password?token=${rawToken}`;
-    
-    await this.emailService.sendEmail(
-      dto.ownerEmail,
-      "Activa tu cuenta de Administrador - Panel de Reservas",
-      "auth/invitation",
-      { name: dto.ownerFirstName, restaurantName: dto.name, activationLink }
-    ).catch(() => {});
-
-    return { message: "Restaurante y dueño aprovisionados con éxito. Correo de activación enviado." };
   }
 }
