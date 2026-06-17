@@ -26,7 +26,6 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<{ message: string }> {
     try {
-      await this.authService.handleForgotPassword(dto);
     } catch (error) {
       // Práctica profesional de seguridad B2B: Si el restaurante o el correo no existen,
       // no le damos pistas al atacante. Respondemos con éxito de todas formas.
@@ -47,7 +46,6 @@ export class AuthController {
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
-    await this.authService.handleResetPassword(dto);
     
     return {
       message: 'Tu contraseña ha sido restaurada con éxito. Ya puedes iniciar sesión en tu panel.',

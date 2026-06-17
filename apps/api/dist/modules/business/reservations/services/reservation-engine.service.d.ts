@@ -54,24 +54,24 @@ export declare class ReservationEngineService {
     } | {
         success: boolean;
         reservation: {
-            restaurantId: string;
-            source: import("@prisma/client").$Enums.ReservationSource;
-            confirmationCode: string | null;
             id: string;
-            status: import("@prisma/client").$Enums.ReservationStatus;
-            createdAt: Date;
-            updatedAt: Date;
-            deletedAt: Date | null;
-            notes: string | null;
+            restaurantId: string;
             customerId: string;
             reservationDate: Date;
             reservationStart: Date;
             reservationEnd: Date;
             guestCount: number;
+            status: import("@prisma/client").$Enums.ReservationStatus;
+            source: import("@prisma/client").$Enums.ReservationSource;
+            notes: string | null;
+            confirmationCode: string | null;
             confirmedAt: Date | null;
             cancelledAt: Date | null;
             completedAt: Date | null;
             noShowAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt: Date | null;
         };
         message?: undefined;
     }>;

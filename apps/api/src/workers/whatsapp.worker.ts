@@ -37,12 +37,7 @@ export class WhatsappWorker implements OnModuleInit, OnModuleDestroy {
       {
         // Corregido: Casting a 'any' para unificar la firma de conexión esperada por la interfaz de BullMQ
         connection: this.redisConnection as any,
-          settings: {
-            backoffStrategies: {
-              exponential: (delay) => Math.pow(2, delay) * 1000
-            }
-          },
-        concurrency: 5,
+          concurrency: 5,
         autorun: true,
       }
     );

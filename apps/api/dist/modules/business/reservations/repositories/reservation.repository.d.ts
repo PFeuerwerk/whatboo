@@ -18,6 +18,7 @@ export declare class ReservationRepository extends BaseRepository {
         confirmationCode: string;
         notes?: string;
     }): Promise<Reservation>;
+    update(restaurantId: string, id: string, data: Partial<Reservation>): Promise<Reservation>;
     updateStatus(restaurantId: string, id: string, status: ReservationStatus): Promise<Reservation>;
     reschedule(restaurantId: string, id: string, reservationStart: Date, reservationEnd: Date, tableId?: string): Promise<Reservation>;
     softDelete(restaurantId: string, id: string): Promise<Reservation>;

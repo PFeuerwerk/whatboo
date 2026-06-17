@@ -4,6 +4,7 @@ import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { EmailService } from '../../../integrations/email/email.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { CreateTenantDto } from './dto/create-tenant.dto';
 export declare class AuthService {
     private readonly prisma;
     private readonly jwtService;
@@ -14,5 +15,8 @@ export declare class AuthService {
     handleForgotPassword(dto: ForgotPasswordDto): Promise<void>;
     login(email: string, password: string, restaurantSlug: string): Promise<{
         accessToken: string;
+    }>;
+    provisionTenant(dto: CreateTenantDto): Promise<{
+        message: string;
     }>;
 }

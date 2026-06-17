@@ -89,6 +89,13 @@ let ReservationRepository = class ReservationRepository extends base_repository_
             },
         });
     }
+    async update(restaurantId, id, data) {
+        this.requireRestaurantId(restaurantId);
+        return this.prisma.reservation.update({
+            where: { id },
+            data,
+        });
+    }
     async updateStatus(restaurantId, id, status) {
         this.requireRestaurantId(restaurantId);
         const timestamps = {};

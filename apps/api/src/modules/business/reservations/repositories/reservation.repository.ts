@@ -1,70 +1,170 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
-import { ReservationStatus } from '@prisma/client';
+import { BaseRepository } from '../../../../infrastructure/database/repositories/base.repository';
+import { Reservation, ReservationStatus } from '@prisma/client';
 
 @Injectable()
-export class ReservationRepository {
-  constructor(private readonly prisma: PrismaService) {}
+export class ReservationRepository extends BaseRepository {
+  constructor(prisma: PrismaService) {
+    super(prisma);
+  }
 
-  async findByDateRange(restaurantId: string, start: Date, end: Date) {
+  async findById(restaurantId: string, id: string): Promise<Reservation | null> {
+    this.requireRestaurantId(restaurantId);
+    return this.prisma.reservation.findFirst({
+      where: { id, restaurantId, deletedAt: null },
+      include: { assignedTables: { include: { table: true } }, customer: true },
+    });
+  }
+
+  async findByConfirmationCode(restaurantId: string, code: string): Promise<Reservation | null> {
+    this.requireRestaurantId(restaurantId);
+    return this.prisma.reservation.findFirst({
+      where: { confirmationCode: code, restaurantId, deletedAt: null },
+    });
+  }
+
+  async findByCustomer(restaurantId: string, customerId: string): Promise<Reservation[]> {
+    this.requireRestaurantId(restaurantId);
+    return this.prisma.reservation.findMany({
+      where: { restaurantId, customerId, deletedAt: null },
+      orderBy: { reservationStart: 'desc' },
+    });
+  }
+
+  async findActiveByCustomer(
+    restaurantId: string,
+    customerId: string,
+  ): Promise<Reservation[]> {
+    this.requireRestaurantId(restaurantId);
+
     return this.prisma.reservation.findMany({
       where: {
         restaurantId,
-        reservationStart: { gte: start, lte: end }
+        customerId,
+        deletedAt: null,
+        status: {
+          in: ["PENDING", "CONFIRMED"],
+        },
+          confirmationCode: {
+            not: null,
+          },
       },
-      include: {
-        customer: true,
-        tables: { include: { table: true } }
+      orderBy: {
+        reservationStart: "asc",
       },
-      orderBy: { reservationStart: 'asc' }
     });
   }
 
-  async findById(restaurantId: string, id: string) {
-    return this.prisma.reservation.findFirst({
-      where: { id, restaurantId },
-      include: { customer: true, tables: true }
+
+  async findByDateRange(restaurantId: string, start: Date, end: Date): Promise<Reservation[]> {
+    this.requireRestaurantId(restaurantId);
+    return this.prisma.reservation.findMany({
+      where: {
+        restaurantId,
+        deletedAt: null,
+        reservationStart: { gte: start },
+        reservationEnd: { lte: end },
+      },
+      include: { customer: true, assignedTables: { include: { table: true } } },
+      orderBy: { reservationStart: 'asc' },
     });
   }
 
-  async updateStatus(restaurantId: string, id: string, status: ReservationStatus) {
-    return this.prisma.reservation.updateMany({
-      where: { id, restaurantId },
-      data: { status }
+  async create(data: {
+    restaurantId: string;
+    customerId: string;
+    reservationStart: Date;
+    reservationEnd: Date;
+    guestCount: number;
+    tableId: string;
+    confirmationCode: string;
+    notes?: string;
+  }): Promise<Reservation> {
+    this.requireRestaurantId(data.restaurantId);
+    return this.prisma.reservation.create({
+      data: {
+        restaurantId: data.restaurantId,
+        customerId: data.customerId,
+        reservationDate: data.reservationStart,
+        reservationStart: data.reservationStart,
+        reservationEnd: data.reservationEnd,
+        guestCount: data.guestCount,
+        confirmationCode: data.confirmationCode,
+        notes: data.notes,
+        status: 'PENDING',
+        source: 'WHATSAPP',
+        assignedTables: {
+          create: { tableId: data.tableId, autoAssigned: true },
+        },
+      },
     });
   }
 
-  /**
-   * MUTACIÓN EXPANDIDA PARA DRAG & DROP
-   * Guarda de forma física la reasignación de mesa y slot horario en PostgreSQL
-   */
-  async update(restaurantId: string, id: string, data: { tableId?: string; timeSlot?: string; reservationStart?: Date }) {
-    // 1. Ejecutar la actualización base de los strings relacionales en la reserva
-    const updatedReservation = await this.prisma.reservation.update({
+  async update(
+    restaurantId: string,
+    id: string,
+    data: Partial<Reservation>,
+  ): Promise<Reservation> {
+    this.requireRestaurantId(restaurantId);
+
+    return this.prisma.reservation.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async updateStatus(
+    restaurantId: string,
+    id: string,
+    status: ReservationStatus,
+  ): Promise<Reservation> {
+    this.requireRestaurantId(restaurantId);
+    const timestamps: Record<string, Date> = {};
+    if (status === 'CONFIRMED') timestamps.confirmedAt = new Date();
+    if (status === 'CANCELLED') timestamps.cancelledAt = new Date();
+    if (status === 'COMPLETED') timestamps.completedAt = new Date();
+    if (status === 'NO_SHOW') timestamps.noShowAt = new Date();
+    return this.prisma.reservation.update({
+      where: { id },
+      data: { status, ...timestamps },
+    });
+  }
+
+
+  async reschedule(
+    restaurantId: string,
+    id: string,
+    reservationStart: Date,
+    reservationEnd: Date,
+    tableId?: string,
+  ): Promise<Reservation> {
+    this.requireRestaurantId(restaurantId);
+
+    return this.prisma.reservation.update({
       where: { id },
       data: {
-        timeSlot: data.timeSlot,
-        ...(data.reservationStart && { reservationStart: data.reservationStart })
-      }
+        reservationDate: reservationStart,
+        reservationStart,
+        reservationEnd,
+        assignedTables: tableId
+          ? {
+              deleteMany: {},
+              create: {
+                tableId,
+                autoAssigned: true,
+              },
+            }
+          : undefined,
+      },
     });
+  }
 
-    // 2. Si se arrastró a una nueva mesa física, romper el pivote viejo y crear el enganche en reservation_tables
-    if (data.tableId) {
-      // Eliminar asignación previa en la tabla intermedia de este comensal
-      await this.prisma.reservationTable.deleteMany({
-        where: { reservationId: id }
-      });
-
-      // Insertar el nuevo registro de vinculación física de la mesa
-      await this.prisma.reservationTable.create({
-        data: {
-          reservationId: id,
-          tableId: data.tableId,
-          autoAssigned: false
-        }
-      });
-    }
-
-    return updatedReservation;
+  async softDelete(restaurantId: string, id: string): Promise<Reservation> {
+    this.requireRestaurantId(restaurantId);
+    return this.prisma.reservation.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 }

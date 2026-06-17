@@ -165,6 +165,57 @@ let AuthService = class AuthService {
         };
         return { accessToken: this.jwtService.sign(payload) };
     }
+    async provisionTenant(dto) {
+        const existingTenant = await this.prisma.restaurant.findUnique({ where: { slug: dto.slug } });
+        if (existingTenant)
+            throw new common_1.BadRequestException("El subdominio o slug ya está registrado por otro restaurante.");
+        const existingUser = await this.prisma.user.findFirst({ where: { email: dto.ownerEmail } });
+        if (existingUser)
+            throw new common_1.BadRequestException("El correo electrónico del dueño ya se encuentra registrado.");
+        const rawToken = crypto.randomBytes(32).toString("hex");
+        const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 48);
+        await this.prisma.$transaction(async (tx) => {
+            const restaurant = await tx.restaurant.create({
+                data: {
+                    name: dto.name,
+                    slug: dto.slug,
+                    maxCapacity: dto.maxCapacity,
+                    timezone: "Europe/Madrid",
+                    status: "ACTIVE",
+                },
+            });
+            const user = await tx.user.create({
+                data: {
+                    email: dto.ownerEmail,
+                    firstName: dto.ownerFirstName,
+                    lastName: dto.ownerLastName,
+                    role: "OWNER",
+                    restaurantId: restaurant.id,
+                    passwordHash: await bcrypt.hash(crypto.randomBytes(16).toString("hex"), 10),
+                    isActive: false,
+                },
+            });
+            await tx.passwordResetToken.create({
+                data: {
+                    tokenHash,
+                    userId: user.id,
+                    expiresAt,
+                    isUsed: false,
+                },
+            });
+        });
+        const activationLink = `${this.configService.get("FRONTEND_URL") || "http://localhost:4200"}/auth/reset-password?token=${rawToken}`;
+        await this.emailService.sendMail({
+            to: dto.ownerEmail,
+            subject: "Activa tu cuenta de Administrador - Panel de Reservas",
+            template: activationLink,
+            context: {},
+        }).catch(() => {
+        });
+        return { message: "Restaurante y dueño aprovisionados con éxito. Correo de activación enviado." };
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([

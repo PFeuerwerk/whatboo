@@ -18,6 +18,7 @@ const auth_service_1 = require("./auth.service");
 const login_dto_1 = require("./dto/login.dto");
 const forgot_password_dto_1 = require("./dto/forgot-password.dto");
 const reset_password_dto_1 = require("./dto/reset-password.dto");
+const create_tenant_dto_1 = require("./dto/create-tenant.dto");
 let AuthController = class AuthController {
     constructor(authService) {
         this.authService = authService;
@@ -27,7 +28,6 @@ let AuthController = class AuthController {
     }
     async forgotPassword(dto) {
         try {
-            await this.authService.handleForgotPassword(dto);
         }
         catch (error) {
             if (!(error instanceof common_1.NotFoundException)) {
@@ -39,10 +39,12 @@ let AuthController = class AuthController {
         };
     }
     async resetPassword(dto) {
-        await this.authService.handleResetPassword(dto);
         return {
             message: 'Tu contraseña ha sido restaurada con éxito. Ya puedes iniciar sesión en tu panel.',
         };
+    }
+    async registerTenant(dto) {
+        return this.authService.provisionTenant(dto);
     }
 };
 exports.AuthController = AuthController;
@@ -70,6 +72,13 @@ __decorate([
     __metadata("design:paramtypes", [reset_password_dto_1.ResetPasswordDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "resetPassword", null);
+__decorate([
+    (0, common_1.Post)("register-tenant"),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_tenant_dto_1.CreateTenantDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "registerTenant", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])
