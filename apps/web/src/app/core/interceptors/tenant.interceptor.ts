@@ -20,7 +20,7 @@ export const tenantInterceptor: HttpInterceptorFn = (
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     const devReq = req.clone({
       setHeaders: {
-        'X-Tenant-Slug': 'la-bella-italia' // Cambiado al slug demo sembrado para pruebas locales automáticas
+        'X-Tenant-Slug': 'platform-master-control' // Cambiado al slug demo sembrado para pruebas locales automáticas
       }
     });
     return next(devReq);

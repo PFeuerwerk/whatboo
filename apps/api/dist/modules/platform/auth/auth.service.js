@@ -163,7 +163,12 @@ let AuthService = class AuthService {
             role: user.role,
             restaurantId: user.restaurantId,
         };
-        return { accessToken: this.jwtService.sign(payload) };
+        console.log('[LOGIN USER]', user.email);
+        console.log('[LOGIN PAYLOAD]', payload);
+        console.log('[JWT SECRET]', this.configService.get('JWT_SECRET'));
+        const token = this.jwtService.sign(payload);
+        console.log('[JWT TOKEN OK]');
+        return { accessToken: token };
     }
     async provisionTenant(dto) {
         const existingTenant = await this.prisma.restaurant.findUnique({ where: { slug: dto.slug } });

@@ -182,7 +182,14 @@ export class AuthService {
       restaurantId: user.restaurantId,
     };
 
-    return { accessToken: this.jwtService.sign(payload) };
+    
+console.log('[LOGIN USER]', user.email);
+console.log('[LOGIN PAYLOAD]', payload);
+console.log('[JWT SECRET]', this.configService.get('JWT_SECRET'));
+const token=this.jwtService.sign(payload);
+console.log('[JWT TOKEN OK]');
+return { accessToken: token };
+
   }
   /**
    * Registra un nuevo restaurante e invita al dueño (Owner) enviando un token seguro de activación
