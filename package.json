@@ -9,13 +9,11 @@
   "scripts": {
     "start": "pnpm --filter web start",
     "build": "turbo run build",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "check": "bash scripts/hooks/check-contract-integrity.sh"
   },
   "devDependencies": {
     "@types/node": "^25.9.2",
-    "turbo": "^2.0.0"
-  },
-  "dependencies": {
-    "@angular/animations": "^19.2.0"
+    "turbo": "^2.10.0"
   }
 }
