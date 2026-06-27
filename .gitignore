@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+
+# Environment files (NEVER commit these)
+.env
+.env.local
+.env.production
+apps/api/.env
+
+# Prisma generated
+apps/api/node_modules/
+generated/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+node_modules/
+node_modules/
+**/node_modules/
+**/node_modules/
+**/node_modules/
+.turbo/

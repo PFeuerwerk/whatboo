@@ -1,0 +1,46 @@
+<div class="reports-wrapper animate-fade-in">
+  
+  <div class="header-block">
+    <div>
+      <h1 class="title-main">Análisis de Ocupación Diaria</h1>
+      <p class="subtitle-main">Métricas consolidadas de asistencia, volumen de cubiertos y saturación de franjas horarias.</p>
+    </div>
+    <!-- BOTÓN MAESTRO: Forzado en la cabecera sin bloqueos condicionales -->
+    <button (click)="onPrintReport()" class="print-btn">
+      <span>🖨️</span> Exportar / Imprimir PDF
+    </button>
+  </div>
+
+  <!-- INDICADORES ANALÍTICOS FLASH -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Total Reservas del Turno</div>
+      <div class="metric-value">{{ totalReservations() }}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Volumen de Cubiertos (Pax)</div>
+      <div class="metric-value">{{ totalPax() }} <span class="text-xs text-slate-400 font-bold">Comensales</span></div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Ratio de Asistencia Fija</div>
+      <div class="metric-value">{{ attendanceRate() }}%</div>
+    </div>
+  </div>
+
+  <!-- GRÁFICO COMPACTO DE FRANJAS HORARIAS -->
+  <div class="chart-card">
+    <h3 class="section-title">Ocupación por Franja Horaria (Slots del Día)</h3>
+    <div class="bars-container">
+      @for (slot of hourlyData(); track slot.time) {
+        <div class="bar-row">
+          <div class="bar-time">{{ slot.time }}</div>
+          <div class="bar-track">
+            <div class="bar-fill" [style.width.%]="slot.percentage"></div>
+          </div>
+          <div class="bar-count">{{ slot.count }} Reservas ({{ slot.percentage }}%)</div>
+        </div>
+      }
+    </div>
+  </div>
+
+</div>

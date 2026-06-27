@@ -1,0 +1,30 @@
+{
+  "NAV": {
+    "RESERVATIONS": "Agenda Diaria",
+    "FLOOR_PLAN": "Salón y Mesas",
+    "CONFIG": "Parámetros",
+    "REPORTS": "Reportes",
+    "INTEGRATIONS": "Integración WhatsApp",
+    "STAFF": "Equipo y Permisos",
+    "LOGOUT": "Cerrar Sesión"
+  },
+  "AUTH": {
+    "HERO_BADGE": "🚀 Plataforma Multi-Tenant Enterprise",
+    "LOGIN_TITLE": "WhatBoo SaaS",
+    "HERO_SUBHEAD": "Gestión inteligente de aforo, asignación interactiva de mesas y automatización de reservas de alta gama para restaurantes.",
+    "OWNER_ROLE": "Propietario / Dueño",
+    "OWNER_HIGHLIGHT": "Control total inmutable de facturación, salones y configuración maestra perimetral.",
+    "MANAGER_ROLE": "Gerente / Maitre de Sala",
+    "MANAGER_HIGHLIGHT": "Operación del Drag & Drop, control de turnos de personal y lista de espera de comensales en caliente.",
+    "NEED_HELP": "¿Necesitas asistencia de infraestructura? Contactar con Soporte IT",
+    "LOGIN_DESCRIPTION": "Ingrese las credenciales corporativas asignadas para gestionar el aforo y la sala interactiva de su establecimiento.",
+    "RESTAURANT_SLUG_LABEL": "Identificador del Restaurante (Slug)",
+    "RESTAURANT_SLUG_PLACEHOLDER": "Ej: la-bella-italia",
+    "EMAIL_LABEL": "Correo Electrónico Corporativo",
+    "EMAIL_PLACEHOLDER": "ej: manager@restaurante.com",
+    "PASSWORD_LABEL": "Contraseña de Acceso",
+    "PASSWORD_PLACEHOLDER": "Escriba su contraseña...",
+    "FORGOT_PASSWORD": "¿Olvidó su contraseña?",
+    "LOGIN_SUBMIT": "Ingresar al Panel"
+  }
+}

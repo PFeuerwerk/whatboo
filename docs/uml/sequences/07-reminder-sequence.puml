@@ -1,0 +1,32 @@
+@startuml
+
+title Reservation Reminder
+
+participant Scheduler
+participant ReservationService
+database PostgreSQL
+participant NotificationService
+participant WhatsApp
+actor Customer
+
+Scheduler -> ReservationService :
+Find Reservations
+
+ReservationService -> PostgreSQL :
+Query Upcoming Reservations
+
+PostgreSQL --> ReservationService
+
+ReservationService --> Scheduler :
+Reservation List
+
+Scheduler -> NotificationService :
+Generate Reminder
+
+NotificationService -> WhatsApp :
+Send Reminder
+
+WhatsApp -> Customer :
+Reminder Message
+
+@enduml

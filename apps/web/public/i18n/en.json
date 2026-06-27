@@ -1,0 +1,30 @@
+{
+  "NAV": {
+    "RESERVATIONS": "Daily Agenda",
+    "FLOOR_PLAN": "Floor & Tables",
+    "CONFIG": "Settings",
+    "REPORTS": "Analytics",
+    "INTEGRATIONS": "WhatsApp Sync",
+    "STAFF": "Team & Perms",
+    "LOGOUT": "Sign Out"
+  },
+  "AUTH": {
+    "HERO_BADGE": "🚀 Multi-Tenant Enterprise Platform",
+    "LOGIN_TITLE": "WhatBoo SaaS",
+    "HERO_SUBHEAD": "Intelligent capacity management, interactive table allocation, and high-end automated booking workflow for restaurants.",
+    "OWNER_ROLE": "Proprietor / Owner",
+    "OWNER_HIGHLIGHT": "Total immutable control over billing, floor plans, and master perimeter configuration.",
+    "MANAGER_ROLE": "Manager / Floor Maitre",
+    "MANAGER_HIGHLIGHT": "Drag & Drop operations, staff shift control, and real-time guest waitlist management.",
+    "NEED_HELP": "Need infrastructure assistance? Contact IT Support",
+    "LOGIN_DESCRIPTION": "Enter your corporate credentials to manage capacity and your establishment's interactive dining room.",
+    "RESTAURANT_SLUG_LABEL": "Restaurant Identifier (Slug)",
+    "RESTAURANT_SLUG_PLACEHOLDER": "E.g., la-bella-italia",
+    "EMAIL_LABEL": "Corporate Email Address",
+    "EMAIL_PLACEHOLDER": "e.g., manager@restaurant.com",
+    "PASSWORD_LABEL": "Access Password",
+    "PASSWORD_PLACEHOLDER": "Enter your password...",
+    "FORGOT_PASSWORD": "Forgot password?",
+    "LOGIN_SUBMIT": "Sign In to Dashboard"
+  }
+}

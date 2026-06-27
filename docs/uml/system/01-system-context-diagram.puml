@@ -1,0 +1,36 @@
+@startuml
+
+title Restaurant Reservation SaaS - System Context
+
+actor Customer
+actor RestaurantStaff
+
+rectangle "WhatsApp Business Platform" as WA
+
+rectangle "Reservation SaaS" {
+
+component "Angular Dashboard" as Dashboard
+
+component "NestJS Backend" as Backend
+
+database "PostgreSQL" as DB
+
+collections "Redis" as Redis
+
+}
+
+Customer --> WA : Send Messages
+
+WA --> Backend : Webhook Events
+
+Backend --> WA : Send Responses
+
+RestaurantStaff --> Dashboard
+
+Dashboard --> Backend
+
+Backend --> DB
+
+Backend --> Redis
+
+@enduml

@@ -1,0 +1,84 @@
+<div class="auth-container">
+  
+  <!-- PANEL DE MARCA E INFORMACIÓN B2B -->
+  <div class="auth-sidebar">
+    <div class="brand-header">
+      <div class="brand-logo">W</div>
+      <span class="brand-name">WhatBoo <span class="brand-badge">SaaS</span></span>
+    </div>
+
+    <div class="hero-content">
+      <span class="hero-tag">{{ 'AUTH.HERO_BADGE' | translate }}</span>
+      <h2 class="hero-title">{{ 'AUTH.LOGIN_TITLE' | translate }}</h2>
+      <p class="hero-subtitle">{{ 'AUTH.HERO_SUBHEAD' | translate }}</p>
+
+      <div class="role-cards">
+        <div class="role-card">
+          <div class="role-icon">👑</div>
+          <div>
+            <h4 class="role-name">{{ 'AUTH.OWNER_ROLE' | translate }}</h4>
+            <p class="role-desc">{{ 'AUTH.OWNER_HIGHLIGHT' | translate }}</p>
+          </div>
+        </div>
+        <div class="role-card">
+          <div class="role-icon">💼</div>
+          <div>
+            <h4 class="role-name">{{ 'AUTH.MANAGER_ROLE' | translate }}</h4>
+            <p class="role-desc">{{ 'AUTH.MANAGER_HIGHLIGHT' | translate }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <span>&copy; 2026 WhatBoo Platform Enterprise Inc.</span>
+      <a href="#" class="footer-link">{{ 'AUTH.NEED_HELP' | translate }}</a>
+    </div>
+  </div>
+
+  <!-- PANEL DERECHO: FORMULARIO ULTRA-CENTRADO MATEMÁTICAMENTE -->
+  <div class="auth-form-wrapper">
+    <div class="form-container">
+      <div class="form-header">
+        <h3 class="form-title-desktop">{{ 'AUTH.LOGIN_TITLE' | translate }}</h3>
+        <app-language-selector></app-language-selector>
+        <p class="form-description">{{ 'AUTH.LOGIN_DESCRIPTION' | translate }}</p>
+      </div>
+
+      @if (serverError()) {
+        <div class="alert-error">
+          <div class="alert-icon">!</div>
+          <span class="alert-text">{{ serverError() }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="login-form">
+        <div class="input-group">
+          <label class="input-label">{{ 'AUTH.RESTAURANT_SLUG_LABEL' | translate }}</label>
+          <input type="text" formControlName="restaurantSlug" class="form-input" placeholder="{{ 'AUTH.RESTAURANT_SLUG_PLACEHOLDER' | translate }}">
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">{{ 'AUTH.EMAIL_LABEL' | translate }}</label>
+          <input type="email" formControlName="email" class="form-input" placeholder="{{ 'AUTH.EMAIL_PLACEHOLDER' | translate }}">
+        </div>
+
+        <div class="input-group">
+          <div class="label-row">
+            <label class="input-label">{{ 'AUTH.PASSWORD_LABEL' | translate }}</label>
+            <a routerLink="/auth/forgot-password" class="forgot-link">{{ 'AUTH.FORGOT_PASSWORD' | translate }}</a>
+          </div>
+          <input type="password" formControlName="password" class="form-input" placeholder="{{ 'AUTH.PASSWORD_PLACEHOLDER' | translate }}">
+        </div>
+
+        <button type="submit" [disabled]="form.invalid || isSubmitting()" class="submit-button">
+          @if (isSubmitting()) {
+            <span class="spinner"></span>
+          }
+          {{ 'AUTH.LOGIN_SUBMIT' | translate }}
+        </button>
+      </form>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,50 @@
+<div class="crm-wrapper animate-fade-in">
+  
+  <div class="header-block">
+    <h1 class="title-main">Fidelización e Historial de Clientes</h1>
+    <p class="subtitle-main">Audite la libreta de contactos recurrentes, identifique preferencias y gestione notas críticas de alérgenos.</p>
+  </div>
+
+  <!-- GRILLA PRINCIPAL DE EXPEDIENTES CRM -->
+  <div class="table-card">
+    <table class="b2b-table">
+      <thead>
+        <tr>
+          <th class="th-item">Comensal</th>
+          <th class="th-item">Teléfono / WhatsApp</th>
+          <th class="th-item">Alérgenos / Restricciones</th>
+          <th class="th-item">Preferencias / Notas de Sala</th>
+          <th class="th-item">Categoría</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (client of customerList(); track client.id) {
+          <tr>
+            <td class="td-item font-bold text-slate-900">{{ client.firstName }} {{ client.lastName }}</td>
+            <td class="td-item text-slate-500 font-mono text-xs">{{ client.phone }}</td>
+            <td class="td-item">
+              @if (client.allergies && client.allergies.length > 0) {
+                @for (allergy of client.allergies; track allergy) {
+                  <span class="allergy-pill">⚠️ {{ allergy }}</span>
+                }
+              } @else {
+                <span class="text-slate-400 font-medium text-xs">Ninguna</span>
+              }
+            </td>
+            <td class="td-item notes-text">{{ client.notes || 'Sin anotaciones particulares.' }}</td>
+            <td class="td-item">
+              <span class="vip-tag" [ngClass]="client.isVip ? 'tag-vip' : 'tag-regular'">
+                {{ client.isVip ? 'VIP Gold' : 'Frecuente' }}
+              </span>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="td-item text-center text-slate-400 p-8">No hay expedientes de clientes registrados en el SaaS local.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+</div>

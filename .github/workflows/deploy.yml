@@ -1,0 +1,67 @@
+name: Continuous Deployment - SaaS Multi-Tenant
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy-infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Código Fuente
+      uses: actions/checkout@v4
+
+    - name: Google Auth
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Configurar GCP CLI
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Configurar Docker Auth
+      run: gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
+
+    # ==========================================
+    # BUILD Y SUBIDA INMUTABLE DE LA API NESTJS
+    # ==========================================
+    - name: Compilar y Subir Container API (NestJS)
+      run: |
+        docker build -f infrastructure/docker/api.Dockerfile -t europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/saas-registry/api:${{ github.sha }} .
+        docker push europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/saas-registry/api:${{ github.sha }}
+
+    # ==========================================
+    # BUILD Y SUBIDA INMUTABLE DEL FRONTEND ANGULAR 19
+    # ==========================================
+    - name: Compilar y Subir Container Web (Angular 19)
+      run: |
+        docker build -f infrastructure/docker/web.Dockerfile -t europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/saas-registry/web:${{ github.sha }} .
+        docker push europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/saas-registry/web:${{ github.sha }}
+
+    # ==========================================
+    # DESPLIEGUE ELÁSTICO SERVERLESS (CLOUD RUN)
+    # ==========================================
+    - name: Desplegar API en Cloud Run
+      run: |
+        gcloud run deploy restaurant-saas-api \
+          --image=europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/saas-registry/api:${{ github.sha }} \
+          --region=europe-west1 \
+          --platform=managed \
+          --allow-unauthenticated \
+          --min-instances=0 \
+          --max-instances=10 \
+          --cpu=1 \
+          --memory=1Gi \
+          --set-secrets=DATABASE_URL=DATABASE_URL:latest,WHATSAPP_TOKEN=WHATSAPP_META_TOKEN:latest --update-env-vars=NODE_ENV=production,REDIS_HOST=${{ secrets.REDIS_HOST }} --vpc-connector=saas-vpc-connector --egress=private-ranges-only
+
+    - name: Desplegar Frontend Web en Cloud Run
+      run: |
+        gcloud run deploy restaurant-saas-web \
+          --image=europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/saas-registry/web:${{ github.sha }} \
+          --region=europe-west1 \
+          --platform=managed \
+          --allow-unauthenticated \
+          --min-instances=0 \
+          --max-instances=5 \
+          --cpu=1 \
+          --memory=512Mi

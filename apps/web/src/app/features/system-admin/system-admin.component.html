@@ -1,0 +1,41 @@
+<div class="admin-it-wrapper animate-fade-in">
+  
+  <div class="header-block">
+    <h1 class="title-main">🚨 Panel Maestro de Infraestructura IT (WhatBoo Global)</h1>
+    <p class="subtitle-main">Consola suprema del sistema. Supervise inquilinos comerciales en PostgreSQL y elimine entornos de prueba en caliente.</p>
+  </div>
+
+  <div class="table-card">
+    <table class="b2b-table">
+      <thead>
+        <tr>
+          <th class="th-item">ID del Sistema</th>
+          <th class="th-item">Nombre de la Marca</th>
+          <th class="th-item">Slug / URL</th>
+          <th class="th-item">Aforo Max</th>
+          <th class="th-item" style="text-align: right;">Mantenimiento Crítico</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (rest of restaurantList(); track rest.id) {
+          <tr>
+            <td class="td-item font-mono text-xs text-slate-400">{{ rest.id }}</td>
+            <td class="td-item font-bold text-slate-900">🏢 {{ rest.name }}</td>
+            <td class="td-item text-blue-600 font-bold">/{{ rest.slug }}</td>
+            <td class="td-item">{{ rest.maxCapacity || 100 }} Pax</td>
+            <td class="td-item" style="text-align: right;">
+              <button (click)="onDestroyRestaurant(rest.id)" class="destroy-btn">
+                🔥 Destruir e Invalidar Inquilino
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="td-item text-center text-slate-400 p-8">No hay ningún restaurante registrado en el SaaS de WhatBoo en este instante.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+</div>

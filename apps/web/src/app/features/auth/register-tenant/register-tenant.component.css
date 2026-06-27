@@ -1,0 +1,133 @@
+/* ============================================================================
+   DISEÑO PREMIUM ENTERPRISE B2B - WIZARD PÚBLICO DE ALTA DE INQUILINOS
+   ============================================================================ */
+@import url('https://googleapis.com');
+
+.onboarding-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8fafc;
+  padding: 2rem;
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+.onboarding-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05);
+  width: 100%;
+  max-width: 32rem;
+  box-sizing: border-box;
+}
+
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(37, 99, 235, 0.06);
+  color: #2563eb;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.65rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.title-wizard {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.subtitle-wizard {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0.35rem 0 2rem 0;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.section-divider {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.input-label {
+  font-size: 0.725rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.form-input {
+  width: 100%;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.8rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+  outline: none;
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  border-color: #2563eb;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.slug-preview {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+  margin-top: 0.25rem;
+  padding-left: 0.25rem;
+}
+.slug-bold { color: #2563eb; font-weight: 700; }
+
+.submit-btn {
+  width: 100%;
+  background-color: #0f172a;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 0.9rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.775rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background-color 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
+}
+
+.submit-btn:hover { background-color: #1e293b; }
+.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }

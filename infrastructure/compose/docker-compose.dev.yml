@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # MOTOR DE BASE DE DATOS PRINCIPAL (POSTGRESQL)
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: saas-postgres-dev
+    environment:
+      POSTGRES_USER: rene_admin
+      POSTGRES_PASSWORD: saas_secure_pass_2026
+      POSTGRES_DB: restaurant_saas_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - saas-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rene_admin -d restaurant_saas_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # CACHÉ DISTRIBUIDA Y COLAS BULLMQ (REDIS)
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: saas-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - saas-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ==========================================
+  # API PRINCIPAL (NESTJS BACKEND)
+  # ==========================================
+  api:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/api.Dockerfile
+    container_name: saas-api-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://rene_admin:saas_secure_pass_2026@postgres:5432/restaurant_saas_db?schema=public
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=super_secret_jwt_key_saas_2026
+      - FRONTEND_URL=http://localhost:80
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - saas-network
+    restart: unless-stopped
+
+  # ==========================================
+  # PROCESADOR DE SEGUNDO PLANO (WHATSAPP WORKER)
+  # ==========================================
+  worker:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/api.Dockerfile
+    container_name: saas-worker-dev
+    # Sobreescribimos el comando por defecto del Dockerfile para arrancar el binario del Worker aislado
+    command: ["node", "apps/api/dist/workers/whatsapp.worker.js"]
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://rene_admin:saas_secure_pass_2026@postgres:5432/restaurant_saas_db?schema=public
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - saas-network
+    restart: unless-stopped
+
+  # ==========================================
+  # CLIENTE WEB SPA (ANGULAR 19 + NGINX)
+  # ==========================================
+  web:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/web.Dockerfile
+    container_name: saas-web-dev
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    networks:
+      - saas-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  saas-network:
+    driver: bridge

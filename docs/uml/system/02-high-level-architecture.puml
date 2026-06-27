@@ -1,0 +1,59 @@
+@startuml
+
+title High Level Architecture
+
+package "Frontend" {
+
+[Angular Dashboard]
+
+}
+
+package "Backend" {
+
+[API Gateway]
+
+[Auth Module]
+
+[Reservation Module]
+
+[Availability Module]
+
+[WhatsApp Module]
+
+[Notification Module]
+
+[Audit Module]
+
+}
+
+database PostgreSQL
+
+collections Redis
+
+queue BullMQ
+
+cloud WhatsApp
+
+[Angular Dashboard] --> [API Gateway]
+
+[API Gateway] --> [Auth Module]
+
+[API Gateway] --> [Reservation Module]
+
+[Reservation Module] --> [Availability Module]
+
+[Reservation Module] --> PostgreSQL
+
+[Availability Module] --> PostgreSQL
+
+[WhatsApp Module] --> WhatsApp
+
+[WhatsApp Module] --> BullMQ
+
+[BullMQ] --> Redis
+
+[Notification Module] --> BullMQ
+
+[Audit Module] --> PostgreSQL
+
+@enduml

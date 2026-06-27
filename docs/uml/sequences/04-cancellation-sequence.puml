@@ -1,0 +1,38 @@
+@startuml
+
+title Reservation Cancellation
+
+actor Customer
+
+participant WhatsApp
+participant Webhook
+participant RuleEngine
+participant ReservationService
+database PostgreSQL
+
+Customer -> WhatsApp :
+"Cancel my reservation"
+
+WhatsApp -> Webhook
+
+Webhook -> RuleEngine :
+Detect Cancellation Intent
+
+RuleEngine -> ReservationService :
+Cancel Reservation
+
+ReservationService -> PostgreSQL :
+Update Status
+
+PostgreSQL --> ReservationService
+
+ReservationService --> RuleEngine :
+Cancelled
+
+RuleEngine -> WhatsApp :
+Send Confirmation
+
+WhatsApp -> Customer :
+Reservation Cancelled
+
+@enduml

@@ -1,0 +1,33 @@
+@startuml
+
+title Automatic Confirmation
+
+actor Customer
+
+participant WhatsApp
+participant RuleEngine
+participant ReservationService
+participant NotificationService
+
+Customer -> WhatsApp :
+Reservation Request
+
+WhatsApp -> RuleEngine :
+Process
+
+RuleEngine -> ReservationService :
+Create Reservation
+
+ReservationService --> RuleEngine :
+Reservation Confirmed
+
+RuleEngine -> NotificationService :
+Generate Confirmation
+
+NotificationService -> WhatsApp :
+Send Message
+
+WhatsApp -> Customer :
+Reservation Confirmed
+
+@enduml

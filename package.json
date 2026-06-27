@@ -1,0 +1,21 @@
+{
+  "name": "restaurant-booking-saas",
+  "private": true,
+  "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": "11.5.2"
+  },
+  "scripts": {
+    "start": "pnpm --filter web start",
+    "build": "turbo run build",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.2",
+    "turbo": "^2.0.0"
+  },
+  "dependencies": {
+    "@angular/animations": "^19.2.0"
+  }
+}

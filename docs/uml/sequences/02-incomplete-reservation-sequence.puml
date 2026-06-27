@@ -1,0 +1,39 @@
+@startuml
+
+title Incomplete Reservation
+
+actor Customer
+
+participant WhatsApp
+participant Webhook
+participant RuleEngine
+database PostgreSQL
+
+Customer -> WhatsApp :
+"I want a table"
+
+WhatsApp -> Webhook :
+Incoming Message
+
+Webhook -> RuleEngine :
+Process Message
+
+RuleEngine -> RuleEngine :
+Detect Missing Data
+
+RuleEngine -> PostgreSQL :
+Save Conversation State
+
+PostgreSQL --> RuleEngine
+
+RuleEngine -> WhatsApp :
+Request Missing Fields
+
+WhatsApp -> Customer :
+Please provide:
+Name
+Date
+Time
+Guests
+
+@enduml

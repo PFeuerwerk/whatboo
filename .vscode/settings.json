@@ -1,0 +1,17 @@
+{
+  "js/ts.tsdk.path": "apps/web/node_modules/typescript/lib",
+  "js/ts.tsserver.useSyntaxServer": "always",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.useLocalTsProtonVersion": true,
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "typescript.tsserver.trace": "off",
+  "typescript.tsserver.log": "off",
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  }
+}

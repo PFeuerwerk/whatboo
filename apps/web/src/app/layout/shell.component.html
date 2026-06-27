@@ -1,0 +1,69 @@
+<div class="b2b-layout">
+  
+  <!-- SIDEBAR ADMINISTRATIVO COMPACTO B2B -->
+  <aside class="b2b-sidebar">
+    <div>
+      <div class="sidebar-brand">
+        <div class="brand-logo">W</div>
+        <span class="brand-text">WhatBoo <span class="brand-sub">SaaS</span></span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a routerLink="/reservations" routerLinkActive="nav-link-active" class="nav-link">
+          <span class="nav-icon">📅</span>
+          {{ 'NAV.RESERVATIONS' | translate }}
+        </a>
+        <a routerLink="/tables" routerLinkActive="nav-link-active" class="nav-link">
+          <span class="nav-icon">🧱</span>
+          {{ 'NAV.FLOOR_PLAN' | translate }}
+        </a>
+        <a routerLink="/settings" routerLinkActive="nav-link-active" class="nav-link">
+          <span class="nav-icon">⚙️</span>
+          {{ 'NAV.CONFIG' | translate }}
+        </a>
+        <a routerLink="/reports" routerLinkActive="nav-link-active" class="nav-link">
+          <span class="nav-icon">📊</span>
+          {{ 'NAV.REPORTS' | translate }}
+        </a>
+        <a routerLink="/integrations" routerLinkActive="nav-link-active" class="nav-link">
+          <span class="nav-icon">🔌</span>
+          {{ 'NAV.INTEGRATIONS' | translate }}
+        </a>
+        <!-- ENLACE ADICIONADO: Acceso Directo al Módulo de Equipo y Permisos Staff -->
+        <a routerLink="/users" routerLinkActive="nav-link-active" class="nav-link">
+          <span class="nav-icon">🧑‍💼</span>
+          {{ 'NAV.STAFF' | translate }}
+        </a>
+      </nav>
+    </div>
+
+    <div>
+      <!-- TARJETA DE CONTROL DE CUENTA DEL STAFF -->
+      <div class="sidebar-user">
+        <div class="user-email">{{ userEmail() }}</div>
+        <div class="user-role">{{ userRole() }}</div>
+      </div>
+
+      <button (click)="onLogout()" class="logout-button">
+        <span>🚪</span> {{ 'NAV.LOGOUT' | translate }}
+      </button>
+    </div>
+  </aside>
+
+  <!-- SOPORTE Y VISUALIZACIÓN MÓVIL EXCLUSIVA -->
+  <header class="mobile-header">
+    <div class="mobile-brand">
+      <div class="brand-logo" style="width:1.5rem; height:1.5rem; font-size:0.75rem; border-radius:0.375rem;">W</div>
+      <span>WhatBoo</span>
+    </div>
+    <button (click)="onLogout()" class="mobile-logout">
+      {{ 'NAV.LOGOUT' | translate }}
+    </button>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL DEL ESPACIO DE TRABAJO -->
+  <main class="b2b-main">
+    <router-outlet></router-outlet>
+  </main>
+
+</div>

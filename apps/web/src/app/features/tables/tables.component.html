@@ -1,0 +1,60 @@
+<div class="tables-wrapper animate-fade-in">
+  
+  <div class="header-block">
+    <h1 class="title-main">Layout de Planta y Salones</h1>
+    <p class="subtitle-main">Registre las mesas del restaurante vinculadas a sus respectivas zonas operativas en PostgreSQL.</p>
+  </div>
+
+  <div class="split-grid">
+    <!-- PANEL IZQUIERDO: Formulario de Registro Dinámico -->
+    <div class="form-card">
+      <h3 class="section-title">Añadir Nueva Mesa</h3>
+      <form [formGroup]="tableForm" (ngSubmit)="onCreateTable()" class="space-y-4">
+        <div class="input-group">
+          <label class="input-label">Número o Código de Mesa</label>
+          <input type="text" formControlName="name" class="form-input" placeholder="Ej: Mesa 4">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Capacidad de Asiento (Pax)</label>
+          <input type="number" formControlName="capacity" class="form-input" min="1" max="20">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Zona Geográfica</label>
+          <select formControlName="zoneId" class="form-select">
+            @for (zone of zones(); track zone.id) {
+              <option [value]="zone.id">{{ zone.name }}</option>
+            }
+          </select>
+        </div>
+        <button type="submit" [disabled]="tableForm.invalid" class="submit-btn">Persistir en PostgreSQL</button>
+      </form>
+    </div>
+
+    <!-- PANEL DERECHO: Grid Arquitectónico Compacto -->
+    <div class="map-canvas">
+      <div class="zones-container">
+        @for (zone of zones(); track zone.id) {
+          <div class="zone-block">
+            <div class="zone-header">
+              <h3 class="zone-title">📍 {{ zone.name }}</h3>
+              <span class="zone-meta">Prioridad Llenado: #{{ zone.priority }}</span>
+            </div>
+            
+            <div class="tables-grid">
+              @for (table of getTablesByZone(zone.id); track table.id) {
+                <div class="table-node">
+                  <div class="table-icon">🪑</div>
+                  <h4 class="table-name">{{ table.name }}</h4>
+                  <p class="table-pax">Capacidad: {{ table.capacity }} Pax</p>
+                </div>
+              } @empty {
+                <p class="text-xs text-slate-400 font-semibold p-2 col-span-full">No hay mesas configuradas en esta área.</p>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+</div>

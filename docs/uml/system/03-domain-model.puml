@@ -1,0 +1,62 @@
+@startuml
+
+title Domain Model
+
+class Restaurant {
++id
++name
++phone
++timezone
++capacity
+}
+
+class User {
++id
++email
++role
+}
+
+class Reservation {
++id
++date
++time
++guestCount
++status
+}
+
+class Customer {
++id
++name
++phone
+}
+
+class Table {
++id
++name
++capacity
+}
+
+class WaitlistEntry {
++id
++requestedDate
++requestedTime
+}
+
+class ConversationState {
++id
++state
+}
+
+Restaurant "1" -- "*" User
+
+Restaurant "1" -- "*" Reservation
+
+Restaurant "1" -- "*" Table
+
+Restaurant "1" -- "*" WaitlistEntry
+
+Customer "1" -- "*" Reservation
+
+Customer "1" -- "*" ConversationState
+
+@enduml

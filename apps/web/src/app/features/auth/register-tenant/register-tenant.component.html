@@ -1,0 +1,52 @@
+<div class="onboarding-container animate-fade-in">
+  
+  <div class="onboarding-card">
+    <div class="brand-badge">🚀 Onboarding Automatizado</div>
+    <h1 class="title-wizard">Cree su Cuenta SaaS</h1>
+    <p class="subtitle-wizard">Dé de alta su establecimiento comercial en WhatBoo. El backend aprovisionará de forma atómica sus tablas multi-tenant en PostgreSQL.</p>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onRegisterTenant()" class="space-y-4">
+      
+      <div class="section-divider">Datos del Establecimiento</div>
+      
+      <div class="input-group">
+        <label class="input-label">Nombre del Restaurante</label>
+        <input type="text" formControlName="name" (input)="onNameChange()" class="form-input" placeholder="Ej: El Gauchesco Asador">
+        <div class="slug-preview">Identificador único URL: ://whatboo.com<span class="slug-bold">{{ generatedSlug() }}</span></div>
+      </div>
+
+      <!-- RESTAURADO: Campo visual de alta densidad para el número de WhatsApp Comercial -->
+      <div class="input-group">
+        <label class="input-label">Número de WhatsApp del Restaurante</label>
+        <input type="text" formControlName="phone" class="form-input" placeholder="Ej: +34600000000">
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Capacidad Máxima de Comensales (Aforo total)</label>
+        <input type="number" formControlName="maxCapacity" class="form-input" min="10" max="1000">
+      </div>
+
+      <div class="section-divider">Credenciales del Administrador (Owner)</div>
+
+      <div class="input-group">
+        <label class="input-label">Nombre Completo</label>
+        <div class="flex gap-3">
+          <input type="text" formControlName="firstName" class="form-input" placeholder="Nombre">
+          <input type="text" formControlName="lastName" class="form-input" placeholder="Apellidos">
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Correo Electrónico Corporativo</label>
+        <input type="email" formControlName="email" class="form-input" placeholder="ej: dueno@asador.com">
+      </div>
+
+      <button type="submit" [disabled]="registerForm.invalid || isSaving()" class="submit-btn">
+        @if (isSaving()) { <span>⏳ Aprovisionando PostgreSQL...</span> }
+        @else { Lanzar mi Restaurante }
+      </button>
+
+    </form>
+  </div>
+
+</div>
