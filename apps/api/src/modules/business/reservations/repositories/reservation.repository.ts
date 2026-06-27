@@ -116,6 +116,9 @@ export class ReservationRepository {
   }
 
   async updateStatus(restaurantId: string, id: string, status: ReservationStatus) {
+    const current = await this.findById(restaurantId, id);
+    if (!current) return null;
+
     const data: Record<string, unknown> = { status };
 
     if (status === ReservationStatus.CANCELLED) data.cancelledAt = new Date();
@@ -144,7 +147,12 @@ export class ReservationRepository {
 
     if (data.tableId) {
       await this.prisma.reservationTable.deleteMany({
-        where: { reservationId: id },
+        where: {
+          reservationId: id,
+          reservation: {
+            restaurantId,
+          },
+        },
       });
 
       await this.prisma.reservationTable.create({
