@@ -3,15 +3,29 @@ name: CI - Whatboo Stable Validation
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+
   validate:
+
+    name: Build & Validate
+
     runs-on: ubuntu-latest
 
+    timeout-minutes: 20
+
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
+      - name: Setup PNPM
         uses: pnpm/action-setup@v4
         with:
           version: 11.5.2
@@ -22,14 +36,25 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Display tool versions
+        run: |
+          node --version
+          pnpm --version
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma Client
         run: pnpm --filter api exec prisma generate
 
-      - name: Typecheck backend
+      - name: Backend TypeScript validation
         run: pnpm --filter api exec tsc --noEmit --skipLibCheck
 
-      - name: Build project
+      - name: Build Backend
+        run: pnpm --filter api build
+
+      - name: Build Frontend
+        run: pnpm --filter web build
+
+      - name: Build Monorepo
         run: pnpm build

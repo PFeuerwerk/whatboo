@@ -1,0 +1,24 @@
+# ============================================================================
+# Whatboo - CODEOWNERS
+# ============================================================================
+
+# Default owner for the entire repository
+* @PFeuerwerk
+
+# GitHub configuration
+.github/ @PFeuerwerk
+
+# Infrastructure
+infrastructure/ @PFeuerwerk
+
+# Backend
+apps/api/ @PFeuerwerk
+
+# Frontend
+apps/web/ @PFeuerwerk
+
+# Documentation
+docs/ @PFeuerwerk
+
+# Scripts
+scripts/ @PFeuerwerk
