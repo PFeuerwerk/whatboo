@@ -1,33 +1,22 @@
-export interface RestaurantSettings {
-  id?: string;
-  maxCapacity: number;
-  defaultReservationDuration: number;
-  slotIntervalMinutes: number;
-  bufferTimeMinutes: number;
-  autoConfirm: boolean;
-  allowWaitlist: boolean;
-}
-
-export interface Zone {
-  id: string;
-  name: string;
-  priority: number;
-  active: boolean;
-}
-
-export interface Table {
-  id?: string;
-  name: string;
-  capacity: number;
-  zoneId: string;
-  active: boolean;
-}
-
-export interface Reservation {
-  id: string;
-  customerName: string;
-  pax: number;
-  timeSlot: string;
-  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
-  tableId?: string;
-}
+/**
+ * Compatibilidad temporal para imports antiguos.
+ *
+ * La fuente única de contratos de Fase 1 ahora es restaurant.interfaces.ts,
+ * alineada con Prisma y con las respuestas reales del backend NestJS.
+ */
+export {
+  type RestaurantSettings,
+  type UpdateRestaurantSettingsDto,
+  type RestaurantZone as Zone,
+  type RestaurantTable as Table,
+  type CreateRestaurantTableDto,
+  type UpdateRestaurantTableDto,
+  type Reservation,
+  type ReservationTableAssignment,
+  ReservationStatus,
+  ReservationSource,
+  DayOfWeek,
+  UserRole,
+  RestaurantStatus,
+  WhatsappAccountStatus
+} from './restaurant.interfaces';

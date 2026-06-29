@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ReservationStatus, ReservationSource } from '@prisma/client';
+import { Prisma, ReservationStatus, ReservationSource } from '@prisma/client';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 
 export interface CreateReservationRepositoryInput {
@@ -20,7 +20,7 @@ export interface UpdateReservationRepositoryInput {
   reservationEnd?: Date;
   guestCount?: number;
   notes?: string | null;
-  tableId?: string;
+  tableId?: string | null;
 }
 
 @Injectable()
@@ -84,10 +84,18 @@ export class ReservationRepository {
   }
 
   async create(data: CreateReservationRepositoryInput) {
+    return this.createWithClient(data);
+  }
+
+  async createWithClient(
+    data: CreateReservationRepositoryInput,
+    tx?: Prisma.TransactionClient,
+  ) {
     const reservationDate = new Date(data.reservationStart);
     reservationDate.setHours(0, 0, 0, 0);
+    const client = tx ?? this.prisma;
 
-    return this.prisma.reservation.create({
+    return client.reservation.create({
       data: {
         restaurantId: data.restaurantId,
         customerId: data.customerId,
@@ -136,8 +144,21 @@ export class ReservationRepository {
     });
   }
 
-  async update(restaurantId: string, id: string, data: UpdateReservationRepositoryInput) {
-    const current = await this.findById(restaurantId, id);
+  async update(
+    restaurantId: string,
+    id: string,
+    data: UpdateReservationRepositoryInput,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const client = tx ?? this.prisma;
+    const current = await client.reservation.findFirst({
+      where: { id, restaurantId, deletedAt: null },
+      include: {
+        customer: true,
+        assignedTables: { include: { table: true } },
+      },
+    });
+
     if (!current) return null;
 
     const reservationStart = data.reservationStart ?? current.reservationStart;
@@ -145,8 +166,19 @@ export class ReservationRepository {
     const reservationDate = new Date(reservationStart);
     reservationDate.setHours(0, 0, 0, 0);
 
-    if (data.tableId) {
-      await this.prisma.reservationTable.deleteMany({
+    if (data.tableId !== undefined) {
+      const tableId = data.tableId || null;
+
+      if (tableId) {
+        const table = await client.restaurantTable.findFirst({
+          where: { id: tableId, restaurantId, active: true },
+          select: { id: true },
+        });
+
+        if (!table) return null;
+      }
+
+      await client.reservationTable.deleteMany({
         where: {
           reservationId: id,
           reservation: {
@@ -155,16 +187,18 @@ export class ReservationRepository {
         },
       });
 
-      await this.prisma.reservationTable.create({
-        data: {
-          reservationId: id,
-          tableId: data.tableId,
-          autoAssigned: false,
-        },
-      });
+      if (tableId) {
+        await client.reservationTable.create({
+          data: {
+            reservationId: id,
+            tableId,
+            autoAssigned: false,
+          },
+        });
+      }
     }
 
-    return this.prisma.reservation.update({
+    return client.reservation.update({
       where: { id },
       data: {
         reservationDate,
@@ -186,11 +220,12 @@ export class ReservationRepository {
     reservationStart: Date,
     reservationEnd: Date,
     tableId?: string,
+    tx?: Prisma.TransactionClient,
   ) {
     return this.update(restaurantId, id, {
       reservationStart,
       reservationEnd,
       tableId,
-    });
+    }, tx);
   }
 }

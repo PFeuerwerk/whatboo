@@ -42,4 +42,12 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async releaseLock(key: string): Promise<void> {
     await this.client.del(key);
   }
+
+  async get(key: string): Promise<string | null> {
+    return this.client.get(key);
+  }
+
+  async set(key: string, value: string, ttlSeconds: number): Promise<void> {
+    await this.client.set(key, value, 'EX', ttlSeconds);
+  }
 }

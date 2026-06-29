@@ -1,123 +1,119 @@
-import { Component, OnInit, inject, signal, computed, input } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
+import { Subject, takeUntil } from 'rxjs';
 import { RestaurantConfigService } from '../../../../core/services/restaurant-config.service';
 import { ReservationDashboardService } from '../../../../core/services/reservation-dashboard.service';
 import { ReservationHttpService } from '../../../../core/services/reservation-http.service';
 import { Reservation, ReservationStatus } from '../../../../core/models/restaurant.interfaces';
-import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-reservation-calendar',
   standalone: true,
   imports: [CommonModule, TranslateModule, DragDropModule],
   template: `
-    <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-100">
-      <!-- Encabezado del Calendario Operativo -->
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <section class="calendar-card">
+      <div class="calendar-header">
         <div>
-          <h2 class="text-xl font-bold text-gray-900">{{ 'CALENDAR.DAILY_OCCUPATION' | translate }}</h2>
-          <p class="text-sm text-gray-500">{{ selectedDate() | date:'longDate' }}</p>
+          <h2>{{ 'CALENDAR.DAILY_OCCUPATION' | translate }}</h2>
+          <p>{{ selectedDate() | date:'longDate' }}</p>
         </div>
-        
-        <!-- Indicadores Rápidos de Capacidad Computados -->
-        <div class="flex gap-3 text-xs font-semibold">
-          <div class="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg border border-blue-100">
-            {{ 'CALENDAR.TOTAL_GUESTS' | translate }}: {{ totalGuests() }}
-          </div>
-          <div class="px-3 py-2 bg-green-50 text-green-700 rounded-lg border border-green-100">
-            {{ 'CALENDAR.CONFIRMED' | translate }}: {{ confirmedCount() }}
-          </div>
-          <div class="px-3 py-2 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-100">
-            {{ 'CALENDAR.PENDING' | translate }}: {{ pendingCount() }}
-          </div>
+
+        <div class="calendar-metrics">
+          <span>Total: {{ totalGuests() }} pax</span>
+          <span>Confirmadas: {{ confirmedCount() }}</span>
+          <span>Pendientes: {{ pendingCount() }}</span>
         </div>
       </div>
 
-      <!-- Cuadrícula Horaria Dinámica (Mobile-First Adaptive Grid) -->
-      <div class="overflow-x-auto border border-gray-100 rounded-xl">
-        <div class="min-w-[640px] divide-y divide-gray-100">
-          <!-- Bucle de Franjas Horarias Disponibles (Slot Interval) -->
-          @for (slot of timeSlots(); track slot) {
-            <div cdkDropList [cdkDropListData]="slot" (cdkDropListDropped)="onReservationDropped($event)" class="flex items-center min-h-[72px] transition-colors hover:bg-gray-50/50">
-              <!-- Eje Horario Flotante -->
-              <div class="w-24 text-sm font-bold text-gray-500 p-4 border-r border-gray-100 bg-gray-50/30 text-center select-none">
-                {{ slot }}
-              </div>
-              
-              <!-- Contenedor de Celdas de Reserva Activas -->
-              <div class="flex-1 p-2 flex flex-wrap gap-2 items-center">
-                @for (res of getReservationsForSlot(slot); track res.id) {
-                  <div 
-                    [class]="getReservationClass(res.status)"
-                    class="px-3 py-2 rounded-lg border text-xs shadow-xs max-w-[200px] truncate transition-all cursor-pointer hover:scale-[1.02]" cdkDrag [cdkDragData]="res">
-                    <div class="flex justify-between items-center font-bold mb-0.5">
-                      <span class="truncate pr-1">{{ res.confirmationCode }}</span>
-                      <span class="px-1.5 py-0.5 rounded-sm bg-black/5 text-[10px] font-extrabold">Pax: {{ res.guestCount }}</span>
-                    </div>
-                    <div class="text-gray-600 dark:text-inherit truncate font-medium">
-                      {{ res.notes || ('CALENDAR.NO_NOTES' | translate) }}
-                    </div>
-                  </div>
-                } @empty {
-                  <span class="text-xs text-gray-300 italic pl-2 select-none">{{ 'CALENDAR.SLOT_AVAILABLE' | translate }}</span>
-                }
-              </div>
+      <div class="calendar-grid" cdkDropListGroup>
+        @for (slot of timeSlots(); track slot) {
+          <div
+            class="calendar-row"
+            cdkDropList
+            [cdkDropListData]="slot"
+            (cdkDropListDropped)="onReservationDropped($event)">
+            <div class="time-cell">{{ slot }}</div>
+
+            <div class="slot-cell">
+              @for (res of getReservationsForSlot(slot); track res.id) {
+                <article
+                  class="reservation-chip"
+                  [class]="getReservationClass(res.status)"
+                  cdkDrag
+                  [cdkDragData]="res">
+                  <strong>{{ displayCustomerName(res) }}</strong>
+                  <span>{{ res.guestCount }} pax · {{ res.confirmationCode || 'Sin código' }}</span>
+                </article>
+              } @empty {
+                <span class="empty-slot">Disponible</span>
+              }
             </div>
-          }
-        </div>
+          </div>
+        }
       </div>
-    </div>
+    </section>
   `,
-  styles: []
+  styles: [`
+    .calendar-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1rem; }
+    .calendar-header { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }
+    .calendar-header h2 { margin: 0; font-size: 1.1rem; font-weight: 800; color: #0f172a; }
+    .calendar-header p { margin: .25rem 0 0; font-size: .85rem; color: #64748b; }
+    .calendar-metrics { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
+    .calendar-metrics span { font-size: .75rem; font-weight: 700; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: .5rem; padding: .45rem .65rem; color: #334155; }
+    .calendar-grid { overflow-x: auto; border: 1px solid #f1f5f9; border-radius: .85rem; }
+    .calendar-row { min-width: 620px; display: grid; grid-template-columns: 5.5rem 1fr; border-bottom: 1px solid #f1f5f9; min-height: 4.25rem; }
+    .calendar-row:last-child { border-bottom: 0; }
+    .time-cell { display: flex; align-items: center; justify-content: center; background: #f8fafc; border-right: 1px solid #f1f5f9; font-weight: 800; color: #2563eb; font-size: .8rem; }
+    .slot-cell { display: flex; align-items: center; gap: .5rem; padding: .6rem; flex-wrap: wrap; }
+    .reservation-chip { border: 1px solid #dbeafe; border-radius: .75rem; padding: .5rem .65rem; cursor: grab; min-width: 11rem; display: flex; flex-direction: column; gap: .15rem; font-size: .75rem; }
+    .reservation-chip strong { color: inherit; }
+    .reservation-chip span { opacity: .78; }
+    .empty-slot { color: #cbd5e1; font-size: .75rem; font-style: italic; }
+    .status-confirmed { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+    .status-pending { background: #fefce8; border-color: #fde68a; color: #854d0e; }
+    .status-cancelled { background: #fef2f2; border-color: #fecaca; color: #991b1b; text-decoration: line-through; }
+    .status-completed { background: #f1f5f9; border-color: #cbd5e1; color: #475569; }
+    .status-default { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+  `]
 })
-export class CalendarComponent implements OnInit {
+export class CalendarComponent implements OnInit, OnDestroy {
   private readonly configService = inject(RestaurantConfigService);
   private readonly socketService = inject(ReservationDashboardService);
   private readonly reservationHttpService = inject(ReservationHttpService);
+  private readonly destroy$ = new Subject<void>();
 
-  // Inputs Reactivos desde el Padre (Reservations Shell Component)
-  public readonly restaurantId = input.required<string>();
   public readonly serverReservations = input<Reservation[]>([]);
+  public readonly selectedDate = input<Date>(new Date());
+  private readonly localReservations = signal<Reservation[]>([]);
 
-  // Estados de Control Locales mediante Señales
-  public readonly selectedDate = signal<Date>(new Date());
-  private readonly _localReservations = signal<Reservation[]>([]);
+  constructor() {
+    effect(() => {
+      this.localReservations.set(this.serverReservations());
+    });
+  }
 
-  // ==========================================
-  // METRICAS REACTIVAS COMPUTADAS EN MEMORIA
-  // ==========================================
-  public readonly allReservations = computed(() => {
-    const serverData = this.serverReservations();
-    const localData = this._localReservations();
-    // Mezcla determinista priorizando eventos push asíncronos de WhatsApp
-    const combined = [...localData, ...serverData.filter(s => !localData.some(l => l.id === s.id))];
-    return combined;
-  });
+  public readonly allReservations = computed(() => this.localReservations());
 
-  public readonly totalGuests = computed(() => 
-    this.allReservations().reduce((acc, res) => acc + res.guestCount, 0)
+  public readonly totalGuests = computed(() =>
+    this.allReservations().reduce((acc, res) => acc + Number(res.guestCount || 0), 0)
   );
 
-  public readonly confirmedCount = computed(() => 
+  public readonly confirmedCount = computed(() =>
     this.allReservations().filter(res => res.status === ReservationStatus.CONFIRMED).length
   );
 
-  public readonly pendingCount = computed(() => 
+  public readonly pendingCount = computed(() =>
     this.allReservations().filter(res => res.status === ReservationStatus.PENDING).length
   );
 
-  // Generador Dinámico de Ejes Horarios en función de los parámetros comerciales del Tenant
   public readonly timeSlots = computed(() => {
-    const restaurant = this.configService.currentRestaurant();
-    if (!restaurant) return ['12:00', '13:00', '14:00', '15:00', '20:00', '21:00', '22:00', '23:00'];
-    
+    const settings = this.configService.currentRestaurant();
+    const interval = settings?.slotIntervalMinutes || 30;
     const slots: string[] = [];
-    const interval = restaurant.slotIntervalMinutes || 30;
-    
-    // Configuración base fija de simulación comercial expandible por OpeningHours
-    let currentMinutes = 12 * 60; // Inicia a las 12:00 PM
-    const endMinutes = 23 * 60 + 30; // Finaliza a las 11:30 PM
+    let currentMinutes = 12 * 60;
+    const endMinutes = 23 * 60 + 30;
 
     while (currentMinutes <= endMinutes) {
       const hours = Math.floor(currentMinutes / 60).toString().padStart(2, '0');
@@ -125,72 +121,79 @@ export class CalendarComponent implements OnInit {
       slots.push(`${hours}:${mins}`);
       currentMinutes += interval;
     }
+
     return slots;
   });
 
   public ngOnInit(): void {
-    // Escucha en tiempo real de inserciones originadas desde la API de Meta
-    this.socketService.reservationCreated$.subscribe((newRes: Reservation) => {
-      this._localReservations.update(prev => [newRes, ...prev]);
-    });
+    this.socketService.reservationCreated$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(reservation => this.upsertReservation(reservation));
 
-    // Escucha en tiempo real de mutaciones de estado
-    this.socketService.reservationUpdated$.subscribe((updatedRes: Reservation) => {
-      this._localReservations.update(prev => 
-        prev.map(res => res.id === updatedRes.id ? updatedRes : res)
-      );
-    });
+    this.socketService.reservationUpdated$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(reservation => this.upsertReservation(reservation));
   }
 
-  // Mapeador Léxico de Celdas Horarias
+  public ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   public getReservationsForSlot(slot: string): Reservation[] {
-    return this.allReservations().filter(res => {
-      const startTime = new Date(res.reservationStart);
-      const slotTimeStr = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}`;
-      return slotTimeStr === slot;
-    });
+    return this.allReservations().filter(res => this.toSlot(res.reservationStart) === slot);
   }
 
-  // Estilos de Alta Visibilidad para Maîtres (Accesibilidad / Contraste)
   public onReservationDropped(event: CdkDragDrop<string>): void {
     const reservation = event.item.data as Reservation;
     const targetSlot = event.container.data;
-    
-    const start = new Date(reservation.reservationStart);
-    const [hours, minutes] = targetSlot.split(':');
-    start.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-    const updatedIsoString = start.toISOString();
-    
-    // 1. Mutación visual inmediata (Optimistic UI Update)
-    this._localReservations.update(prev => 
-      prev.map(r => r.id === reservation.id ? { ...r, reservationStart: updatedIsoString } : r)
-    );
-    
-    // 2. Persistencia atómica en Base de Datos + Trigger asíncrono de WhatsApp
-    this.reservationHttpService.updateReservation(reservation.id, {
-      reservationStart: updatedIsoString
-    }).subscribe({
-      error: () => {
-        // Reversión del estado local en caso de fallo crítico de red
-        this._localReservations.update(prev => 
-          prev.map(r => r.id === reservation.id ? { ...r, reservationStart: reservation.reservationStart } : r)
-        );
-      }
+    const previousStart = reservation.reservationStart;
+    const nextStart = this.withSlot(previousStart, targetSlot);
+
+    this.upsertReservation({ ...reservation, reservationStart: nextStart });
+
+    this.reservationHttpService.updateReservation(reservation.id, { reservationStart: nextStart }).subscribe({
+      next: updated => this.upsertReservation(updated),
+      error: () => this.upsertReservation({ ...reservation, reservationStart: previousStart })
     });
+  }
+
+  public displayCustomerName(reservation: Reservation): string {
+    const first = reservation.customer?.firstName ?? '';
+    const last = reservation.customer?.lastName ?? '';
+    const fullName = `${first} ${last}`.trim();
+    return fullName || reservation.customer?.phone || reservation.notes || 'Cliente';
   }
 
   public getReservationClass(status: ReservationStatus): string {
     switch (status) {
-      case ReservationStatus.CONFIRMED:
-        return 'bg-green-50 border-green-200 text-green-800';
-      case ReservationStatus.PENDING:
-        return 'bg-yellow-50 border-yellow-200 text-yellow-800';
-      case ReservationStatus.CANCELLED:
-        return 'bg-red-50 border-red-200 text-red-800 line-through';
-      case ReservationStatus.COMPLETED:
-        return 'bg-gray-100 border-gray-300 text-gray-700';
-      default:
-        return 'bg-blue-50 border-blue-200 text-blue-800';
+      case ReservationStatus.CONFIRMED: return 'status-confirmed';
+      case ReservationStatus.PENDING: return 'status-pending';
+      case ReservationStatus.CANCELLED: return 'status-cancelled';
+      case ReservationStatus.COMPLETED: return 'status-completed';
+      default: return 'status-default';
     }
+  }
+
+  private upsertReservation(reservation: Reservation): void {
+    this.localReservations.update(current => {
+      const index = current.findIndex(item => item.id === reservation.id);
+      if (index === -1) return [reservation, ...current];
+      const copy = [...current];
+      copy[index] = reservation;
+      return copy;
+    });
+  }
+
+  private toSlot(date: string | Date): string {
+    const parsed = new Date(date);
+    return `${parsed.getHours().toString().padStart(2, '0')}:${parsed.getMinutes().toString().padStart(2, '0')}`;
+  }
+
+  private withSlot(date: string | Date, slot: string): string {
+    const parsed = new Date(date);
+    const [hours, minutes] = slot.split(':').map(Number);
+    parsed.setHours(hours, minutes, 0, 0);
+    return parsed.toISOString();
   }
 }

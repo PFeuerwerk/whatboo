@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { BaseRepository } from '../../../../infrastructure/database/repositories/base.repository';
-import { Restaurant } from '@prisma/client';
+import { Prisma, Restaurant } from '@prisma/client';
 
 @Injectable()
 export class RestaurantRepository extends BaseRepository {
@@ -73,7 +73,7 @@ export class RestaurantRepository extends BaseRepository {
    */
   async executeConcurrentBookingTx<T>(
     restaurantId: string, 
-    callback: (tx: any) => Promise<T>
+    callback: (tx: Prisma.TransactionClient) => Promise<T>
   ): Promise<T> {
     return this.prisma.$transaction(async (tx) => {
       // 1. Bloqueo Pesimista FOR UPDATE a nivel de fila en PostgreSQL para congelar el slot del inquilino

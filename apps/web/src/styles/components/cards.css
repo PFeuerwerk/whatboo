@@ -1,0 +1,82 @@
+.panel-card,
+.form-card,
+.table-card,
+.metric-card,
+.chart-card,
+.capacity-card,
+.map-canvas {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.panel-card,
+.form-card {
+  border-radius: var(--radius-2xl);
+  padding: var(--panel-padding);
+}
+
+.table-card,
+.chart-card,
+.map-canvas {
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+}
+
+.metric-card,
+.capacity-card {
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+}
+
+.header-block {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-5);
+  margin-bottom: var(--space-8);
+}
+
+.title-main {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-extrabold);
+  line-height: var(--leading-tight);
+}
+
+.subtitle-main {
+  margin: 0.35rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: var(--font-medium);
+}
+
+.section-title,
+.metric-label,
+.capacity-label {
+  color: var(--color-text-subtle);
+  font-size: var(--text-sm);
+  font-weight: var(--font-extrabold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+}
+
+.section-title {
+  margin: 0 0 var(--space-5);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.metric-value {
+  margin-top: var(--space-1);
+  color: var(--color-text);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-extrabold);
+}
+
+.empty-state {
+  padding: var(--space-16) var(--space-8);
+  text-align: center;
+  color: var(--color-text-subtle);
+  font-size: 0.85rem;
+  font-weight: var(--font-semibold);
+}

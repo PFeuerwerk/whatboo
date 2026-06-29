@@ -12,7 +12,7 @@ async function bootstrap() {
     origin: ['http://localhost:4200', 'http://127.0.0.1:4200'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-Tenant-Slug'],
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-Tenant-Slug', 'X-Tenant-ID'],
   });
 
   // 2. Prefijo Global de Endpoints Transaccionales

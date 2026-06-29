@@ -1,0 +1,64 @@
+.status-badge,
+.role-badge,
+.vip-tag,
+.allergy-pill,
+.tag-vip,
+.tag-regular {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0.2rem 0.5rem;
+  font-size: 0.675rem;
+  font-weight: var(--font-extrabold);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.badge-confirmed,
+.role-manager,
+.tag-regular {
+  background-color: var(--color-success-soft);
+  border-color: var(--color-success-border);
+  color: var(--color-success-text);
+}
+
+.badge-pending {
+  background-color: var(--color-warning-soft);
+  border-color: var(--color-warning-border);
+  color: var(--color-warning-text);
+}
+
+.badge-cancelled {
+  background-color: var(--color-danger-soft);
+  border-color: var(--color-danger-border);
+  color: var(--color-danger-text);
+}
+
+.role-owner,
+.status-default {
+  background-color: var(--color-primary-soft);
+  border-color: var(--color-primary-border);
+  color: var(--color-primary-text);
+}
+
+.role-staff,
+.tag-vip {
+  background-color: var(--color-vip-soft);
+  border-color: var(--color-vip-border);
+  color: var(--color-vip-text);
+}
+
+.role-maitre {
+  background-color: #f3e8ff;
+  border-color: #e9d5ff;
+  color: #6b21a8;
+}
+
+.allergy-pill {
+  background-color: var(--color-danger-soft);
+  border-color: #fee2e2;
+  color: var(--color-danger-text);
+  margin-right: var(--space-1);
+}

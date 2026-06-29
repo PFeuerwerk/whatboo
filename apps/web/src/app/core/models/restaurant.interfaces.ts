@@ -1,6 +1,8 @@
 // ============================================================================
-// ENUMS TRANSACCIONALES DEL DOMINIO (SINCRO CONFIGURACIÓN / COMPILACIÓN PRISMA)
+// CONTRATOS TYPESCRIPT ALINEADOS CON PRISMA / NESTJS / POSTGRESQL
+// Fase 1-3: Infraestructura de Datos + Gestión de Planta Multi-Tenant
 // ============================================================================
+
 export enum RestaurantStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
@@ -47,21 +49,25 @@ export enum WhatsappAccountStatus {
   SUSPENDED = 'SUSPENDED'
 }
 
+export type IsoDateString = string;
+export type DateLike = Date | IsoDateString;
+
 // ============================================================================
-// CONTRATOS E INTERFACES DE ENTIDADES DEL MAÎTRE DASHBOARD (MULTI-TENANT REAL)
+// ENTIDADES PRINCIPALES
 // ============================================================================
+
 export interface Restaurant {
   id: string;
-  slug: string;
+  slug?: string;
   name: string;
-  legalName: string | null;
-  taxId: string | null;
-  email: string | null;
-  phone: string | null;
-  website: string | null;
-  addressLine1: string | null;
-  city: string | null;
-  country: string | null;
+  legalName?: string | null;
+  taxId?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  addressLine1?: string | null;
+  city?: string | null;
+  country?: string | null;
   timezone: string;
   currency: string;
   locale: string;
@@ -71,26 +77,121 @@ export interface Restaurant {
   maxCapacity: number | null;
   allowWaitlist: boolean;
   autoConfirm: boolean;
-  status: RestaurantStatus;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  deletedAt: Date | string | null;
-  
+  status?: RestaurantStatus;
+  createdAt?: DateLike;
+  updatedAt?: DateLike;
+  deletedAt?: DateLike | null;
+
   zones?: RestaurantZone[];
   tables?: RestaurantTable[];
   reservations?: Reservation[];
   openingHours?: OpeningHour[];
 }
 
+/** Respuesta real de GET /api/v1/restaurants/settings. */
+export interface RestaurantSettings {
+  id: string;
+  name: string;
+  timezone: string;
+  currency: string;
+  locale: string;
+  maxCapacity: number | null;
+  defaultReservationDuration: number;
+  slotIntervalMinutes: number;
+  bufferTimeMinutes: number;
+  autoConfirm: boolean;
+  allowWaitlist: boolean;
+  closingHourLimit: string;
+  openingHours: OpeningHour[];
+  capacityRule: CapacityRule;
+}
+
+export type UpdateRestaurantSettingsDto = Partial<Pick<
+  RestaurantSettings,
+  | 'name'
+  | 'timezone'
+  | 'currency'
+  | 'locale'
+  | 'maxCapacity'
+  | 'defaultReservationDuration'
+  | 'slotIntervalMinutes'
+  | 'bufferTimeMinutes'
+  | 'autoConfirm'
+  | 'allowWaitlist'
+  | 'closingHourLimit'
+>> & {
+  openingHours?: UpdateOpeningHourDto[];
+  capacityRule?: UpdateCapacityRuleDto;
+};
+
+
+export interface CapacityRule {
+  id: string | null;
+  restaurantId: string;
+  maxGuestsPerReservation: number | null;
+  maxReservationsPerSlot: number | null;
+  slotDurationMinutes: number;
+  bufferMinutes: number;
+  maxDailyCapacity: number | null;
+  overbookingAllowed: boolean;
+  active: boolean;
+  createdAt?: DateLike;
+  updatedAt?: DateLike;
+  deletedAt?: DateLike | null;
+}
+
+export type UpdateCapacityRuleDto = Partial<Pick<
+  CapacityRule,
+  | 'maxGuestsPerReservation'
+  | 'maxReservationsPerSlot'
+  | 'slotDurationMinutes'
+  | 'bufferMinutes'
+  | 'maxDailyCapacity'
+  | 'overbookingAllowed'
+  | 'active'
+>>;
+
+export interface UpdateOpeningHourDto {
+  dayOfWeek: DayOfWeek;
+  openTime: string;
+  closeTime: string;
+  isClosed: boolean;
+  active?: boolean;
+}
+
 export interface RestaurantZone {
   id: string;
   restaurantId: string;
   name: string;
-  priority: number; // Permite priorizar qué zonas llenar primero (ej: 1 = Salón, 2 = Terraza)
+  priority: number;
   active: boolean;
-  createdAt: Date | string;
-  updatedAt: Date | string;
+  createdAt: DateLike;
+  updatedAt: DateLike;
   tables?: RestaurantTable[];
+}
+
+export interface CreateRestaurantZoneDto {
+  name: string;
+  priority?: number;
+}
+
+export interface UpdateRestaurantZoneDto {
+  name?: string;
+  priority?: number;
+  active?: boolean;
+}
+
+export interface CreateRestaurantTableDto {
+  name: string;
+  capacity: number;
+  zoneId?: string | null;
+}
+
+export interface UpdateRestaurantTableDto {
+  name?: string;
+  capacity?: number;
+  zoneId?: string | null;
+  active?: boolean;
 }
 
 export interface RestaurantTable {
@@ -100,44 +201,96 @@ export interface RestaurantTable {
   capacity: number;
   zoneId: string | null;
   active: boolean;
-  createdAt: Date | string;
-  updatedAt: Date | string;
+  createdAt: DateLike;
+  updatedAt: DateLike;
   zone?: RestaurantZone | null;
+}
+
+export interface Customer {
+  id: string;
+  restaurantId: string;
+  firstName: string | null;
+  lastName: string | null;
+  phone: string;
+  email: string | null;
+  preferredLanguage: string;
+  notes: string | null;
+  totalReservations: number;
+  lastReservationAt: DateLike | null;
+  active: boolean;
+  createdAt: DateLike;
+  updatedAt: DateLike;
+}
+
+/** Relación real Prisma ReservationTable devuelta por backend. */
+export interface ReservationTableAssignment {
+  reservationId: string;
+  tableId: string;
+  assignedAt: DateLike;
+  autoAssigned: boolean;
+  table: RestaurantTable;
 }
 
 export interface Reservation {
   id: string;
   restaurantId: string;
   customerId: string;
-  reservationDate: Date | string;
-  reservationStart: Date | string;
-  reservationEnd: Date | string;
+  reservationDate: DateLike;
+  reservationStart: DateLike;
+  reservationEnd: DateLike;
   guestCount: number;
   status: ReservationStatus;
   source: ReservationSource;
   notes: string | null;
-  confirmationCode: string | null; // Código alfanumérico único estilo aerolínea (PNR) para confirmaciones automáticas
-  confirmedAt: Date | string | null;
-  cancelledAt: Date | string | null;
-  completedAt: Date | string | null;
-  noShowAt: Date | string | null;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  deletedAt: Date | string | null;
-  
-  customer?: any; 
-  assignedTables?: RestaurantTable[];
+  confirmationCode: string | null;
+  confirmedAt: DateLike | null;
+  cancelledAt: DateLike | null;
+  completedAt: DateLike | null;
+  noShowAt: DateLike | null;
+  createdAt: DateLike;
+  updatedAt: DateLike;
+  deletedAt: DateLike | null;
+
+  customer?: Customer;
+  assignedTables?: ReservationTableAssignment[];
 }
 
 export interface OpeningHour {
   id: string;
   restaurantId: string;
   dayOfWeek: DayOfWeek;
-  openTime: string; // Formato estricto "HH:MM"
-  closeTime: string; // Formato estricto "HH:MM"
+  openTime: string;
+  closeTime: string;
   isClosed: boolean;
   active: boolean;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-  deletedAt: Date | string | null;
+  createdAt: DateLike;
+  updatedAt: DateLike;
+  deletedAt: DateLike | null;
+}
+
+
+export interface StaffUser {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  role: UserRole;
+  isActive: boolean;
+  lastLoginAt?: DateLike | null;
+  createdAt?: DateLike;
+}
+
+export interface CreateStaffUserDto {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole.OWNER | UserRole.MANAGER | UserRole.STAFF;
+  password: string;
+}
+
+export interface UpdateStaffUserDto {
+  firstName?: string;
+  lastName?: string;
+  role?: UserRole.OWNER | UserRole.MANAGER | UserRole.STAFF;
+  isActive?: boolean;
 }

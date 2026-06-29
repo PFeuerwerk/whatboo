@@ -1,6 +1,7 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { CommonModule, formatDate } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
 export interface HourlyStat {
@@ -9,56 +10,68 @@ export interface HourlyStat {
   percentage: number;
 }
 
+export interface DailyAnalyticsReport {
+  date: string;
+  totalReservations: number;
+  totalPax: number;
+  attendanceRate: number;
+  hourlyData: HourlyStat[];
+}
+
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './reports.component.html',
   styleUrls: ['./reports.component.css']
 })
 export class ReportsComponent implements OnInit {
   private readonly http = inject(HttpClient);
 
+  public readonly selectedDate = signal<string>(formatDate(new Date(), 'yyyy-MM-dd', 'en-US'));
+  public readonly isLoading = signal<boolean>(false);
+  public readonly errorMessage = signal<string | null>(null);
   public readonly totalReservations = signal<number>(0);
   public readonly totalPax = signal<number>(0);
   public readonly attendanceRate = signal<number>(0);
   public readonly hourlyData = signal<HourlyStat[]>([]);
+
+  public readonly hasHourlyData = computed(() => this.hourlyData().length > 0);
 
   public ngOnInit(): void {
     this.loadAnalyticsReport();
   }
 
   public loadAnalyticsReport(): void {
-    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
-    
-    this.http.get<any>(`${environment.apiUrl}/restaurants/${slug}/analytics`)
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+
+    const params = new HttpParams().set('date', this.selectedDate());
+
+    this.http.get<DailyAnalyticsReport>(`${environment.apiUrl}/restaurants/analytics`, { params })
       .subscribe({
-        next: (res) => {
-          if (res) {
-            this.totalReservations.set(res.totalReservations || 6);
-            this.totalPax.set(res.totalPax || 24);
-            this.attendanceRate.set(res.attendanceRate || 94);
-            this.hourlyData.set(res.hourlyData || [
-              { time: '13:00', count: 2, percentage: 40 },
-              { time: '14:00', count: 1, percentage: 20 },
-              { time: '21:00', count: 2, percentage: 40 },
-              { time: '22:00', count: 1, percentage: 20 }
-            ]);
-          }
+        next: (report) => {
+          this.totalReservations.set(report.totalReservations ?? 0);
+          this.totalPax.set(report.totalPax ?? 0);
+          this.attendanceRate.set(report.attendanceRate ?? 0);
+          this.hourlyData.set(report.hourlyData ?? []);
+          this.isLoading.set(false);
         },
-        error: () => {
-          // Fallback analítico robusto sincronizado en caso de latencia de red local
-          this.totalReservations.set(6);
-          this.totalPax.set(24);
-          this.attendanceRate.set(94);
-          this.hourlyData.set([
-            { time: '13:00', count: 2, percentage: 40 },
-            { time: '14:00', count: 1, percentage: 20 },
-            { time: '21:00', count: 2, percentage: 40 },
-            { time: '22:00', count: 1, percentage: 20 }
-          ]);
+        error: (error: unknown) => {
+          console.error('Error al cargar reporte de ocupación:', error);
+          this.totalReservations.set(0);
+          this.totalPax.set(0);
+          this.attendanceRate.set(0);
+          this.hourlyData.set([]);
+          this.errorMessage.set('No se pudo cargar el reporte desde la API.');
+          this.isLoading.set(false);
         }
       });
+  }
+
+  public onDateChange(date: string): void {
+    this.selectedDate.set(date);
+    this.loadAnalyticsReport();
   }
 
   public onPrintReport(): void {

@@ -2,16 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { UserRole } from '../models/restaurant.interfaces';
-
-export interface StaffUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  active: boolean;
-}
+import { CreateStaffUserDto, StaffUser, UpdateStaffUserDto, UserRole } from '../models/restaurant.interfaces';
 
 @Injectable({
   providedIn: 'root'
@@ -24,15 +15,19 @@ export class UserHttpService {
     return this.http.get<StaffUser[]>(this.baseUrl);
   }
 
-  public createStaff(user: Partial<StaffUser>): Observable<StaffUser> {
+  public createStaff(user: CreateStaffUserDto): Observable<StaffUser> {
     return this.http.post<StaffUser>(this.baseUrl, user);
   }
 
-  public updateStaffRole(userId: string, role: UserRole): Observable<StaffUser> {
-    return this.http.patch<StaffUser>(`${this.baseUrl}/${userId}/role`, { role });
+  public updateStaffRole(userId: string, role: UserRole.MANAGER | UserRole.STAFF): Observable<StaffUser> {
+    return this.http.patch<StaffUser>(`${this.baseUrl}/${userId}`, { role });
   }
 
-  public toggleStaffStatus(userId: string, active: boolean): Observable<void> {
-    return this.http.patch<void>(`${this.baseUrl}/${userId}/status`, { active });
+  public toggleStaffStatus(userId: string, isActive: boolean): Observable<StaffUser> {
+    return this.http.patch<StaffUser>(`${this.baseUrl}/${userId}`, { isActive });
+  }
+
+  public updateStaff(userId: string, data: UpdateStaffUserDto): Observable<StaffUser> {
+    return this.http.patch<StaffUser>(`${this.baseUrl}/${userId}`, data);
   }
 }

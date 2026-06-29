@@ -1,150 +1,139 @@
-@import url('https://googleapis.com');
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--color-bg-app);
+}
 
 .tables-wrapper {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  box-sizing: border-box;
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  max-width: 80rem;
 }
 
-.header-block {
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 1.25rem;
-  margin-bottom: 2rem;
+.header-block,
+.zone-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
 }
 
-.title-main { font-size: 1.75rem; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.03em; }
-.subtitle-main { font-size: 0.85rem; color: #64748b; margin: 0.35rem 0 0 0; font-weight: 500; }
-
-.split-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.75rem;
+.capacity-card {
+  min-width: 8rem;
+  text-align: center;
 }
 
-@media (min-width: 1024px) {
-  .split-grid { grid-template-columns: 22rem 1fr; }
+.capacity-card strong {
+  display: block;
+  color: var(--color-text);
+  font-size: 1.6rem;
+  line-height: 1;
 }
 
-.form-card {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 1.25rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-  height: fit-content;
+@media (min-width: 1100px) {
+  .split-grid {
+    grid-template-columns: 24rem minmax(0, 1fr);
+  }
 }
 
-.section-title {
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 0.75rem;
-  margin: 0 0 1.25rem 0;
-}
-
-.input-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.25rem; }
-.input-label { font-size: 0.725rem; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.025em; }
-
-.form-input, .form-select {
-  width: 100%;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  padding: 0.8rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #0f172a;
-  outline: none;
-  box-sizing: border-box;
-  font-family: 'Plus Jakarta Sans', sans-serif !important;
-  transition: all 0.2s ease;
-}
-
-.form-input:focus, .form-select:focus {
-  border-color: #2563eb;
-  background-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
-}
-
-.submit-btn {
-  width: 100%;
-  background-color: #2563eb;
-  color: #ffffff;
-  font-weight: 700;
-  padding: 0.875rem 1rem;
-  border-radius: 0.75rem;
-  font-size: 0.775rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.submit-btn:hover { background-color: #1d4ed8; }
-
-/* CANVAS GRID DE PLANTA COMPACTO */
-.map-canvas {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 1.25rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-}
-
+.controls-stack,
 .zones-container {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: var(--space-4);
+}
+
+.form-card,
+.map-canvas {
+  padding: 1.35rem;
+}
+
+.submit-btn.secondary {
+  background-color: var(--color-surface-inverse);
+}
+
+.ghost-btn {
+  width: 100%;
+  margin-top: 0.65rem;
 }
 
 .zone-block {
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  padding: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-bg-app);
+  padding: var(--space-4);
 }
 
 .zone-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 0.5rem;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
 }
 
-.zone-title { font-size: 0.95rem; font-weight: 800; color: #0f172a; margin: 0; }
-.zone-meta { font-size: 0.725rem; font-weight: 700; color: #2563eb; background-color: rgba(37, 99, 235, 0.08); padding: 0.2rem 0.5rem; border-radius: 0.5rem; }
+.zone-title {
+  margin: 0 0 var(--space-1);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.zone-meta {
+  width: fit-content;
+  border-radius: var(--radius-md);
+  background-color: rgba(37, 99, 235, 0.08);
+  color: var(--color-primary);
+  padding: 0.2rem 0.5rem;
+  font-size: 0.725rem;
+  font-weight: var(--font-extrabold);
+}
+
+.zone-actions,
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
 
 .tables-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(8.25rem, 1fr));
+  gap: var(--space-3);
 }
 
 .table-node {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 0.85rem;
-  padding: 1rem;
+  background-color: var(--color-surface);
+  padding: 0.9rem;
   text-align: center;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
-  cursor: grab;
-  transition: all 0.2s ease;
+  box-shadow: var(--shadow-xs);
 }
 
-.table-node:hover {
-  transform: translateY(-2px);
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+.table-icon {
+  margin-bottom: var(--space-1);
+  font-size: 1.25rem;
 }
 
-.table-icon { font-size: 1.25rem; margin-bottom: 0.25rem; }
-.table-name { font-size: 0.8rem; font-weight: 800; color: #1e293b; margin: 0; }
-.table-pax { font-size: 0.7rem; font-weight: 600; color: #64748b; margin-top: 0.15rem; }
+.table-name {
+  margin: 0;
+  color: #1e293b;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.table-pax {
+  margin: 0.2rem 0 0.65rem;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  font-weight: var(--font-bold);
+}
+
+@media (max-width: 720px) {
+  .header-block,
+  .zone-header {
+    flex-direction: column;
+  }
+
+  .capacity-card {
+    width: 100%;
+  }
+}

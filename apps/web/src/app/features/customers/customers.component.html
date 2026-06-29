@@ -5,6 +5,16 @@
     <p class="subtitle-main">Audite la libreta de contactos recurrentes, identifique preferencias y gestione notas críticas de alérgenos.</p>
   </div>
 
+  <div class="table-card" style="margin-bottom: 1rem;">
+    <input
+      type="search"
+      class="form-input"
+      placeholder="Buscar por nombre, teléfono o email"
+      [value]="searchTerm()"
+      (input)="onSearch($any($event.target).value)"
+      aria-label="Buscar clientes">
+  </div>
+
   <!-- GRILLA PRINCIPAL DE EXPEDIENTES CRM -->
   <div class="table-card">
     <table class="b2b-table">

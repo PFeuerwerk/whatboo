@@ -1,0 +1,33 @@
+.app-page,
+.dashboard-wrapper,
+.settings-wrapper,
+.staff-wrapper,
+.crm-wrapper,
+.admin-it-wrapper,
+.integrations-wrapper,
+.reports-wrapper,
+.tables-wrapper {
+  width: 100%;
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: var(--page-padding);
+}
+
+.app-page-narrow,
+.panel-card {
+  max-width: 48rem;
+}
+
+@media (max-width: 768px) {
+  .app-page,
+  .dashboard-wrapper,
+  .settings-wrapper,
+  .staff-wrapper,
+  .crm-wrapper,
+  .admin-it-wrapper,
+  .integrations-wrapper,
+  .reports-wrapper,
+  .tables-wrapper {
+    padding: var(--page-padding-mobile);
+  }
+}

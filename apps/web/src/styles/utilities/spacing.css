@@ -1,0 +1,6 @@
+.mb-5 { margin-bottom: var(--space-5); }
+.mb-6 { margin-bottom: var(--space-6); }
+.mt-4 { margin-top: var(--space-4); }
+.p-8 { padding: var(--space-8); }
+.pb-4 { padding-bottom: var(--space-4); }
+.px-2 { padding-left: var(--space-2); padding-right: var(--space-2); }

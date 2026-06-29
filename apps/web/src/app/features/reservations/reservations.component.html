@@ -1,6 +1,4 @@
 <div class="dashboard-wrapper animate-fade-in">
-  
-  <!-- CABECERA CON BOTÓN MAESTRO DE CONTROL -->
   <div class="header-block flex justify-between items-center border-b border-slate-200/80 pb-4 mb-5">
     <div>
       <h1 class="title-main">{{ 'RESERVATIONS.TITLE' | translate }}</h1>
@@ -11,40 +9,51 @@
     </button>
   </div>
 
-  <!-- TARJETAS ANALÍTICAS FLASH -->
   <div class="metrics-grid">
     <div class="metric-card">
-      <div class="metric-label">Cubiertos Asignados</div>
-      <div class="metric-value">12 <span class="text-xs text-slate-400 font-bold">Pax</span></div>
+      <div class="metric-label">Cubiertos asignados</div>
+      <div class="metric-value">{{ totalGuests() }} <span class="text-xs text-slate-400 font-bold">Pax</span></div>
     </div>
     <div class="metric-card">
-      <div class="metric-label">Turnos en Espera</div>
-      <div class="metric-value">0</div>
+      <div class="metric-label">Turnos pendientes</div>
+      <div class="metric-value">{{ waitListCount() }}</div>
     </div>
   </div>
 
-  <!-- SECCIÓN INTEGRADA DE ALTA FIDELIDAD: REJILLA INTERACTIVA DRAG & DROP -->
   <div class="mb-6">
-    <app-reservations-grid 
-      [tables]="tables()" 
+    <app-reservation-calendar
+      [selectedDate]="selectedDate()"
+      [serverReservations]="reservations()">
+    </app-reservation-calendar>
+  </div>
+
+  <div class="mb-6">
+    <app-reservations-grid
+      [tables]="tables()"
       [reservations]="reservations()"
-      (onGridUpdated)="loadAgendaDiaria()">
+      (onGridUpdated)="onGridUpdated($event)">
     </app-reservations-grid>
   </div>
 
-  <!-- CONTROL DE FILTRADO INTERACTIVO -->
   <div class="filter-bar">
     <button (click)="setFilter('ALL')" [class.filter-btn-active]="activeFilter() === 'ALL'" class="filter-btn">
       {{ 'STATUS.ALL' | translate }}
     </button>
-    <button (click)="setFilter('CONFIRMED')" [class.filter-btn-active]="activeFilter() === 'CONFIRMED'" class="filter-btn">
+    <button (click)="setFilter(ReservationStatus.CONFIRMED)" [class.filter-btn-active]="activeFilter() === ReservationStatus.CONFIRMED" class="filter-btn">
       {{ 'RESERVATIONS.STATUS.CONFIRMED' | translate }}
+    </button>
+    <button (click)="setFilter(ReservationStatus.PENDING)" [class.filter-btn-active]="activeFilter() === ReservationStatus.PENDING" class="filter-btn">
+      Pendientes
+    </button>
+    <button (click)="setFilter(ReservationStatus.CANCELLED)" [class.filter-btn-active]="activeFilter() === ReservationStatus.CANCELLED" class="filter-btn">
+      Canceladas
     </button>
   </div>
 
-  <!-- GRILLA DE COMENSALES DEL DÍA -->
   <div class="table-card">
-    @if (filteredReservations().length > 0) {
+    @if (isLoading()) {
+      <div class="empty-state"><p>Cargando agenda...</p></div>
+    } @else if (filteredReservations().length > 0) {
       <table class="b2b-table">
         <thead>
           <tr>
@@ -58,17 +67,13 @@
         <tbody>
           @for (res of filteredReservations(); track res.id) {
             <tr>
-              <td class="td-item font-bold text-slate-900">{{ res.customerName }}</td>
-              <td class="td-item">{{ res.pax }} Personas</td>
-              <td class="td-item"><span class="font-bold text-blue-600">{{ res.timeSlot }}</span></td>
-              <td class="td-item">
-                <span class="status-badge badge-confirmed">
-                  {{ res.status }}
-                </span>
-              </td>
+              <td class="td-item font-bold text-slate-900">{{ displayCustomerName(res) }}</td>
+              <td class="td-item">{{ res.guestCount }} Personas</td>
+              <td class="td-item"><span class="font-bold text-blue-600">{{ displayTime(res) }}</span></td>
+              <td class="td-item"><span class="status-badge badge-confirmed">{{ res.status }}</span></td>
               <td class="td-item" style="text-align: right;">
-                <button (click)="updateStatus(res.id, 'COMPLETED')" class="action-btn">🪑 Sentar</button>
-                <button (click)="updateStatus(res.id, 'CANCELLED')" class="action-btn" style="color: #ef4444; border-color: rgba(239,68,68,0.2)">❌ Cancelar</button>
+                <button (click)="updateStatus(res.id, ReservationStatus.COMPLETED)" class="action-btn">🪑 Sentar</button>
+                <button (click)="updateStatus(res.id, ReservationStatus.CANCELLED)" class="action-btn" style="color: #ef4444; border-color: rgba(239,68,68,0.2)">❌ Cancelar</button>
               </td>
             </tr>
           }
@@ -80,5 +85,4 @@
       </div>
     }
   </div>
-
 </div>

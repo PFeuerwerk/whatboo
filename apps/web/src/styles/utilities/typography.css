@@ -1,0 +1,9 @@
+.text-xs { font-size: var(--text-xs); }
+.text-sm { font-size: var(--text-sm); }
+.text-slate-400 { color: var(--color-text-subtle); }
+.text-slate-500 { color: var(--color-text-muted); }
+.text-slate-900 { color: var(--color-text); }
+.text-blue-600 { color: var(--color-primary); }
+.font-medium { font-weight: var(--font-medium); }
+.font-semibold { font-weight: var(--font-semibold); }
+.font-bold { font-weight: var(--font-bold); }

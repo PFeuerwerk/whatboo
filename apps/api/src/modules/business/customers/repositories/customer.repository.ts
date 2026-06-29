@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { BaseRepository } from '../../../../infrastructure/database/repositories/base.repository';
-import { Customer } from '@prisma/client';
+import { Customer, Prisma } from '@prisma/client';
 import { normalizePhone } from "../../../../common/phone/phone-normalizer.util";
 
 @Injectable()
@@ -40,14 +40,62 @@ export class CustomerRepository extends BaseRepository {
     });
   }
 
+  async search(
+    restaurantId: string,
+    input: {
+      q?: string;
+      take?: number;
+      skip?: number;
+    },
+  ): Promise<{ data: Customer[]; total: number }> {
+    this.requireRestaurantId(restaurantId);
+
+    const q = input.q?.trim();
+    const take = Math.min(Math.max(Number(input.take ?? 50), 1), 100);
+    const skip = Math.max(Number(input.skip ?? 0), 0);
+    const where: Prisma.CustomerWhereInput = {
+      restaurantId,
+      active: true,
+      ...(q
+        ? {
+            OR: [
+              { firstName: { contains: q, mode: 'insensitive' } },
+              { lastName: { contains: q, mode: 'insensitive' } },
+              { email: { contains: q, mode: 'insensitive' } },
+              { phone: { contains: q } },
+            ],
+          }
+        : {}),
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.customer.findMany({
+        where,
+        orderBy: [
+          { totalReservations: 'desc' },
+          { lastReservationAt: 'desc' },
+          { firstName: 'asc' },
+        ],
+        take,
+        skip,
+      }),
+      this.prisma.customer.count({ where }),
+    ]);
+
+    return { data, total };
+  }
+
 
   async findOrCreate(
     restaurantId: string,
     phone: string,
     data?: { firstName?: string; lastName?: string },
+    tx?: Prisma.TransactionClient,
   ): Promise<Customer> {
     this.requireRestaurantId(restaurantId);
-    return this.prisma.customer.upsert({
+    const client = tx ?? this.prisma;
+
+    return client.customer.upsert({
         where: {
           restaurantId_phone: {
             restaurantId,

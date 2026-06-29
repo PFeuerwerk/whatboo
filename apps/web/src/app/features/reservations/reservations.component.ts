@@ -1,90 +1,134 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { CommonModule, formatDate } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
-import { environment } from '../../../environments/environment';
+import { Subject, forkJoin, takeUntil } from 'rxjs';
+import { RestaurantConfigService } from '../../core/services/restaurant-config.service';
+import { ReservationDashboardService } from '../../core/services/reservation-dashboard.service';
+import { ReservationHttpService } from '../../core/services/reservation-http.service';
+import { Reservation, ReservationStatus, RestaurantTable } from '../../core/models/restaurant.interfaces';
+import { CalendarComponent } from './components/calendar/calendar.component';
 import { GridComponent } from './components/grid/grid.component';
 
 @Component({
   selector: 'app-reservations',
   standalone: true,
-  imports: [CommonModule, TranslateModule, GridComponent],
+  imports: [CommonModule, TranslateModule, CalendarComponent, GridComponent],
   templateUrl: './reservations.component.html',
   styleUrls: ['./reservations.component.css']
 })
-export class ReservationsComponent implements OnInit {
-  private readonly http = inject(HttpClient);
+export class ReservationsComponent implements OnInit, OnDestroy {
+  private readonly configService = inject(RestaurantConfigService);
+  private readonly socketService = inject(ReservationDashboardService);
+  private readonly reservationHttpService = inject(ReservationHttpService);
+  private readonly destroy$ = new Subject<void>();
 
-  public readonly reservations = signal<any[]>([]);
-  public readonly tables = signal<any[]>([]);
-  public readonly activeFilter = signal<string>('ALL');
+  public readonly selectedDate = signal<Date>(new Date());
+  public readonly reservations = signal<Reservation[]>([]);
+  public readonly tables = signal<RestaurantTable[]>([]);
+  public readonly activeFilter = signal<'ALL' | ReservationStatus>('ALL');
+  public readonly isLoading = signal<boolean>(false);
 
   public readonly filteredReservations = computed(() => {
     const filter = this.activeFilter();
     if (filter === 'ALL') return this.reservations();
-    return this.reservations().filter(r => r.status === filter);
+    return this.reservations().filter(reservation => reservation.status === filter);
   });
+
+  public readonly totalGuests = computed(() =>
+    this.reservations().reduce((acc, reservation) => acc + Number(reservation.guestCount || 0), 0)
+  );
+
+  public readonly waitListCount = computed(() =>
+    this.reservations().filter(reservation => reservation.status === ReservationStatus.PENDING).length
+  );
+
+  public readonly ReservationStatus = ReservationStatus;
 
   public ngOnInit(): void {
     this.loadAgendaDiaria();
+
+    this.socketService.reservationCreated$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(reservation => this.upsertReservation(reservation));
+
+    this.socketService.reservationUpdated$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(reservation => this.upsertReservation(reservation));
+  }
+
+  public ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.socketService.disconnect();
   }
 
   public loadAgendaDiaria(): void {
-    // SANEADO MULTI-TENANT CANÓNICO: Apunta al endpoint global interceptado por el Backend (Fase A)
-    this.http.get<any[]>(`${environment.apiUrl}/restaurants/tables`)
-      .subscribe({
-        next: (res) => {
-          if (res && res.length > 0) {
-            this.tables.set(res);
-          } else {
-            this.setMockTablesFallback();
-          }
-        },
-        error: () => {
-          this.setMockTablesFallback();
-        }
-      });
+    this.isLoading.set(true);
+    const date = formatDate(this.selectedDate(), 'yyyy-MM-dd', 'en-US');
 
-    // Carga de Analíticas blindada contra nulos para evitar errores 400
-    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
-    this.http.get<any>(`${environment.apiUrl}/restaurants/${slug}/analytics`)
-      .subscribe({
-        next: (res) => {
-          this.setDefaultMockReservations();
-        },
-        error: () => {
-          this.setDefaultMockReservations();
-        }
-      });
+    forkJoin({
+      settings: this.configService.getSettings(),
+      tables: this.configService.getTables(),
+      reservations: this.reservationHttpService.getReservationsByDate(date)
+    }).subscribe({
+      next: ({ settings, tables, reservations }) => {
+        this.tables.set(tables ?? []);
+        this.reservations.set(reservations ?? []);
+        this.socketService.connect(settings.id);
+        this.isLoading.set(false);
+      },
+      error: error => {
+        console.error('Error al cargar agenda diaria:', error);
+        this.isLoading.set(false);
+      }
+    });
   }
 
-  private setMockTablesFallback(): void {
-    this.tables.set([
-      { id: 't1', name: 'Mesa 1', capacity: 4 },
-      { id: 't2', name: 'Mesa 2', capacity: 2 },
-      { id: 't3', name: 'Mesa 3', capacity: 6 },
-      { id: 't4', name: "Mesa 4", capacity: 4 },
-      { id: 't5', name: "Mesa 5", capacity: 2 }
-    ]);
-  }
-
-  private setDefaultMockReservations(): void {
-    this.reservations.set([
-      { id: '11111111-1111-1111-1111-111111111111', customerName: 'Comensal Inicial Onboarding', pax: 4, timeSlot: '13:00', status: 'CONFIRMED', tableId: 't1' },
-      { id: '22222222-2222-2222-2222-222222222222', customerName: 'Reserva WhatsApp Pendiente', pax: 2, timeSlot: '14:00', status: 'CONFIRMED', tableId: 't2' }
-    ]);
-  }
-
-  public setFilter(status: string): void {
+  public setFilter(status: 'ALL' | ReservationStatus): void {
     this.activeFilter.set(status);
   }
 
-  public updateStatus(id: string, nextStatus: string): void {
-    this.http.patch(`${environment.apiUrl}/reservations/${id}/status`, { status: nextStatus })
-      .subscribe(() => this.loadAgendaDiaria());
+  public updateStatus(id: string, nextStatus: ReservationStatus): void {
+    if (nextStatus === ReservationStatus.CANCELLED) {
+      this.reservationHttpService.cancelReservation(id, 'Cancelada desde dashboard').subscribe({
+        next: updated => this.upsertReservation(updated),
+        error: err => console.error('Error al cancelar reserva:', err)
+      });
+      return;
+    }
+
+    this.reservationHttpService.updateReservationStatus(id, nextStatus).subscribe({
+      next: updated => this.upsertReservation(updated),
+      error: err => console.error('Error al actualizar estado:', err)
+    });
+  }
+
+  public onGridUpdated(updated: Reservation): void {
+    this.upsertReservation(updated);
+  }
+
+  public displayCustomerName(reservation: Reservation): string {
+    const first = reservation.customer?.firstName ?? '';
+    const last = reservation.customer?.lastName ?? '';
+    const fullName = `${first} ${last}`.trim();
+    return fullName || reservation.customer?.phone || reservation.confirmationCode || 'Cliente';
+  }
+
+  public displayTime(reservation: Reservation): string {
+    return formatDate(reservation.reservationStart, 'HH:mm', 'en-US');
   }
 
   public onPrintAgenda(): void {
     window.print();
+  }
+
+  private upsertReservation(reservation: Reservation): void {
+    this.reservations.update(current => {
+      const index = current.findIndex(item => item.id === reservation.id);
+      if (index === -1) return [reservation, ...current];
+      const copy = [...current];
+      copy[index] = reservation;
+      return copy;
+    });
   }
 }

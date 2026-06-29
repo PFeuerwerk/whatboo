@@ -1,8 +1,7 @@
-<div class="grid-container">
-  
+<div class="grid-container" cdkDropListGroup>
   <div class="grid-header">
-    <h3 class="grid-title">Plano Diario Estructurado por Turnos</h3>
-    
+    <h3 class="grid-title">Plano diario estructurado por turnos</h3>
+
     <div class="pagination-controls">
       <button (click)="prevTables()" [disabled]="tablePage() === 0" class="btn-pager">◀ Anteriores</button>
       <span class="pager-info">Vista {{ tablePage() + 1 }} de {{ totalPages() }}</span>
@@ -11,7 +10,6 @@
   </div>
 
   <div class="grid-matrix-vertical">
-    
     <div class="matrix-column-headers">
       <div class="time-axis-label">Horarios</div>
       <div class="columns-wrapper">
@@ -25,33 +23,25 @@
       @for (hour of timelineHours; track hour) {
         <div class="time-row" [class.night-shift-divider]="hour === '20:00'">
           <div class="time-cell-label">{{ hour }}</div>
-          
+
           <div class="cells-wrapper">
             @for (table of paginatedTables(); track table.id) {
-              <div 
+              <div
                 class="grid-drop-cell"
-                [class.cell-targeted]="isZoneTargeted(table.id, hour)"
-                (dragover)="onDragOver($event, table.id, hour)"
-                (dragleave)="onDragLeave()"
-                (drop)="onDrop($event, table.id, hour)">
-                
+                cdkDropList
+                [cdkDropListData]="hour"
+                (cdkDropListDropped)="onDrop($event, table.id, hour)">
                 @for (res of getReservationsForSlot(table.id, hour); track res.id) {
-                  <div 
-                    class="booking-card-item" 
-                    draggable="true"
-                    (dragstart)="onDragStart($event, res.id)">
-                    <div class="card-customer truncate">{{ res.customerName }}</div>
-                    <div class="card-pax-badge">{{ res.pax }} Pax</div>
-                  </div>
+                  <article class="booking-card-item" cdkDrag [cdkDragData]="res">
+                    <div class="card-customer truncate">{{ displayCustomerName(res) }}</div>
+                    <div class="card-pax-badge">{{ res.guestCount }} Pax</div>
+                  </article>
                 }
-
               </div>
             }
           </div>
         </div>
       }
     </div>
-
   </div>
-
 </div>

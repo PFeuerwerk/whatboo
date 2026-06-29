@@ -1,0 +1,116 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - whatboo
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - whatboo
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  api:
+    image: ${API_IMAGE:-whatboo-api:latest}
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/api.Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      WHATSAPP_WORKER_ENABLED: "false"
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:-}
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN:-}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:-}
+      RATE_LIMIT_SHORT_TTL_MS: ${RATE_LIMIT_SHORT_TTL_MS:-1000}
+      RATE_LIMIT_SHORT_LIMIT: ${RATE_LIMIT_SHORT_LIMIT:-20}
+      RATE_LIMIT_LONG_TTL_MS: ${RATE_LIMIT_LONG_TTL_MS:-60000}
+      RATE_LIMIT_LONG_LIMIT: ${RATE_LIMIT_LONG_LIMIT:-300}
+      WHATSAPP_WEBHOOK_TTL_MS: ${WHATSAPP_WEBHOOK_TTL_MS:-60000}
+      WHATSAPP_WEBHOOK_LIMIT: ${WHATSAPP_WEBHOOK_LIMIT:-120}
+      WHATSAPP_WEBHOOK_BLOCK_MS: ${WHATSAPP_WEBHOOK_BLOCK_MS:-300000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - whatboo
+    restart: unless-stopped
+
+  worker:
+    image: ${API_IMAGE:-whatboo-api:latest}
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/api.Dockerfile
+    command: ["dumb-init", "node", "apps/api/dist/worker.js"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      WHATSAPP_WORKER_ENABLED: "true"
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:-}
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN:-}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - whatboo
+    restart: unless-stopped
+
+  web:
+    image: ${WEB_IMAGE:-whatboo-web:latest}
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/web.Dockerfile
+    environment:
+      NGINX_PORT: 80
+      API_UPSTREAM: http://api:3000
+      NGINX_RESOLVER: 127.0.0.11
+    ports:
+      - "${WEB_PORT:-80}:80"
+    depends_on:
+      - api
+    networks:
+      - whatboo
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  whatboo:
+    driver: bridge

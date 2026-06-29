@@ -1,8 +1,6 @@
 /* ============================================================================
    DISEÑO PREMIUM ENTERPRISE B2B - WIZARD PÚBLICO DE ALTA DE INQUILINOS
    ============================================================================ */
-@import url('https://googleapis.com');
-
 .onboarding-container {
   min-height: 100vh;
   display: flex;

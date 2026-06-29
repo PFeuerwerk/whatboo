@@ -1,27 +1,28 @@
-import { Component, OnInit, inject, input, output, signal, computed } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http'; // Importación canónica corregida
-import { environment } from '../../../../../environments/environment';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
+import { ReservationHttpService } from '../../../../core/services/reservation-http.service';
+import { Reservation, RestaurantTable } from '../../../../core/models/restaurant.interfaces';
 
 @Component({
   selector: 'app-reservations-grid',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DragDropModule],
   templateUrl: './grid.component.html',
   styleUrls: ['./grid.component.css']
 })
-export class GridComponent implements OnInit {
-  private readonly http = inject(HttpClient);
+export class GridComponent {
+  private readonly reservationHttpService = inject(ReservationHttpService);
 
-  public readonly tables = input<any[]>([]);
-  public readonly reservations = input<any[]>([]);
-  public readonly onGridUpdated = output<void>();
+  public readonly tables = input<RestaurantTable[]>([]);
+  public readonly reservations = input<Reservation[]>([]);
+  public readonly onGridUpdated = output<Reservation>();
 
   public readonly timelineHours = [
     '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00',
     '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00', '23:30'
   ];
-  
+
   public readonly tablePage = signal<number>(0);
   private readonly pageSize = 5;
 
@@ -30,76 +31,57 @@ export class GridComponent implements OnInit {
     return this.tables().slice(start, start + this.pageSize);
   });
 
-  public readonly totalPages = computed(() => {
-    return Math.ceil(this.tables().length / this.pageSize) || 1;
-  });
-
-  private activeTableId: string | null = null;
-  private activeHour: string | null = null;
-
-  public ngOnInit(): void {}
+  public readonly totalPages = computed(() => Math.ceil(this.tables().length / this.pageSize) || 1);
 
   public nextTables(): void {
-    if (this.tablePage() < this.totalPages() - 1) {
-      this.tablePage.update(p => p + 1);
-    }
+    if (this.tablePage() < this.totalPages() - 1) this.tablePage.update(page => page + 1);
   }
 
   public prevTables(): void {
-    if (this.tablePage() > 0) {
-      this.tablePage.update(p => p - 1);
-    }
+    if (this.tablePage() > 0) this.tablePage.update(page => page - 1);
   }
 
-  public getReservationsForSlot(tableId: string, hour: string): any[] {
-    return this.reservations().filter(r => r.tableId === tableId && r.timeSlot === hour);
-  }
-
-  public isZoneTargeted(tableId: string, hour: string): boolean {
-    return this.activeTableId === tableId && this.activeHour === hour;
-  }
-
-  public onDragStart(event: DragEvent, reservationId: string): void {
-    event.dataTransfer?.setData('text/plain', reservationId);
-    event.dataTransfer!.effectAllowed = 'move';
-  }
-
-  public onDragOver(event: DragEvent, tableId: string, hour: string): void {
-    event.preventDefault();
-    this.activeTableId = tableId;
-    this.activeHour = hour;
-  }
-
-  public onDragLeave(): void {
-    this.activeTableId = null;
-    this.activeHour = null;
-  }
-
-  public onDrop(event: DragEvent, tableId: string, hour: string): void {
-    event.preventDefault();
-    this.onDragLeave();
-
-    const reservationId = event.dataTransfer?.getData('text/plain');
-    if (!reservationId) return;
-
-    // 1. UI Optimista: Actualizar síncronamente la posición en memoria del cliente
-    const found = this.reservations().find(r => r.id === reservationId);
-    if (found) {
-      found.tableId = tableId;
-      found.timeSlot = hour;
-    }
-
-    // 2. Persistencia asíncrona en PostgreSQL a través de la API NestJS
-    this.http.patch(`${environment.apiUrl}/reservations/${reservationId}`, {
-      tableId: tableId,
-      timeSlot: hour
-    }).subscribe({
-      next: () => {
-        this.onGridUpdated.emit(); // Rehidratación reactiva inmutable global
-      },
-      error: (err) => {
-        console.error('❌ Error en el guardado de red del Drag & Drop:', err);
-      }
+  public getReservationsForSlot(tableId: string, hour: string): Reservation[] {
+    return this.reservations().filter(reservation => {
+      return this.getAssignedTableId(reservation) === tableId && this.toSlot(reservation.reservationStart) === hour;
     });
+  }
+
+  public onDrop(event: CdkDragDrop<string>, tableId: string, hour: string): void {
+    const reservation = event.item.data as Reservation;
+    if (!reservation?.id) return;
+
+    const reservationStart = this.withSlot(reservation.reservationStart, hour);
+
+    this.reservationHttpService.updateReservation(reservation.id, {
+      reservationStart,
+      tableId
+    }).subscribe({
+      next: updated => this.onGridUpdated.emit(updated),
+      error: err => console.error('Error al reasignar mesa/reserva:', err)
+    });
+  }
+
+  public displayCustomerName(reservation: Reservation): string {
+    const first = reservation.customer?.firstName ?? '';
+    const last = reservation.customer?.lastName ?? '';
+    const fullName = `${first} ${last}`.trim();
+    return fullName || reservation.customer?.phone || reservation.confirmationCode || 'Cliente';
+  }
+
+  public getAssignedTableId(reservation: Reservation): string | null {
+    return reservation.assignedTables?.[0]?.tableId ?? null;
+  }
+
+  private toSlot(date: string | Date): string {
+    const parsed = new Date(date);
+    return `${parsed.getHours().toString().padStart(2, '0')}:${parsed.getMinutes().toString().padStart(2, '0')}`;
+  }
+
+  private withSlot(date: string | Date, slot: string): string {
+    const parsed = new Date(date);
+    const [hours, minutes] = slot.split(':').map(Number);
+    parsed.setHours(hours, minutes, 0, 0);
+    return parsed.toISOString();
   }
 }

@@ -1,0 +1,29 @@
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .cluster-between,
+  .header-block {
+    align-items: flex-start;
+  }
+
+  .header-block {
+    gap: var(--space-4);
+  }
+}
+
+@media print {
+  .no-print,
+  .print-btn,
+  .filter-bar {
+    display: none !important;
+  }
+
+  .table-card,
+  .b2b-table {
+    overflow: visible !important;
+  }
+}

@@ -12,6 +12,7 @@ import { HybridIntentParser } from './application/parsers/hybrid-intent.parser';
 import { EntityExtractorService } from './application/services/entity-extractor.service';
 import { IntentClassifierService } from './application/services/intent-classifier.service';
 import { ConversationStateService } from './application/services/conversation-state.service';
+import { DeterministicReservationIntentService } from './application/services/deterministic-reservation-intent.service';
 
 import { DateNormalizer } from './application/normalizers/date.normalizer';
 import { TimeNormalizer } from './application/normalizers/time.normalizer';
@@ -44,6 +45,7 @@ import { LLM_PROVIDER } from './domain/interfaces/llm-provider.token';
     EntityExtractorService,
     IntentClassifierService,
     ConversationStateService,
+    DeterministicReservationIntentService,
 
     // Parsers
     RegexIntentParser,
@@ -67,6 +69,7 @@ import { LLM_PROVIDER } from './domain/interfaces/llm-provider.token';
     EntityExtractorService,
     IntentClassifierService,
     ConversationStateService,
+    DeterministicReservationIntentService,
   ],
 })
 export class AiModule {}

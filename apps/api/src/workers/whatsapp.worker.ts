@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/commo
 import { ConfigService } from '@nestjs/config';
 import { Worker, Job } from 'bullmq';
 import { WhatsappService } from '../modules/business/whatsapp/services/whatsapp.service';
-import { WHATSAPP_QUEUE_NAME } from '../queues/whatsapp.queue';
+import { WHATSAPP_QUEUE_NAME, WhatsappQueue } from '../queues/whatsapp.queue';
 import { DashboardGateway } from "../infrastructure/observability/events/dashboard.gateway";
 import IORedis from 'ioredis';
 
@@ -16,9 +16,16 @@ export class WhatsappWorker implements OnModuleInit, OnModuleDestroy {
     private readonly configService: ConfigService,
     private readonly whatsappService: WhatsappService,
       private readonly dashboardGateway: DashboardGateway,
+      private readonly whatsappQueue: WhatsappQueue,
   ) {}
 
   async onModuleInit() {
+    const enabled = this.configService.get<boolean>('WHATSAPP_WORKER_ENABLED', true);
+    if (!enabled) {
+      this.logger.log('Worker asíncrono de WhatsApp desactivado para este proceso.');
+      return;
+    }
+
     const redisHost = this.configService.get<string>('REDIS_HOST', 'localhost');
     const redisPort = this.configService.get<number>('REDIS_PORT', 6379);
 
@@ -32,7 +39,7 @@ export class WhatsappWorker implements OnModuleInit, OnModuleDestroy {
       WHATSAPP_QUEUE_NAME,
       async (job: Job<Record<string, unknown>>) => {
         this.logger.debug(`[WORKER] Procesando Job ID: ${job.id} de la cola de WhatsApp...`);
-        await this.whatsappService.handleIncoming(job.data, '');
+        await this.whatsappService.handleIncoming(job.data, '', true);
       },
       {
         // Corregido: Casting a 'any' para unificar la firma de conexión esperada por la interfaz de BullMQ
@@ -51,6 +58,17 @@ export class WhatsappWorker implements OnModuleInit, OnModuleDestroy {
 
       this.worker.on("failed", (job: Job<Record<string, unknown>> | undefined, error: Error) => {
         this.logger.error(`[WORKER CRITICAL] Job ID ${job?.id} ha fallado de forma definitiva: ${error?.message || "Error desconocido"}`);
+
+        const attempts = Number(job?.opts?.attempts ?? 1);
+        const attemptsMade = Number(job?.attemptsMade ?? 0);
+        if (job && attemptsMade >= attempts) {
+          void this.whatsappQueue.addDeadLetterJob({
+            payload: job.data,
+            sourceJobId: String(job.id ?? ''),
+            attemptsMade,
+            errorMessage: error?.message || 'Error desconocido',
+          });
+        }
         
         const payload = job?.data;
         const metadata = (payload as any)?.entry?.[0]?.changes?.[0]?.value?.metadata;

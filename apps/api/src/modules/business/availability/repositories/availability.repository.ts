@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { BaseRepository } from '../../../../infrastructure/database/repositories/base.repository';
 import { OpeningHour, RestaurantTable, BlockedDate } from '@prisma/client';
@@ -11,12 +12,15 @@ export class AvailabilityRepository extends BaseRepository {
 
   async findOpeningHours(
     restaurantId: string,
+    tx?: Prisma.TransactionClient,
   ): Promise<OpeningHour[]> {
     this.requireRestaurantId(
       restaurantId,
     );
 
-    return this.prisma.openingHour.findMany({
+    const client = tx ?? this.prisma;
+
+    return client.openingHour.findMany({
       where: {
         restaurantId,
         active: true,
@@ -30,12 +34,15 @@ export class AvailabilityRepository extends BaseRepository {
 
   async findActiveTables(
     restaurantId: string,
+    tx?: Prisma.TransactionClient,
   ): Promise<RestaurantTable[]> {
     this.requireRestaurantId(
       restaurantId,
     );
 
-    return this.prisma.restaurantTable.findMany({
+    const client = tx ?? this.prisma;
+
+    return client.restaurantTable.findMany({
       where: {
         restaurantId,
         active: true,
@@ -49,6 +56,7 @@ export class AvailabilityRepository extends BaseRepository {
   async findBlockedDates(
     restaurantId: string,
     date: Date,
+    tx?: Prisma.TransactionClient,
   ): Promise<BlockedDate[]> {
     this.requireRestaurantId(
       restaurantId,
@@ -74,7 +82,9 @@ export class AvailabilityRepository extends BaseRepository {
       999,
     );
 
-    return this.prisma.blockedDate.findMany({
+    const client = tx ?? this.prisma;
+
+    return client.blockedDate.findMany({
       where: {
         restaurantId,
         active: true,
@@ -93,13 +103,16 @@ export class AvailabilityRepository extends BaseRepository {
     end: Date,
     partySize: number,
       excludeReservationId?: string,
+      tx?: Prisma.TransactionClient,
   ): Promise<RestaurantTable[]> {
     this.requireRestaurantId(
       restaurantId,
     );
 
+    const client = tx ?? this.prisma;
+
     const booked =
-      await this.prisma.reservationTable.findMany({
+      await client.reservationTable.findMany({
         where: {
           reservation: {
             restaurantId,
@@ -133,7 +146,7 @@ export class AvailabilityRepository extends BaseRepository {
 
       const maxCapacityThreshold = partySize + 3;
 
-      return this.prisma.restaurantTable.findMany({
+      return client.restaurantTable.findMany({
         where: {
           restaurantId,
           active: true,
@@ -163,6 +176,7 @@ export class AvailabilityRepository extends BaseRepository {
     requestedDate: Date,
     partySize: number,
     durationMinutes = 90,
+    tx?: Prisma.TransactionClient,
   ): Promise<string[]> {
     const suggestions: string[] = [];
 
@@ -199,6 +213,8 @@ export class AvailabilityRepository extends BaseRepository {
           start,
           end,
           partySize,
+          undefined,
+          tx,
         );
 
       if (

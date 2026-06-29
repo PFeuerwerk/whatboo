@@ -2,6 +2,7 @@ import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { tenantInterceptor } from './core/interceptors/tenant.interceptor';
+import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { TranslateLoader, provideTranslateService } from '@ngx-translate/core';
 import { Observable } from 'rxjs';
@@ -22,7 +23,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([tenantInterceptor])),
+    provideHttpClient(withInterceptors([tenantInterceptor, authInterceptor])),
     
     // SANEADO DEFINITIVO LIBRE DE DEPRECACIONES EN ANGULAR 19
     provideTranslateService({

@@ -1,14 +1,20 @@
 <div class="staff-wrapper animate-fade-in">
-  
   <div class="header-block">
-    <h1 class="title-main">Equipo y Restricciones de Turno</h1>
-    <p class="subtitle-main">Gestione el personal de sala. Las credenciales de acceso se validan contra el horario personalizado del restaurante.</p>
+    <h1 class="title-main">Usuarios del Staff y Roles</h1>
+    <p class="subtitle-main">Controle accesos multi-tenant con roles OWNER, MANAGER y STAFF alineados con Prisma y NestJS.</p>
   </div>
 
+  @if (successMessage()) {
+    <div class="toast-success"><span>✅</span> {{ successMessage() }}</div>
+  }
+
+  @if (errorMessage()) {
+    <div class="toast-success" style="background:#fef2f2;color:#991b1b;border-color:#fecaca;"><span>⚠️</span> {{ errorMessage() }}</div>
+  }
+
   <div class="split-grid">
-    <!-- PANEL IZQUIERDO: Formulario Avanzado Multi-Tenant -->
     <div class="form-card">
-      <h3 class="section-title">Alta de Personal Operativo</h3>
+      <h3 class="section-title">Alta de Usuario</h3>
       <form [formGroup]="staffForm" (ngSubmit)="onCreateStaff()" class="space-y-4">
         <div class="input-group">
           <label class="input-label">Nombre</label>
@@ -20,45 +26,40 @@
         </div>
         <div class="input-group">
           <label class="input-label">Correo Electrónico</label>
-          <input type="email" formControlName="email" class="form-input" placeholder="ej: maitre@labellaitalia.com">
+          <input type="email" formControlName="email" class="form-input" placeholder="ej: staff@restaurante.com">
         </div>
-        
-        <!-- SELECTOR DE ROLES JERÁRQUICOS ESTÁNDAR MUNDIAL -->
         <div class="input-group">
-          <label class="input-label">Rol y Privilegios en Sala</label>
+          <label class="input-label">Contraseña Temporal</label>
+          <input type="password" formControlName="password" class="form-input" placeholder="Mínimo 8 caracteres">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Rol de Acceso</label>
           <select formControlName="role" class="form-select">
-            <option value="MANAGER">💼 Manager / Gerente de Turno</option>
-            <option value="MAITRE">🤵 Maître / Recepción (Control Drag & Drop)</option>
-            <option value="STAFF">🍽️ Staff / Camarero de Sala (Solo Lectura)</option>
-          </select>
-        </div>
-
-        <!-- SELECTOR DE TURNOS DE TRABAJO CONTEXTUALES -->
-        <div class="input-group">
-          <label class="input-label">Turno Laboral Asignado</label>
-          <select formControlName="shift" class="form-select">
-            <option value="LUNCH">☀️ Turno Almuerzo / Mañana</option>
-            <option value="DINNER">🌙 Turno Cena / Madrugada</option>
-            <option value="FULL_TIME">🔄 Jornada Completa / Partido</option>
+            <option [value]="'MANAGER'">💼 MANAGER / Puede administrar operación</option>
+            <option [value]="'STAFF'">🍽️ STAFF / Operación diaria</option>
           </select>
         </div>
 
         <button type="submit" [disabled]="staffForm.invalid || isSaving()" class="submit-btn">
-          Inyectar en Personal
+          @if (isSaving()) { ⏳ }
+          Crear Usuario
         </button>
       </form>
     </div>
 
-    <!-- PANEL DERECHO: Lista Compacta de Miembros Sincronizados -->
     <div class="table-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h3 class="section-title" style="margin:0;">Personal Activo: {{ activeStaffCount() }}</h3>
+        @if (isLoading()) { <span class="text-xs text-slate-400 font-bold">Cargando...</span> }
+      </div>
+
       <table class="b2b-table">
         <thead>
           <tr>
             <th class="th-item">Miembro</th>
             <th class="th-item">Email</th>
-            <th class="th-item">Rol Jerárquico</th>
-            <th class="th-item">Turno</th>
-            <th class="th-item" style="text-align: right;">Estado Operativo</th>
+            <th class="th-item">Rol</th>
+            <th class="th-item" style="text-align: right;">Estado</th>
           </tr>
         </thead>
         <tbody>
@@ -67,37 +68,35 @@
               <td class="td-item font-bold text-slate-900">{{ member.firstName }} {{ member.lastName }}</td>
               <td class="td-item text-slate-500 font-mono text-xs">{{ member.email }}</td>
               <td class="td-item">
-                <span class="role-badge" [ngClass]="{
-                  'role-owner': member.role === 'OWNER',
-                  'role-manager': member.role === 'MANAGER',
-                  'role-maitre': member.role === 'MAITRE',
-                  'role-staff': member.role === 'STAFF'
-                }">
-                  {{ member.role }}
-                </span>
-              </td>
-              <td class="td-item">
-                <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">
-                  {{ member.shift === 'LUNCH' ? '☀️ Mañana' : member.shift === 'DINNER' ? '🌙 Cena' : '🔄 Completo' }}
-                </span>
+                @if (member.role === 'OWNER') {
+                  <span class="role-badge role-owner">{{ roleLabel(member.role) }}</span>
+                } @else {
+                  <select class="form-select" style="min-width:12rem;" [value]="member.role" (change)="onChangeRole(member, $any($event.target).value)">
+                    <option value="MANAGER">MANAGER / Gerencia</option>
+                    <option value="STAFF">STAFF / Operación</option>
+                  </select>
+                }
               </td>
               <td class="td-item" style="text-align: right;">
                 @if (member.role !== 'OWNER') {
-                  <button 
-                    (click)="onToggleStatus(member.id, !member.isActive)" 
+                  <button
+                    (click)="onToggleStatus(member)"
                     class="toggle-status-btn"
                     [ngClass]="member.isActive ? 'btn-suspend' : 'btn-activate'">
                     {{ member.isActive ? '🛑 Suspender' : '🟢 Activar' }}
                   </button>
                 } @else {
-                  <span class="text-xs text-slate-400 font-bold px-2">Titular Inmutable</span>
+                  <span class="text-xs text-slate-400 font-bold px-2">Titular protegido</span>
                 }
               </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td class="td-item" colspan="4">No hay usuarios registrados para este restaurante.</td>
             </tr>
           }
         </tbody>
       </table>
     </div>
   </div>
-
 </div>

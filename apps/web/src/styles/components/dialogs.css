@@ -1,0 +1,26 @@
+.alert-error,
+.error-banner,
+.alert.alert-error {
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-danger-soft);
+  color: var(--color-danger-text);
+  padding: var(--space-4);
+  font-size: var(--text-md);
+  font-weight: var(--font-bold);
+}
+
+.toast-success,
+.alert.alert-success {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px solid var(--color-success-border);
+  border-radius: var(--radius-lg);
+  background: #ecfdf5;
+  color: #065f46;
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+  font-size: 0.8rem;
+  font-weight: var(--font-bold);
+}

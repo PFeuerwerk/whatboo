@@ -1,60 +1,119 @@
 <div class="tables-wrapper animate-fade-in">
-  
   <div class="header-block">
-    <h1 class="title-main">Layout de Planta y Salones</h1>
-    <p class="subtitle-main">Registre las mesas del restaurante vinculadas a sus respectivas zonas operativas en PostgreSQL.</p>
+    <div>
+      <h1 class="title-main">Layout de Planta y Salones</h1>
+      <p class="subtitle-main">Gestioná zonas, prioridad de llenado automático, mesas y aforo real del restaurante.</p>
+    </div>
+
+    <div class="capacity-card">
+      <span class="capacity-label">Aforo activo</span>
+      <strong>{{ totalCapacity() }}</strong>
+      <span class="capacity-label">pax</span>
+    </div>
   </div>
+
+  @if (errorMessage()) {
+    <div class="alert-error">{{ errorMessage() }}</div>
+  }
 
   <div class="split-grid">
-    <!-- PANEL IZQUIERDO: Formulario de Registro Dinámico -->
-    <div class="form-card">
-      <h3 class="section-title">Añadir Nueva Mesa</h3>
-      <form [formGroup]="tableForm" (ngSubmit)="onCreateTable()" class="space-y-4">
-        <div class="input-group">
-          <label class="input-label">Número o Código de Mesa</label>
-          <input type="text" formControlName="name" class="form-input" placeholder="Ej: Mesa 4">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Capacidad de Asiento (Pax)</label>
-          <input type="number" formControlName="capacity" class="form-input" min="1" max="20">
-        </div>
-        <div class="input-group">
-          <label class="input-label">Zona Geográfica</label>
-          <select formControlName="zoneId" class="form-select">
-            @for (zone of zones(); track zone.id) {
-              <option [value]="zone.id">{{ zone.name }}</option>
-            }
-          </select>
-        </div>
-        <button type="submit" [disabled]="tableForm.invalid" class="submit-btn">Persistir en PostgreSQL</button>
-      </form>
-    </div>
-
-    <!-- PANEL DERECHO: Grid Arquitectónico Compacto -->
-    <div class="map-canvas">
-      <div class="zones-container">
-        @for (zone of zones(); track zone.id) {
-          <div class="zone-block">
-            <div class="zone-header">
-              <h3 class="zone-title">📍 {{ zone.name }}</h3>
-              <span class="zone-meta">Prioridad Llenado: #{{ zone.priority }}</span>
-            </div>
-            
-            <div class="tables-grid">
-              @for (table of getTablesByZone(zone.id); track table.id) {
-                <div class="table-node">
-                  <div class="table-icon">🪑</div>
-                  <h4 class="table-name">{{ table.name }}</h4>
-                  <p class="table-pax">Capacidad: {{ table.capacity }} Pax</p>
-                </div>
-              } @empty {
-                <p class="text-xs text-slate-400 font-semibold p-2 col-span-full">No hay mesas configuradas en esta área.</p>
-              }
-            </div>
+    <div class="controls-stack">
+      <div class="form-card">
+        <h3 class="section-title">{{ editingZoneId() ? 'Editar Zona' : 'Añadir Zona' }}</h3>
+        <form [formGroup]="zoneForm" (ngSubmit)="onCreateOrUpdateZone()">
+          <div class="input-group">
+            <label class="input-label">Nombre de Zona</label>
+            <input type="text" formControlName="name" class="form-input" placeholder="Ej: Terraza">
           </div>
-        }
+
+          <div class="input-group">
+            <label class="input-label">Prioridad de llenado</label>
+            <input type="number" formControlName="priority" class="form-input" min="1" max="999">
+            <small class="helper-text">Menor número = se llena primero en la asignación automática.</small>
+          </div>
+
+          <button type="submit" [disabled]="zoneForm.invalid || isSavingZone()" class="submit-btn secondary">
+            {{ editingZoneId() ? 'Actualizar Zona' : 'Crear Zona' }}
+          </button>
+
+          @if (editingZoneId()) {
+            <button type="button" class="ghost-btn" (click)="onCancelZoneEdit()">Cancelar edición</button>
+          }
+        </form>
+      </div>
+
+      <div class="form-card">
+        <h3 class="section-title">{{ editingTableId() ? 'Editar Mesa' : 'Añadir Mesa' }}</h3>
+        <form [formGroup]="tableForm" (ngSubmit)="onCreateOrUpdateTable()">
+          <div class="input-group">
+            <label class="input-label">Número o Código de Mesa</label>
+            <input type="text" formControlName="name" class="form-input" placeholder="Ej: Mesa 4">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Capacidad de Asiento</label>
+            <input type="number" formControlName="capacity" class="form-input" min="1" max="50">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Zona Operativa</label>
+            <select formControlName="zoneId" class="form-select">
+              @for (zone of zones(); track zone.id) {
+                <option [value]="zone.id">{{ zone.name }} · Prioridad #{{ zone.priority }}</option>
+              }
+            </select>
+          </div>
+
+          <button type="submit" [disabled]="tableForm.invalid || isSavingTable() || zones().length === 0" class="submit-btn">
+            {{ editingTableId() ? 'Actualizar Mesa' : 'Crear Mesa' }}
+          </button>
+
+          @if (editingTableId()) {
+            <button type="button" class="ghost-btn" (click)="onCancelTableEdit()">Cancelar edición</button>
+          }
+        </form>
       </div>
     </div>
-  </div>
 
+    <div class="map-canvas">
+      @if (isLoading()) {
+        <p class="empty-state">Cargando planta del restaurante...</p>
+      } @else {
+        <div class="zones-container">
+          @for (zone of zones(); track zone.id) {
+            <section class="zone-block">
+              <div class="zone-header">
+                <div>
+                  <h3 class="zone-title">📍 {{ zone.name }}</h3>
+                  <span class="zone-meta">Prioridad Tetris #{{ zone.priority }} · Aforo {{ getZoneCapacity(zone.id) }} pax</span>
+                </div>
+                <div class="zone-actions">
+                  <button type="button" class="mini-btn" (click)="onEditZone(zone)">Editar</button>
+                  <button type="button" class="mini-btn danger" (click)="onDeleteZone(zone)">Desactivar</button>
+                </div>
+              </div>
+
+              <div class="tables-grid">
+                @for (table of getTablesByZone(zone.id); track table.id) {
+                  <article class="table-node">
+                    <div class="table-icon">🪑</div>
+                    <h4 class="table-name">{{ table.name }}</h4>
+                    <p class="table-pax">{{ table.capacity }} pax</p>
+                    <div class="table-actions">
+                      <button type="button" class="mini-btn" (click)="onEditTable(table)">Editar</button>
+                      <button type="button" class="mini-btn danger" (click)="onDeleteTable(table)">Desactivar</button>
+                    </div>
+                  </article>
+                } @empty {
+                  <p class="empty-state">No hay mesas activas en esta zona.</p>
+                }
+              </div>
+            </section>
+          } @empty {
+            <p class="empty-state">No hay zonas configuradas. Creá la primera zona para comenzar a registrar mesas.</p>
+          }
+        </div>
+      }
+    </div>
+  </div>
 </div>

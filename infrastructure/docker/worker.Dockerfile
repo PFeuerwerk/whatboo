@@ -1,8 +1,7 @@
-FROM nginx:1.10.1-alpine
-COPY src/html /usr/share/nginx/html
-WORKDIR /app
+ARG API_IMAGE=whatboo-api:latest
 
+FROM ${API_IMAGE}
 
-# Documentation
-# EXPOSE 80
-# ENTRYPOINT ["nginx", "-g", "daemon off"]
+ENV WHATSAPP_WORKER_ENABLED=true
+
+CMD ["dumb-init", "node", "apps/api/dist/worker.js"]

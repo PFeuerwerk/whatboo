@@ -4,11 +4,13 @@ import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
 
 export const WHATSAPP_QUEUE_NAME = 'whatsapp-inbound-queue';
+export const WHATSAPP_DLQ_NAME = 'whatsapp-inbound-dlq';
 
 @Injectable()
 export class WhatsappQueue implements OnModuleInit {
   private readonly logger = new Logger(WhatsappQueue.name);
   private queue!: Queue;
+  private dlq!: Queue;
   private redisConnection!: IORedis;
 
   constructor(private readonly configService: ConfigService) {}
@@ -37,6 +39,14 @@ export class WhatsappQueue implements OnModuleInit {
       },
     });
 
+    this.dlq = new Queue(WHATSAPP_DLQ_NAME, {
+      connection: this.redisConnection as any,
+      defaultJobOptions: {
+        removeOnComplete: false,
+        removeOnFail: false,
+      },
+    });
+
     this.logger.log(`Cola asíncrona de WhatsApp inicializada correctamente en Redis -> ${redisHost}:${redisPort}`);
   }
 
@@ -48,5 +58,20 @@ export class WhatsappQueue implements OnModuleInit {
     });
     
     this.logger.debug(`Mensaje encolado de forma segura en Redis. Job ID: ${jobId}`);
+  }
+
+  async addDeadLetterJob(input: {
+    payload: Record<string, unknown>;
+    sourceJobId?: string;
+    attemptsMade?: number;
+    errorMessage: string;
+    failedAt?: string;
+  }): Promise<void> {
+    await this.dlq.add('failed-webhook', {
+      ...input,
+      failedAt: input.failedAt ?? new Date().toISOString(),
+    }, {
+      jobId: input.sourceJobId ? `dlq:${input.sourceJobId}` : undefined,
+    });
   }
 }

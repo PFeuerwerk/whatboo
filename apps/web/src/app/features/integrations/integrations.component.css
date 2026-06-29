@@ -1,8 +1,6 @@
 /* ============================================================================
    DISEÑO PREMIUM ENTERPRISE B2B - PASARELA DE INTEGRACIONES META API
    ============================================================================ */
-@import url('https://googleapis.com');
-
 .integrations-wrapper {
   padding: 2rem;
   max-width: 1200px;

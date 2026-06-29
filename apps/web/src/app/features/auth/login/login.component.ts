@@ -44,9 +44,9 @@ export class LoginComponent implements OnInit {
         next: (res) => {
           this.isSubmitting.set(false);
           if (res && res.accessToken) {
-            localStorage.setItem('auth_token', res.accessToken);
+            localStorage.setItem('access_token', res.accessToken);
             localStorage.setItem('tenant_slug', this.form.value.restaurantSlug);
-            window.location.href = '/reservations';
+            this.router.navigate(['/reservations']);
           }
         },
         error: (err) => {

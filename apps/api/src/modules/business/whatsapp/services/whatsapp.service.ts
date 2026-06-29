@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { ReservationEngineService } from '../../reservations/services/reservation-engine.service';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { WhatsappClientService } from './whatsapp-client.service';
-import { AiService } from '../../../../integrations/ai/application/services/ai.service';
-import { AvailabilityRepository } from '../../availability/repositories/availability.repository';
+import { DeterministicReservationIntentService } from '../../../../integrations/ai/application/services/deterministic-reservation-intent.service';
+import { AvailabilityService } from '../../availability/services/availability.service';
 import { CustomerRepository } from "../../customers/repositories/customer.repository";
 import { ReservationRepository } from "../../reservations/repositories/reservation.repository";
 import { ConversationStateService } from '../../../../integrations/ai/application/services/conversation-state.service';
@@ -64,9 +64,9 @@ export class WhatsappService {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly whatsappClient: WhatsappClientService,
-    private readonly aiService: AiService,
+    private readonly deterministicIntentService: DeterministicReservationIntentService,
     private readonly conversationStateService: ConversationStateService,
-    private readonly availabilityRepository: AvailabilityRepository,
+    private readonly availabilityService: AvailabilityService,
     private readonly customerRepository: CustomerRepository,
     private readonly reservationRepository: ReservationRepository,
       private readonly phoneValidationService: PhoneValidationService,
@@ -76,6 +76,7 @@ export class WhatsappService {
   async handleIncoming(
     body: Record<string, unknown>,
     signature: string,
+    rethrowOnFailure = false,
   ): Promise<void> {
     try {
       const message = this.extractMessage(body);
@@ -124,6 +125,10 @@ export class WhatsappService {
         `Fallo crítico al procesar el mensaje entrante de WhatsApp: ${errMsg}`,
         error,
       );
+
+      if (rethrowOnFailure) {
+        throw error;
+      }
     }
   }
 
@@ -454,7 +459,7 @@ export class WhatsappService {
 
 
     const conversation =
-      await this.aiService.processConversation(
+      this.deterministicIntentService.processConversation(
         message.from,
         restaurant.id,
         message.text,
@@ -695,7 +700,7 @@ export class WhatsappService {
       );
 
       const tables =
-        await this.availabilityRepository.findAvailableTables(
+        await this.availabilityService.findBestAvailableTables(
           restaurant.id,
           start,
           end,
@@ -706,7 +711,7 @@ export class WhatsappService {
         tables.length === 0
       ) {
         const alternatives =
-          await this.availabilityRepository.findAvailableSlots(
+          await this.availabilityService.findAvailableSlots(
             restaurant.id,
             start,
             state.guests,

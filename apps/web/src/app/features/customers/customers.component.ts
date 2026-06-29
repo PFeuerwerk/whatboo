@@ -1,17 +1,25 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { Customer } from '../../core/models/restaurant.interfaces';
 
 export interface CustomerProfile {
   id: string;
-  firstName: string;
-  lastName: string;
+  firstName: string | null;
+  lastName: string | null;
   phone: string;
-  email?: string;
+  email?: string | null;
   allergies?: string[];
-  notes?: string;
+  notes?: string | null;
   isVip: boolean;
+  totalReservations?: number;
+  lastReservationAt?: string | Date | null;
+}
+
+interface CustomerListResponse {
+  data: Customer[];
+  total: number;
 }
 
 @Component({
@@ -25,34 +33,44 @@ export class CustomersComponent implements OnInit {
   private readonly http = inject(HttpClient);
 
   public readonly customerList = signal<CustomerProfile[]>([]);
+  public readonly searchTerm = signal('');
 
   public ngOnInit(): void {
     this.loadCustomerCRM();
   }
 
   public loadCustomerCRM(): void {
-    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
-    
-    this.http.get<CustomerProfile[]>(`${environment.apiUrl}/restaurants/${slug}/customers`)
+    const q = this.searchTerm().trim();
+    const params = q ? new HttpParams().set('q', q) : undefined;
+
+    this.http.get<CustomerListResponse>(`${environment.apiUrl}/customers`, { params })
       .subscribe({
         next: (res) => {
-          if (!res || res.length === 0) {
-            this.setMockCRMData();
-          } else {
-            this.customerList.set(res);
-          }
+          this.customerList.set((res?.data ?? []).map(customer => this.toCustomerProfile(customer)));
         },
         error: () => {
-          this.setMockCRMData();
+          this.customerList.set([]);
         }
       });
   }
 
-  private setMockCRMData(): void {
-    this.customerList.set([
-      { id: 'c1', firstName: 'Alejandro', lastName: 'Sanz', phone: '+34600000001', allergies: ['Gluten', 'Lácteos'], notes: 'Prefiere siempre mesa en la terraza cerca de las plantas.', isVip: true },
-      { id: 'c2', firstName: 'María', lastName: 'Antonieta', phone: '+34600000002', allergies: [], notes: 'Cliente muy puntual. Agua mineral natural templada.', isVip: false },
-      { id: 'c3', firstName: 'Carlos', lastName: 'Vives', phone: '+34600000003', allergies: ['Mariscos'], notes: 'Mesa interior espaciosa para reuniones de negocios.', isVip: true }
-    ]);
+  public onSearch(value: string): void {
+    this.searchTerm.set(value);
+    this.loadCustomerCRM();
+  }
+
+  private toCustomerProfile(customer: Customer): CustomerProfile {
+    return {
+      id: customer.id,
+      firstName: customer.firstName,
+      lastName: customer.lastName,
+      phone: customer.phone,
+      email: customer.email,
+      allergies: [],
+      notes: customer.notes,
+      isVip: customer.totalReservations >= 5,
+      totalReservations: customer.totalReservations,
+      lastReservationAt: customer.lastReservationAt,
+    };
   }
 }

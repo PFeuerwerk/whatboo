@@ -1,69 +1,58 @@
-# ============================================================================
-# ETAPA 1: AISLAMIENTO DEL CONTENIDO (PRUNER)
-# ============================================================================
-FROM node:22-alpine AS pruner
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
-RUN npm install -g turbo
-COPY . .
-# Aísla atómicamente la API NestJS y sus dependencias internas compartidas
-RUN turbo prune --scope=api --docker
+# syntax=docker/dockerfile:1.7
 
-# ============================================================================
-# ETAPA 2: COMPILACIÓN DEL BACKEND (BUILDER)
-# ============================================================================
-FROM node:22-alpine AS builder
-RUN apk add --no-cache libc6-compat python3 make g++
-WORKDIR /app
+ARG NODE_VERSION=22-alpine
+ARG PNPM_VERSION=11.5.2
 
-# Instalar PNPM de forma global y configurar almacenamiento en caché nativo
+FROM node:${NODE_VERSION} AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-# Copiar únicamente los archivos mínimos podados del monorrepositorio
-COPY --from=pruner /app/out/json/ .
-COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
-
-# Instalar todas las dependencias requeridas para la compilación de TypeScript
-RUN pnpm install --frozen-lockfile
-
-# Copiar el código fuente atómico e inyectar el motor relacional de Prisma
-COPY --from=pruner /app/out/full/ .
-RUN pnpm --filter api prisma generate
-
-# Compilar TypeScript a binarios puros de JavaScript optimizados
-RUN pnpm --filter api build
-
-# Eliminar dependencias de desarrollo e instalar estrictamente las de producción
-RUN rm -rf node_modules && pnpm install --prod --frozen-lockfile
-
-# ============================================================================
-# ETAPA 3: ENTORNO MINIMALISTA DE PRODUCCIÓN (RUNNER)
-# ============================================================================
-FROM node:22-alpine AS runner
 WORKDIR /app
+RUN apk add --no-cache libc6-compat openssl \
+  && corepack enable \
+  && corepack prepare pnpm@${PNPM_VERSION} --activate
 
-# Configuración de seguridad: Evitar ejecutar el contenedor como root
-RUN addgroup --system --gid 1001 nestjs
-RUN adduser --system --uid 1001 nestjs
-USER nestjs
+FROM base AS deps
+RUN apk add --no-cache python3 make g++
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json ./apps/api/package.json
+RUN pnpm install --frozen-lockfile --filter api...
 
-# Copiar metadatos y contratos del espacio de trabajo
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+FROM deps AS build
+COPY apps/api ./apps/api
+ENV DATABASE_URL="postgresql://whatboo:whatboo@localhost:5432/whatboo?schema=public"
+RUN pnpm --filter api prisma:generate
+RUN rm -f apps/api/tsconfig.tsbuildinfo && pnpm --filter api build
 
-# Copiar dependencias de producción y código fuente transaccional compilado
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
-COPY --from=builder /app/apps/api/dist ./apps/api/dist
-COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
-COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
+FROM deps AS prod-deps
+COPY apps/api/prisma ./apps/api/prisma
+COPY apps/api/prisma.config.ts ./apps/api/prisma.config.ts
+ENV DATABASE_URL="postgresql://whatboo:whatboo@localhost:5432/whatboo?schema=public"
+RUN pnpm --filter api prisma:generate
+RUN mkdir -p /tmp/prisma-generated \
+  && cp -a node_modules/.pnpm/@prisma+client@*/node_modules/.prisma /tmp/prisma-generated/.prisma \
+  && rm -rf node_modules apps/api/node_modules \
+  && CI=true pnpm install --prod --offline --frozen-lockfile --filter api... \
+  && cp -a /tmp/prisma-generated/.prisma node_modules/.pnpm/@prisma+client@*/node_modules/
 
-# Inyección dinámica de variables de entorno elásticas
+FROM node:${NODE_VERSION} AS runtime
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV WHATSAPP_WORKER_ENABLED=true
+WORKDIR /app
+RUN apk add --no-cache dumb-init libc6-compat openssl \
+  && addgroup --system --gid 1001 nestjs \
+  && adduser --system --uid 1001 nestjs
+
+COPY --from=prod-deps --chown=nestjs:nestjs /app/node_modules ./node_modules
+COPY --from=prod-deps --chown=nestjs:nestjs /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=prod-deps --chown=nestjs:nestjs /app/apps/api/package.json ./apps/api/package.json
+COPY --from=build --chown=nestjs:nestjs /app/apps/api/dist ./apps/api/dist
+COPY --from=build --chown=nestjs:nestjs /app/apps/api/prisma ./apps/api/prisma
+
+USER nestjs
 EXPOSE 3000
 
-# Punto de entrada de alta velocidad para Cloud Run
-CMD ["node", "apps/api/dist/main.js"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/api/v1/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+
+CMD ["dumb-init", "node", "apps/api/dist/main.js"]

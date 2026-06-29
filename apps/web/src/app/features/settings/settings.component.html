@@ -1,72 +1,126 @@
 <div class="settings-wrapper animate-fade-in">
-  
   <div class="header-block">
-    <h1 class="title-main">Parámetros del Inquilino</h1>
-    <p class="subtitle-main">Regule las restricciones de aforo, slots horarios y las directivas automatizadas de la API de WhatsApp.</p>
+    <h1 class="title-main">Configuración Operativa</h1>
+    <p class="subtitle-main">Administre franjas horarias, capacidad, restricciones de aforo y reglas automáticas usadas por la API.</p>
   </div>
 
   <div class="panel-card">
-    
     @if (successMessage()) {
-      <div class="toast-success">
-        <span>✅</span> {{ successMessage() }}
-      </div>
+      <div class="toast-success"><span>✅</span> {{ successMessage() }}</div>
+    }
+
+    @if (errorMessage()) {
+      <div class="toast-success" style="background:#fef2f2;color:#991b1b;border-color:#fecaca;"><span>⚠️</span> {{ errorMessage() }}</div>
+    }
+
+    @if (isLoading()) {
+      <div class="toast-success"><span>⏳</span> Cargando configuración...</div>
     }
 
     <form [formGroup]="settingsForm" (ngSubmit)="onSaveSettings()" class="space-y-6">
-      
-      <!-- SECCIÓN 1: Distribución Horaria de Slots y Madrugadas -->
       <div class="section-block">
-        <h3 class="section-title">Distribución de Slots y Operación Horaria</h3>
+        <h3 class="section-title">Slots, Duración y Capacidad Base</h3>
         <div class="row-inputs">
           <div class="input-group">
-            <label class="input-label">Intervalo de Bloques (Slots)</label>
+            <label class="input-label">Intervalo de Bloques</label>
             <select formControlName="slotIntervalMinutes" class="form-select">
-              <option [value]="15">15 Minutos</option>
-              <option [value]="30">30 Minutos</option>
-              <option [value]="60">60 Minutos</option>
+              <option [value]="15">15 minutos</option>
+              <option [value]="30">30 minutos</option>
+              <option [value]="60">60 minutos</option>
             </select>
           </div>
-          
+
           <div class="input-group">
-            <label class="input-label">Hora Límite de Operación / Cierre</label>
-            <select formControlName="closingHourLimit" class="form-select">
-              <option value="00:00">00:00 AM (Medianoche)</option>
-              <option value="01:00">01:00 AM (Madrugada)</option>
-              <option value="02:00">02:00 AM (Madrugada)</option>
-              <option value="03:00">03:00 AM (Cierre Extendido)</option>
-            </select>
+            <label class="input-label">Duración Promedio de Mesa</label>
+            <input type="number" formControlName="defaultReservationDuration" class="form-input" min="15" max="240">
           </div>
         </div>
-        
-        <!-- SANEADO: Inyección de row-spacing-buffer para forzar el padding de aire vertical -->
+
         <div class="row-inputs row-spacing-buffer">
           <div class="input-group">
-            <label class="input-label">Tiempo de Buffer / Cortesía (Minutos)</label>
-            <input type="number" formControlName="bufferTimeMinutes" class="form-input" min="0" max="60">
+            <label class="input-label">Buffer / Cortesía entre Reservas</label>
+            <input type="number" formControlName="bufferTimeMinutes" class="form-input" min="0" max="120">
           </div>
+
           <div class="input-group">
-            <label class="input-label">Duración Promedio de Mesa (Minutos)</label>
-            <input type="number" formControlName="defaultReservationDuration" class="form-input" min="15" max="240">
+            <label class="input-label">Capacidad Máxima del Restaurante</label>
+            <input type="number" formControlName="maxCapacity" class="form-input" min="1" placeholder="Sin límite global">
           </div>
         </div>
       </div>
 
-      <!-- SECCIÓN 2: Directivas de WhatsApp -->
+      <div class="section-block" formGroupName="capacityRule">
+        <h3 class="section-title">Restricciones de Aforo de la API</h3>
+        <div class="row-inputs">
+          <div class="input-group">
+            <label class="input-label">Máximo de Personas por Reserva</label>
+            <input type="number" formControlName="maxGuestsPerReservation" class="form-input" min="1" placeholder="Sin límite">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Máximo de Reservas por Slot</label>
+            <input type="number" formControlName="maxReservationsPerSlot" class="form-input" min="1" placeholder="Según mesas disponibles">
+          </div>
+        </div>
+
+        <div class="row-inputs row-spacing-buffer">
+          <div class="input-group">
+            <label class="input-label">Duración Operativa de Slot</label>
+            <input type="number" formControlName="slotDurationMinutes" class="form-input" min="15" max="240">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Capacidad Máxima Diaria</label>
+            <input type="number" formControlName="maxDailyCapacity" class="form-input" min="1" placeholder="Sin límite diario">
+          </div>
+        </div>
+
+        <div class="toggle-container row-spacing-buffer">
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <h4 class="toggle-title">Permitir Sobreventa Controlada</h4>
+              <p class="toggle-desc">Habilita overbooking únicamente cuando el flujo operativo lo permita.</p>
+            </div>
+            <input type="checkbox" formControlName="overbookingAllowed" class="checkbox-custom">
+          </div>
+        </div>
+      </div>
+
       <div class="section-block">
-        <h3 class="section-title">Filtros y Automatización de WhatsApp</h3>
+        <h3 class="section-title">Franjas Horarias Semanales</h3>
+        <div formArrayName="openingHours" class="toggle-container">
+          @for (hour of openingHours.controls; track hour.value.dayOfWeek; let i = $index) {
+            <div class="toggle-row" [formGroupName]="i">
+              <div class="toggle-info">
+                <h4 class="toggle-title">{{ dayLabel(hour.value.dayOfWeek) }}</h4>
+                <p class="toggle-desc">Horario usado para validar disponibilidad desde WhatsApp y panel web.</p>
+              </div>
+              <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+                <input type="time" formControlName="openTime" class="form-input" style="width:8rem;">
+                <input type="time" formControlName="closeTime" class="form-input" style="width:8rem;">
+                <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.75rem; font-weight:700; color:#64748b;">
+                  <input type="checkbox" formControlName="isClosed" class="checkbox-custom"> Cerrado
+                </label>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="section-block">
+        <h3 class="section-title">Automatización WhatsApp</h3>
         <div class="toggle-container">
           <div class="toggle-row">
             <div class="toggle-info">
-              <h4 class="toggle-title">Confirmación Inmediata por WhatsApp</h4>
-              <p class="toggle-desc">El bot validará la capacidad física en PostgreSQL y confirmará la reserva autónomamente.</p>
+              <h4 class="toggle-title">Confirmación Inmediata</h4>
+              <p class="toggle-desc">El bot confirma automáticamente si la capacidad y horario son válidos.</p>
             </div>
             <input type="checkbox" formControlName="autoConfirm" class="checkbox-custom">
           </div>
           <div class="toggle-row">
             <div class="toggle-info">
-              <h4 class="toggle-title">Activar Lista de Espera Automática</h4>
-              <p class="toggle-desc">Encola comensales en Redis cuando el aforo del slot esté saturado.</p>
+              <h4 class="toggle-title">Lista de Espera Automática</h4>
+              <p class="toggle-desc">Encola solicitudes cuando no hay disponibilidad en el slot requerido.</p>
             </div>
             <input type="checkbox" formControlName="allowWaitlist" class="checkbox-custom">
           </div>
@@ -75,14 +129,10 @@
 
       <div class="footer-row">
         <button type="submit" [disabled]="settingsForm.invalid || isSaving()" class="save-btn">
-          @if (isSaving()) {
-            <span>⏳</span>
-          }
-          Persistir Configuración Personalizada
+          @if (isSaving()) { <span>⏳</span> }
+          Guardar Configuración Operativa
         </button>
       </div>
-
     </form>
   </div>
-
 </div>

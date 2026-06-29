@@ -65,7 +65,7 @@ export class RegisterTenantComponent implements OnInit {
           this.isSaving.set(false);
           localStorage.setItem('tenant_slug', this.generatedSlug());
           if (res && res.accessToken) {
-            localStorage.setItem('auth_token', res.accessToken);
+            localStorage.setItem('access_token', res.accessToken);
           }
           this.router.navigate(['/reservations']);
         },

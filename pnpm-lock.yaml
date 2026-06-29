@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      '@angular/animations':
-        specifier: ^19.2.0
-        version: 19.2.25(@angular/common@19.2.25(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))
     devDependencies:
       '@types/node':
         specifier: ^25.9.2
@@ -172,6 +168,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@angular/animations':
+        specifier: ^19.2.25
+        version: 19.2.25(@angular/common@19.2.25(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))
       '@angular/cdk':
         specifier: ^19.2.19
         version: 19.2.19(@angular/common@19.2.25(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2)
@@ -230,9 +229,6 @@ importers:
       '@angular-devkit/build-angular':
         specifier: ^19.2.27
         version: 19.2.27(@angular/compiler-cli@19.2.25(@angular/compiler@19.2.25)(typescript@5.7.3))(@angular/compiler@19.2.25)(@types/node@25.9.4)(chokidar@4.0.3)(jiti@2.7.0)(karma@6.4.4(debug@4.4.3))(lightningcss@1.32.0)(tailwindcss@4.3.1)(typescript@5.7.3)(vite@6.4.2(@types/node@25.9.4)(jiti@2.7.0)(less@4.2.2)(lightningcss@1.32.0)(sass@1.85.0)(terser@5.39.0))
-      '@angular/animations':
-        specifier: ^19.2.25
-        version: 19.2.25(@angular/common@19.2.25(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@19.2.25(rxjs@7.8.2)(zone.js@0.15.1))
       '@angular/cli':
         specifier: ^19.2.27
         version: 19.2.27(@types/node@25.9.4)(chokidar@4.0.3)

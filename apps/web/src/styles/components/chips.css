@@ -1,0 +1,12 @@
+.notes-text,
+.helper-text,
+.cap-sub,
+.pager-info {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+}
+
+.notes-text {
+  font-style: italic;
+}
