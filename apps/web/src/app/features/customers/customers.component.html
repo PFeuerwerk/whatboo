@@ -21,15 +21,62 @@
     </div>
   }
 
+  @if (selectedCustomer()) {
+    <div class="table-card" style="margin-bottom:1rem;">
+      <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
+        <div>
+          <h3 class="section-title" style="margin:0 0 .35rem;">Perfil de {{ customerName(selectedCustomer()!) }}</h3>
+          <p class="text-slate-500 text-sm" style="margin:0;">{{ selectedCustomer()!.phone }} · {{ selectedCustomer()!.email || 'Sin email' }}</p>
+        </div>
+        <span class="vip-tag" [ngClass]="(selectedCustomer()!.totalReservations || 0) >= 5 ? 'tag-vip' : 'tag-regular'">
+          {{ (selectedCustomer()!.totalReservations || 0) >= 5 ? 'VIP Gold' : 'Frecuente' }}
+        </span>
+      </div>
+
+      <div class="metrics-grid" style="margin:1rem 0;">
+        <div class="metric-card"><div class="metric-label">Reservas</div><div class="metric-value">{{ selectedCustomer()!.metrics.reservationCount }}</div></div>
+        <div class="metric-card"><div class="metric-label">Completadas</div><div class="metric-value">{{ selectedCustomer()!.metrics.completedCount }}</div></div>
+        <div class="metric-card"><div class="metric-label">Canceladas</div><div class="metric-value">{{ selectedCustomer()!.metrics.cancelledCount }}</div></div>
+        <div class="metric-card"><div class="metric-label">No-show</div><div class="metric-value">{{ selectedCustomer()!.metrics.noShowCount }}</div></div>
+      </div>
+
+      <h4 class="section-title">Historial reciente</h4>
+      <table class="b2b-table">
+        <thead>
+          <tr>
+            <th class="th-item">Fecha</th>
+            <th class="th-item">Pax</th>
+            <th class="th-item">Estado</th>
+            <th class="th-item">Origen</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (reservation of selectedCustomer()!.reservations.data; track reservation.id) {
+            <tr>
+              <td class="td-item">{{ reservation.reservationStart | date:'short' }}</td>
+              <td class="td-item">{{ reservation.guestCount }}</td>
+              <td class="td-item">{{ reservation.status }}</td>
+              <td class="td-item">{{ reservation.source }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="4" class="td-item text-center text-slate-400 p-8">Este cliente todavía no tiene reservas registradas.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (isProfileLoading()) {
+    <div class="table-card" style="margin-bottom:1rem;">Cargando perfil del cliente...</div>
+  }
+
   <div class="table-card">
     <table class="b2b-table">
       <thead>
         <tr>
           <th class="th-item">Comensal</th>
           <th class="th-item">Telefono / WhatsApp</th>
-          <th class="th-item">Alergenos / Restricciones</th>
           <th class="th-item">Preferencias / Notas de Sala</th>
           <th class="th-item">Categoria</th>
+          <th class="th-item" style="text-align:right;">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -42,20 +89,14 @@
             <tr>
               <td class="td-item font-bold text-slate-900">{{ client.firstName }} {{ client.lastName }}</td>
               <td class="td-item text-slate-500 font-mono text-xs">{{ client.phone }}</td>
-              <td class="td-item">
-                @if (client.allergies && client.allergies.length > 0) {
-                  @for (allergy of client.allergies; track allergy) {
-                    <span class="allergy-pill">{{ allergy }}</span>
-                  }
-                } @else {
-                  <span class="text-slate-400 font-medium text-xs">Ninguna</span>
-                }
-              </td>
               <td class="td-item notes-text">{{ client.notes || 'Sin anotaciones particulares.' }}</td>
               <td class="td-item">
                 <span class="vip-tag" [ngClass]="client.isVip ? 'tag-vip' : 'tag-regular'">
                   {{ client.isVip ? 'VIP Gold' : 'Frecuente' }}
                 </span>
+              </td>
+              <td class="td-item" style="text-align:right;">
+                <button class="action-btn" (click)="openProfile(client.id)">Ver historial</button>
               </td>
             </tr>
           } @empty {

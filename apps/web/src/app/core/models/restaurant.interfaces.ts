@@ -79,6 +79,7 @@ export interface Restaurant {
   autoConfirm: boolean;
   status?: RestaurantStatus;
   createdAt?: DateLike;
+  invitationEmailSent?: boolean;
   updatedAt?: DateLike;
   deletedAt?: DateLike | null;
 
@@ -285,7 +286,8 @@ export interface CreateStaffUserDto {
   firstName: string;
   lastName: string;
   role: UserRole.OWNER | UserRole.MANAGER | UserRole.STAFF;
-  password: string;
+  password?: string;
+  sendInvitation?: boolean;
 }
 
 export interface UpdateStaffUserDto {

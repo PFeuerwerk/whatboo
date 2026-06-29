@@ -47,7 +47,7 @@
 }
 
 .bar-time {
-  width: 4rem;
+  width: 6.5rem;
   color: var(--color-text-soft);
   font-size: var(--text-md);
   font-weight: var(--font-bold);
@@ -70,7 +70,7 @@
 }
 
 .bar-count {
-  width: 5rem;
+  width: 7rem;
   text-align: right;
   color: #475569;
   font-size: var(--text-md);

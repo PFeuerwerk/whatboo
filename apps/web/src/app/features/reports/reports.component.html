@@ -1,21 +1,29 @@
 <div class="reports-wrapper animate-fade-in">
   <div class="header-block">
     <div>
-      <h1 class="title-main">Reportes de ocupación</h1>
-      <p class="subtitle-main">Revisa reservas, cubiertos y horarios con mayor demanda para tomar mejores decisiones operativas.</p>
+      <h1 class="title-main">Reportes operativos</h1>
+      <p class="subtitle-main">Analiza reservas, cubiertos, asistencia, cancelaciones y no-show por rango de fechas.</p>
     </div>
 
     <div class="header-actions">
       <label class="date-filter">
-        <span>Fecha</span>
+        <span>Desde</span>
         <input
           type="date"
-          [ngModel]="selectedDate()"
-          (ngModelChange)="onDateChange($event)" />
+          [ngModel]="fromDate()"
+          (ngModelChange)="onFromDateChange($event)" />
+      </label>
+
+      <label class="date-filter">
+        <span>Hasta</span>
+        <input
+          type="date"
+          [ngModel]="toDate()"
+          (ngModelChange)="onToDateChange($event)" />
       </label>
 
       <button (click)="onPrintReport()" class="print-btn">
-        <span>🖨️</span> Exportar / Imprimir PDF
+        <span>Exportar / Imprimir PDF</span>
       </button>
     </div>
   </div>
@@ -26,38 +34,46 @@
 
   <div class="metrics-grid">
     <div class="metric-card">
-      <div class="metric-label">Total Reservas del Día</div>
-      <div class="metric-value">{{ totalReservations() }}</div>
+      <div class="metric-label">Reservas del periodo</div>
+      <div class="metric-value">{{ totals().reservations }}</div>
     </div>
     <div class="metric-card">
-      <div class="metric-label">Volumen de Cubiertos (Pax)</div>
-      <div class="metric-value">{{ totalPax() }} <span class="text-xs text-slate-400 font-bold">Comensales</span></div>
+      <div class="metric-label">Cubiertos</div>
+      <div class="metric-value">{{ totals().pax }} <span class="text-xs text-slate-400 font-bold">Pax</span></div>
     </div>
     <div class="metric-card">
-      <div class="metric-label">Ratio de Asistencia</div>
-      <div class="metric-value">{{ attendanceRate() }}%</div>
+      <div class="metric-label">Asistencia</div>
+      <div class="metric-value">{{ totals().attendanceRate }}%</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Cancelación</div>
+      <div class="metric-value">{{ totals().cancellationRate }}%</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">No-show</div>
+      <div class="metric-value">{{ totals().noShowRate }}%</div>
     </div>
   </div>
 
   <div class="chart-card">
-    <h3 class="section-title">Ocupación por horario</h3>
+    <h3 class="section-title">Reservas por día</h3>
 
     @if (isLoading()) {
       <div class="empty-state">Cargando reporte...</div>
-    } @else if (hasHourlyData()) {
+    } @else if (hasDailyData()) {
       <div class="bars-container">
-        @for (slot of hourlyData(); track slot.time) {
+        @for (day of dailyData(); track day.date) {
           <div class="bar-row">
-            <div class="bar-time">{{ slot.time }}</div>
+            <div class="bar-time">{{ day.date }}</div>
             <div class="bar-track">
-              <div class="bar-fill" [style.width.%]="slot.percentage"></div>
+              <div class="bar-fill" [style.width.%]="dailyPercentage(day)"></div>
             </div>
-            <div class="bar-count">{{ slot.count }} Reservas ({{ slot.percentage }}%)</div>
+            <div class="bar-count">{{ day.reservations }} reservas</div>
           </div>
         }
       </div>
     } @else {
-      <div class="empty-state">No hay reservas para la fecha seleccionada.</div>
+      <div class="empty-state">No hay reservas para el rango seleccionado.</div>
     }
   </div>
 </div>

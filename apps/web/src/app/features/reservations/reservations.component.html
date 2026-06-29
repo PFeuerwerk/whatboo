@@ -52,6 +52,9 @@
     <button (click)="setFilter(ReservationStatus.CANCELLED)" [class.filter-btn-active]="activeFilter() === ReservationStatus.CANCELLED" class="filter-btn">
       Canceladas
     </button>
+    <button (click)="setFilter(ReservationStatus.NO_SHOW)" [class.filter-btn-active]="activeFilter() === ReservationStatus.NO_SHOW" class="filter-btn">
+      No-show
+    </button>
   </div>
 
   <div class="table-card">
@@ -77,7 +80,8 @@
               <td class="td-item"><span class="status-badge badge-confirmed">{{ res.status }}</span></td>
               <td class="td-item" style="text-align: right;">
                 <button (click)="updateStatus(res.id, ReservationStatus.COMPLETED)" class="action-btn">🪑 Sentar</button>
-                <button (click)="updateStatus(res.id, ReservationStatus.CANCELLED)" class="action-btn" style="color: #ef4444; border-color: rgba(239,68,68,0.2)">❌ Cancelar</button>
+                <button (click)="updateStatus(res.id, ReservationStatus.NO_SHOW)" class="action-btn">No-show</button>
+                <button (click)="updateStatus(res.id, ReservationStatus.CANCELLED)" class="action-btn" style="color: #ef4444; border-color: rgba(239,68,68,0.2)">Cancelar</button>
               </td>
             </tr>
           }

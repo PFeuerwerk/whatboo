@@ -4,18 +4,31 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 
-export interface HourlyStat {
-  time: string;
-  count: number;
-  percentage: number;
+export interface DailyOperationalStat {
+  date: string;
+  reservations: number;
+  pax: number;
+  completed: number;
+  cancelled: number;
+  noShow: number;
 }
 
-export interface DailyAnalyticsReport {
-  date: string;
-  totalReservations: number;
-  totalPax: number;
-  attendanceRate: number;
-  hourlyData: HourlyStat[];
+export interface OperationalReport {
+  from: string;
+  to: string;
+  totals: {
+    reservations: number;
+    pax: number;
+    completed: number;
+    cancelled: number;
+    noShow: number;
+    attendanceRate: number;
+    cancellationRate: number;
+    noShowRate: number;
+  };
+  byStatus: Record<string, number>;
+  bySource: Record<string, number>;
+  byDay: DailyOperationalStat[];
 }
 
 @Component({
@@ -28,50 +41,73 @@ export interface DailyAnalyticsReport {
 export class ReportsComponent implements OnInit {
   private readonly http = inject(HttpClient);
 
-  public readonly selectedDate = signal<string>(formatDate(new Date(), 'yyyy-MM-dd', 'en-US'));
+  public readonly fromDate = signal<string>(formatDate(new Date(), 'yyyy-MM-dd', 'en-US'));
+  public readonly toDate = signal<string>(formatDate(new Date(), 'yyyy-MM-dd', 'en-US'));
   public readonly isLoading = signal<boolean>(false);
   public readonly errorMessage = signal<string | null>(null);
-  public readonly totalReservations = signal<number>(0);
-  public readonly totalPax = signal<number>(0);
-  public readonly attendanceRate = signal<number>(0);
-  public readonly hourlyData = signal<HourlyStat[]>([]);
+  public readonly report = signal<OperationalReport | null>(null);
 
-  public readonly hasHourlyData = computed(() => this.hourlyData().length > 0);
+  public readonly totals = computed(() => this.report()?.totals ?? {
+    reservations: 0,
+    pax: 0,
+    completed: 0,
+    cancelled: 0,
+    noShow: 0,
+    attendanceRate: 0,
+    cancellationRate: 0,
+    noShowRate: 0,
+  });
+
+  public readonly dailyData = computed(() => this.report()?.byDay ?? []);
+  public readonly hasDailyData = computed(() => this.dailyData().length > 0);
 
   public ngOnInit(): void {
-    this.loadAnalyticsReport();
+    this.loadOperationalReport();
   }
 
-  public loadAnalyticsReport(): void {
+  public loadOperationalReport(): void {
     this.isLoading.set(true);
     this.errorMessage.set(null);
 
-    const params = new HttpParams().set('date', this.selectedDate());
+    const params = new HttpParams()
+      .set('from', this.fromDate())
+      .set('to', this.toDate());
 
-    this.http.get<DailyAnalyticsReport>(`${environment.apiUrl}/restaurants/analytics`, { params })
+    this.http.get<OperationalReport>(`${environment.apiUrl}/restaurants/reports/operational`, { params })
       .subscribe({
         next: (report) => {
-          this.totalReservations.set(report.totalReservations ?? 0);
-          this.totalPax.set(report.totalPax ?? 0);
-          this.attendanceRate.set(report.attendanceRate ?? 0);
-          this.hourlyData.set(report.hourlyData ?? []);
+          this.report.set(report);
           this.isLoading.set(false);
         },
         error: (error: unknown) => {
-          console.error('Error al cargar reporte de ocupación:', error);
-          this.totalReservations.set(0);
-          this.totalPax.set(0);
-          this.attendanceRate.set(0);
-          this.hourlyData.set([]);
-          this.errorMessage.set('No se pudo cargar el reporte desde la API.');
+          console.error('Error al cargar reporte operativo:', error);
+          this.report.set(null);
+          this.errorMessage.set('No se pudo cargar el reporte operativo desde la API.');
           this.isLoading.set(false);
         }
       });
   }
 
-  public onDateChange(date: string): void {
-    this.selectedDate.set(date);
-    this.loadAnalyticsReport();
+  public onFromDateChange(date: string): void {
+    this.fromDate.set(date);
+    if (this.toDate() < date) {
+      this.toDate.set(date);
+    }
+    this.loadOperationalReport();
+  }
+
+  public onToDateChange(date: string): void {
+    this.toDate.set(date);
+    this.loadOperationalReport();
+  }
+
+  public maxDailyReservations(): number {
+    return Math.max(...this.dailyData().map(day => day.reservations), 0);
+  }
+
+  public dailyPercentage(day: DailyOperationalStat): number {
+    const max = this.maxDailyReservations();
+    return max > 0 ? Math.round((day.reservations / max) * 100) : 0;
   }
 
   public onPrintReport(): void {

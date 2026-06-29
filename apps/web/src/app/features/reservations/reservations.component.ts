@@ -93,11 +93,22 @@ export class ReservationsComponent implements OnInit, OnDestroy {
 
   public updateStatus(id: string, nextStatus: ReservationStatus): void {
     if (nextStatus === ReservationStatus.CANCELLED) {
-      this.reservationHttpService.cancelReservation(id, 'Cancelada desde dashboard').subscribe({
+      this.reservationHttpService.cancelReservation(id, 'Cancelada desde dashboard', 'CUSTOMER_REQUEST').subscribe({
         next: updated => this.upsertReservation(updated),
         error: err => {
           console.error('Error al cancelar reserva:', err);
           this.errorMessage.set('No se pudo cancelar la reserva.');
+        }
+      });
+      return;
+    }
+
+    if (nextStatus === ReservationStatus.NO_SHOW) {
+      this.reservationHttpService.markNoShow(id, 'El cliente no se presentó a la reserva').subscribe({
+        next: updated => this.upsertReservation(updated),
+        error: err => {
+          console.error('Error al marcar no-show:', err);
+          this.errorMessage.set('No se pudo marcar la reserva como no-show.');
         }
       });
       return;

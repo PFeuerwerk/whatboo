@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { Customer } from '../../core/models/restaurant.interfaces';
+import { Customer, Reservation } from '../../core/models/restaurant.interfaces';
 
 export interface CustomerProfile {
   id: string;
@@ -22,6 +22,22 @@ interface CustomerListResponse {
   total: number;
 }
 
+interface CustomerDetailResponse extends Customer {
+  metrics: {
+    reservationCount: number;
+    completedCount: number;
+    cancelledCount: number;
+    noShowCount: number;
+    totalPax: number;
+  };
+  reservations: {
+    data: Reservation[];
+    total: number;
+    take: number;
+    skip: number;
+  };
+}
+
 @Component({
   selector: 'app-customers',
   standalone: true,
@@ -33,8 +49,10 @@ export class CustomersComponent implements OnInit {
   private readonly http = inject(HttpClient);
 
   public readonly customerList = signal<CustomerProfile[]>([]);
+  public readonly selectedCustomer = signal<CustomerDetailResponse | null>(null);
   public readonly searchTerm = signal('');
   public readonly isLoading = signal(false);
+  public readonly isProfileLoading = signal(false);
   public readonly errorMessage = signal<string | null>(null);
   public readonly totalCustomers = signal(0);
 
@@ -67,6 +85,30 @@ export class CustomersComponent implements OnInit {
   public onSearch(value: string): void {
     this.searchTerm.set(value);
     this.loadCustomerCRM();
+  }
+
+  public openProfile(customerId: string): void {
+    this.isProfileLoading.set(true);
+    this.errorMessage.set(null);
+    const params = new HttpParams().set('take', 10).set('skip', 0);
+
+    this.http.get<CustomerDetailResponse>(`${environment.apiUrl}/customers/${customerId}`, { params })
+      .subscribe({
+        next: (profile) => {
+          this.selectedCustomer.set(profile);
+          this.isProfileLoading.set(false);
+        },
+        error: () => {
+          this.selectedCustomer.set(null);
+          this.isProfileLoading.set(false);
+          this.errorMessage.set('No se pudo cargar el perfil del cliente.');
+        }
+      });
+  }
+
+  public customerName(customer: Pick<Customer, 'firstName' | 'lastName' | 'phone'>): string {
+    const name = `${customer.firstName ?? ''} ${customer.lastName ?? ''}`.trim();
+    return name || customer.phone;
   }
 
   private toCustomerProfile(customer: Customer): CustomerProfile {

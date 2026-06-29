@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Invitación al equipo</title>
+  </head>
+  <body style="margin:0;background:#f8fafc;color:#0f172a;font-family:Arial,sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+            <tr>
+              <td style="padding:28px 28px 12px;">
+                <p style="margin:0 0 8px;color:#2563eb;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">Whatboo</p>
+                <h1 style="margin:0;color:#0f172a;font-size:24px;line-height:1.25;">Te han invitado a {{restaurantName}}</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 28px 24px;">
+                <p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:1.6;">Hola {{staffName}},</p>
+                <p style="margin:0 0 20px;color:#334155;font-size:15px;line-height:1.6;">Tu cuenta de equipo ya está creada. Para activar el acceso de forma segura, define tu contraseña desde este enlace.</p>
+                <p style="margin:0 0 24px;">
+                  <a href="{{activationLink}}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:8px;">Activar cuenta</a>
+                </p>
+                <p style="margin:0;color:#64748b;font-size:13px;line-height:1.6;">Por seguridad, el enlace es de un solo uso y caduca pronto. Si no esperabas esta invitación, puedes ignorar este mensaje.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

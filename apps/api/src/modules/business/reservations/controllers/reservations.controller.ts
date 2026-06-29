@@ -1,8 +1,9 @@
 import { PhoneValidationService } from '../../../../common/phone/phone-validation.service';
 import { BadRequestException, Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { ReservationStatus } from '@prisma/client';
+import { ReservationSource, ReservationStatus } from '@prisma/client';
 import { JwtAuthGuard } from '../../../platform/auth/guards/jwt-auth.guard';
 import { DashboardGateway } from '../../../../infrastructure/observability/events/dashboard.gateway';
+import { AuditLogService } from '../../../../common/security/audit-log.service';
 import { ReservationEngineService } from '../services/reservation-engine.service';
 import { ReservationRepository } from '../repositories/reservation.repository';
 import { CreateReservationDto } from '../dto/create-reservation.dto';
@@ -10,6 +11,7 @@ import { UpdateReservationStatusDto } from '../dto/update-reservation-status.dto
 import { ListReservationsQueryDto } from '../dto/list-reservations-query.dto';
 import { UpdateReservationDto } from '../dto/update-reservation.dto';
 import { CancelReservationDto } from '../dto/cancel-reservation.dto';
+import { NoShowReservationDto } from '../dto/no-show-reservation.dto';
 
 @Controller('reservations')
 @UseGuards(JwtAuthGuard)
@@ -19,6 +21,7 @@ export class ReservationsController {
     private readonly reservationEngine: ReservationEngineService,
     private readonly reservationRepository: ReservationRepository,
     private readonly dashboardGateway: DashboardGateway,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   @Get('today')
@@ -95,6 +98,9 @@ export class ReservationsController {
     if (dto.status === ReservationStatus.CANCELLED) {
       throw new BadRequestException('Usa el endpoint dedicado de cancelacion para registrar un motivo estructurado.');
     }
+    if (dto.status === ReservationStatus.NO_SHOW) {
+      throw new BadRequestException('Usa el endpoint dedicado de no-show para registrar un motivo estructurado.');
+    }
 
     const updated = await this.reservationRepository.updateStatus(restaurantId, id, dto.status);
 
@@ -114,6 +120,7 @@ export class ReservationsController {
       throw new BadRequestException('La reserva no existe o no pertenece al restaurante actual.');
     }
 
+    const reason = this.resolveCancellationReason(dto);
     const updated = await this.reservationRepository.updateStatus(
       restaurantId,
       id,
@@ -125,14 +132,14 @@ export class ReservationsController {
         restaurantId,
         reservationId: id,
         cancelledByUserId: req.user?.sub ?? req.user?.id ?? null,
-        reason: dto.reason.trim(),
-        source: dto.source,
+        reason,
+        source: dto.source ?? ReservationSource.DASHBOARD,
       });
     }
 
-    if (updated && dto.reason.trim()) {
+    if (updated && reason) {
       const withReason = await this.reservationRepository.update(restaurantId, id, {
-        notes: [updated.notes, `Cancelación dashboard: ${dto.reason.trim()}`]
+        notes: [updated.notes, `Cancelación dashboard: ${reason}`]
           .filter(Boolean)
           .join('\n'),
       });
@@ -140,6 +147,41 @@ export class ReservationsController {
       this.dashboardGateway.emitToRestaurant(restaurantId, 'reservation_updated', withReason);
       return withReason;
     }
+
+    if (updated) {
+      this.dashboardGateway.emitToRestaurant(restaurantId, 'reservation_updated', updated);
+    }
+
+    return updated;
+  }
+
+  @Patch(':id/no-show')
+  async markNoShow(@Req() req: any, @Param('id') id: string, @Body() dto: NoShowReservationDto) {
+    const restaurantId = req['tenantId'];
+    const current = await this.reservationRepository.findById(restaurantId, id);
+
+    if (!current) {
+      throw new BadRequestException('La reserva no existe o no pertenece al restaurante actual.');
+    }
+
+    const updated = await this.reservationRepository.updateStatus(restaurantId, id, ReservationStatus.NO_SHOW);
+    const reasonCode = dto.reasonCode ?? 'CUSTOMER_DID_NOT_ARRIVE';
+    const details = dto.details?.trim() || undefined;
+
+    await this.auditLog.record({
+      tenantId: restaurantId,
+      actorUserId: req.user?.sub ?? req.user?.id,
+      actorRole: req.user?.role,
+      action: 'RESERVATION_NO_SHOW',
+      entity: 'Reservation',
+      entityId: id,
+      previousValue: { status: current.status },
+      newValue: { status: ReservationStatus.NO_SHOW, reasonCode, details },
+      metadata: { reasonCode, details, customerId: current.customerId },
+      ipAddress: this.clientIp(req),
+      userAgent: String(req.headers?.['user-agent'] ?? ''),
+      result: 'SUCCESS',
+    });
 
     if (updated) {
       this.dashboardGateway.emitToRestaurant(restaurantId, 'reservation_updated', updated);
@@ -238,5 +280,23 @@ export class ReservationsController {
     }
 
     return { start, end };
+  }
+
+  private resolveCancellationReason(dto: CancelReservationDto): string {
+    const reasonCode = dto.reasonCode ?? 'OTHER';
+    const details = dto.details?.trim();
+    const legacyReason = dto.reason?.trim();
+    const reason = legacyReason || details;
+
+    if (!reason || reason.length < 3) {
+      throw new BadRequestException('Indica un motivo de cancelación de al menos 3 caracteres.');
+    }
+
+    return `${reasonCode}: ${reason}`;
+  }
+
+  private clientIp(req: any): string | undefined {
+    const forwarded = String(req.headers?.['x-forwarded-for'] ?? '').split(',')[0]?.trim();
+    return forwarded || req.ip || req.socket?.remoteAddress;
   }
 }

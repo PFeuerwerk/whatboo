@@ -1,7 +1,7 @@
 <div class="staff-wrapper animate-fade-in">
   <div class="header-block">
     <h1 class="title-main">Equipo y accesos</h1>
-    <p class="subtitle-main">Crea usuarios del restaurante, asigna roles y controla quién puede entrar al panel.</p>
+    <p class="subtitle-main">Invita usuarios del restaurante por email, asigna roles y controla quién puede entrar al panel.</p>
   </div>
 
   @if (successMessage()) {
@@ -14,7 +14,7 @@
 
   <div class="split-grid">
     <div class="form-card">
-      <h3 class="section-title">Crear usuario</h3>
+      <h3 class="section-title">Invitar usuario</h3>
       <form [formGroup]="staffForm" (ngSubmit)="onCreateStaff()" class="space-y-4">
         <div class="input-group">
           <label class="input-label">Nombre</label>
@@ -28,10 +28,7 @@
           <label class="input-label">Correo Electrónico</label>
           <input type="email" formControlName="email" class="form-input" placeholder="ej: staff@restaurante.com">
         </div>
-        <div class="input-group">
-          <label class="input-label">Contraseña Temporal</label>
-          <input type="password" formControlName="password" class="form-input" placeholder="Mínimo 8 caracteres">
-        </div>
+
         <div class="input-group">
           <label class="input-label">Rol de Acceso</label>
           <select formControlName="role" class="form-select">
@@ -42,7 +39,7 @@
 
         <button type="submit" [disabled]="staffForm.invalid || isSaving()" class="submit-btn">
           @if (isSaving()) { ⏳ }
-          Crear Usuario
+          Enviar invitación
         </button>
       </form>
     </div>

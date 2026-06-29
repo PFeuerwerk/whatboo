@@ -25,9 +25,13 @@ export class CustomersController {
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  async findOne(@Request() req: AuthRequest & { tenantId?: string }, @Param('id') id: string) {
+  async findOne(
+    @Request() req: AuthRequest & { tenantId?: string },
+    @Param('id') id: string,
+    @Query() query: ListCustomersQueryDto,
+  ) {
     const restaurantId = this.getTenantId(req);
-    return this.customersService.getProfile(restaurantId, id);
+    return this.customersService.getProfile(restaurantId, id, query);
   }
 
   private getTenantId(req: AuthRequest & { tenantId?: string }): string {

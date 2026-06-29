@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { BaseRepository } from '../../../../infrastructure/database/repositories/base.repository';
-import { Customer, Prisma } from '@prisma/client';
+import { Customer, Prisma, ReservationStatus } from '@prisma/client';
 import { normalizePhone } from '../../../../common/phone/phone-normalizer.util';
 import { PaginatedResponse, normalizePagination, paginatedResponse } from '../../../../common/pagination/paginated-response';
 
@@ -12,14 +12,14 @@ export class CustomerRepository extends BaseRepository {
   }
 
   async findByPhone(restaurantId: string, phone: string): Promise<Customer | null> {
-      return this.prisma.customer.findUnique({
-        where: {
-          restaurantId_phone: {
-            restaurantId,
-            phone: normalizePhone(phone).normalizedPhone,
-          },
+    return this.prisma.customer.findUnique({
+      where: {
+        restaurantId_phone: {
+          restaurantId,
+          phone: normalizePhone(phone).normalizedPhone,
         },
-      });
+      },
+    });
   }
 
   async findById(restaurantId: string, id: string): Promise<Customer | null> {
@@ -29,15 +29,58 @@ export class CustomerRepository extends BaseRepository {
     });
   }
 
+  async findProfile(restaurantId: string, id: string, input: { take?: number; skip?: number }) {
+    this.requireRestaurantId(restaurantId);
+    const { take, skip } = normalizePagination(input);
+    const customer = await this.prisma.customer.findFirst({
+      where: { id, restaurantId, active: true },
+    });
+
+    if (!customer) return null;
+
+    const reservationWhere: Prisma.ReservationWhereInput = {
+      restaurantId,
+      customerId: id,
+      deletedAt: null,
+    };
+
+    const [reservations, reservationCount, completedCount, cancelledCount, noShowCount, totalPax] = await Promise.all([
+      this.prisma.reservation.findMany({
+        where: reservationWhere,
+        include: { assignedTables: { include: { table: true } } },
+        orderBy: { reservationStart: 'desc' },
+        take,
+        skip,
+      }),
+      this.prisma.reservation.count({ where: reservationWhere }),
+      this.prisma.reservation.count({ where: { ...reservationWhere, status: ReservationStatus.COMPLETED } }),
+      this.prisma.reservation.count({ where: { ...reservationWhere, status: ReservationStatus.CANCELLED } }),
+      this.prisma.reservation.count({ where: { ...reservationWhere, status: ReservationStatus.NO_SHOW } }),
+      this.prisma.reservation.aggregate({ where: reservationWhere, _sum: { guestCount: true } }),
+    ]);
+
+    return {
+      ...customer,
+      metrics: {
+        reservationCount,
+        completedCount,
+        cancelledCount,
+        noShowCount,
+        totalPax: totalPax._sum.guestCount ?? 0,
+      },
+      reservations: paginatedResponse(reservations, reservationCount, { take, skip }),
+    };
+  }
+
   async findAll(restaurantId: string): Promise<Customer[]> {
     return this.prisma.customer.findMany({
       where: {
         restaurantId,
-        active: true
+        active: true,
       },
       orderBy: {
-        totalReservations: 'desc' // Ordenar por fidelización por defecto
-      }
+        totalReservations: 'desc',
+      },
     });
   }
 
@@ -85,7 +128,6 @@ export class CustomerRepository extends BaseRepository {
     return paginatedResponse(data, total, { take, skip });
   }
 
-
   async findOrCreate(
     restaurantId: string,
     phone: string,
@@ -96,19 +138,19 @@ export class CustomerRepository extends BaseRepository {
     const client = tx ?? this.prisma;
 
     return client.customer.upsert({
-        where: {
-          restaurantId_phone: {
-            restaurantId,
-            phone: normalizePhone(phone).normalizedPhone,
-          },
-        },
-        update: {},
-        create: {
+      where: {
+        restaurantId_phone: {
           restaurantId,
           phone: normalizePhone(phone).normalizedPhone,
-          firstName: data?.firstName,
-          lastName: data?.lastName,
         },
+      },
+      update: {},
+      create: {
+        restaurantId,
+        phone: normalizePhone(phone).normalizedPhone,
+        firstName: data?.firstName,
+        lastName: data?.lastName,
+      },
     });
   }
 

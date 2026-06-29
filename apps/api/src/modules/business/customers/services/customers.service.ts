@@ -12,8 +12,8 @@ export class CustomersService {
     return this.customerRepository.search(restaurantId, query);
   }
 
-  async getProfile(restaurantId: string, id: string): Promise<Customer> {
-    const customer = await this.customerRepository.findById(restaurantId, id);
+  async getProfile(restaurantId: string, id: string, query: Pick<ListCustomersQueryDto, 'take' | 'skip'> = {}) {
+    const customer = await this.customerRepository.findProfile(restaurantId, id, query);
 
     if (!customer) {
       throw new NotFoundException('Cliente no encontrado.');

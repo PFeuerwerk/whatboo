@@ -29,8 +29,7 @@ export class UsersComponent implements OnInit {
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
-      role: [UserRole.STAFF, [Validators.required]],
-      password: ['', [Validators.required, Validators.minLength(8)]]
+      role: [UserRole.STAFF, [Validators.required]]
     });
 
     this.loadStaffList();
@@ -58,19 +57,19 @@ export class UsersComponent implements OnInit {
     this.errorMessage.set(null);
     this.successMessage.set(null);
 
-    const body: CreateStaffUserDto = this.staffForm.getRawValue();
+    const body: CreateStaffUserDto = { ...this.staffForm.getRawValue(), sendInvitation: true };
 
     this.usersApi.createStaff(body).subscribe({
       next: () => {
         this.isSaving.set(false);
-        this.successMessage.set('Usuario de staff creado correctamente.');
-        this.staffForm.reset({ role: UserRole.STAFF, password: '' });
+        this.successMessage.set('Usuario creado e invitación enviada por email.');
+        this.staffForm.reset({ role: UserRole.STAFF });
         this.loadStaffList();
         setTimeout(() => this.successMessage.set(null), 4000);
       },
       error: () => {
         this.isSaving.set(false);
-        this.errorMessage.set('No se pudo crear el usuario. Revisa email, rol, contraseña y permisos.');
+        this.errorMessage.set('No se pudo crear el usuario. Revisa email, rol y permisos.');
       }
     });
   }

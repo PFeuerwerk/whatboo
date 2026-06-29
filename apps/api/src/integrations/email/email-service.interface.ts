@@ -1,4 +1,4 @@
-export type EmailTemplateName = 'auth/forgot-password';
+export type EmailTemplateName = 'auth/forgot-password' | 'staff/invitation';
 
 export interface EmailRecipient {
   email: string;
@@ -36,6 +36,21 @@ export interface PasswordResetEmailJob {
   traceId: string;
   requestedAt: string;
 }
+
+export interface StaffInvitationEmailJob {
+  tenantId: string;
+  restaurantId: string;
+  templateName: 'staff/invitation';
+  locale: string;
+  to: string;
+  staffName: string;
+  restaurantName: string;
+  activationLink: string;
+  traceId: string;
+  invitedAt: string;
+}
+
+export type TransactionalEmailJob = PasswordResetEmailJob | StaffInvitationEmailJob;
 
 export interface IEmailService {
   sendMail(options: SendEmailOptions): Promise<void>;

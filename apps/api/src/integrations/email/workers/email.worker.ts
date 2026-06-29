@@ -4,7 +4,7 @@ import { Job, Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import { EmailService } from '../email.service';
 import { EMAIL_QUEUE_NAME, EmailQueue } from '../queues/email.queue';
-import { PasswordResetEmailJob } from '../email-service.interface';
+import { PasswordResetEmailJob, StaffInvitationEmailJob, TransactionalEmailJob } from '../email-service.interface';
 
 @Injectable()
 export class EmailWorker implements OnModuleInit, OnModuleDestroy {
@@ -38,7 +38,7 @@ export class EmailWorker implements OnModuleInit, OnModuleDestroy {
 
     this.worker = new Worker(
       EMAIL_QUEUE_NAME,
-      async (job: Job<PasswordResetEmailJob>) => this.process(job),
+      async (job: Job<TransactionalEmailJob>) => this.process(job),
       {
         connection: this.redisConnection as any,
         concurrency,
@@ -67,22 +67,47 @@ export class EmailWorker implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`Worker transaccional de email activo en Redis -> ${redisHost}:${redisPort}`);
   }
 
-  private async process(job: Job<PasswordResetEmailJob>): Promise<void> {
-    if (job.name !== 'auth.password-reset') {
-      throw new Error(`Email job no soportado: ${job.name}`);
+  private async process(job: Job<TransactionalEmailJob>): Promise<void> {
+    if (job.name === 'auth.password-reset') {
+      return this.sendPasswordReset(job.data as PasswordResetEmailJob);
     }
 
+    if (job.name === 'staff.invitation') {
+      return this.sendStaffInvitation(job.data as StaffInvitationEmailJob);
+    }
+
+    throw new Error(`Email job no soportado: ${job.name}`);
+  }
+
+  private async sendPasswordReset(data: PasswordResetEmailJob): Promise<void> {
     await this.emailService.sendMail({
-      tenantId: job.data.tenantId,
-      restaurantId: job.data.restaurantId,
-      locale: job.data.locale,
-      traceId: job.data.traceId,
-      to: job.data.to,
-      subject: `Restablecer contraseña - ${job.data.restaurantName}`,
-      templateName: job.data.templateName,
+      tenantId: data.tenantId,
+      restaurantId: data.restaurantId,
+      locale: data.locale,
+      traceId: data.traceId,
+      to: data.to,
+      subject: `Restablecer contraseña - ${data.restaurantName}`,
+      templateName: data.templateName,
       context: {
-        restaurantName: job.data.restaurantName,
-        resetLink: job.data.resetLink,
+        restaurantName: data.restaurantName,
+        resetLink: data.resetLink,
+      },
+    });
+  }
+
+  private async sendStaffInvitation(data: StaffInvitationEmailJob): Promise<void> {
+    await this.emailService.sendMail({
+      tenantId: data.tenantId,
+      restaurantId: data.restaurantId,
+      locale: data.locale,
+      traceId: data.traceId,
+      to: data.to,
+      subject: `Invitación al equipo - ${data.restaurantName}`,
+      templateName: data.templateName,
+      context: {
+        staffName: data.staffName,
+        restaurantName: data.restaurantName,
+        activationLink: data.activationLink,
       },
     });
   }

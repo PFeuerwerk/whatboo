@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
-import { PasswordResetEmailJob } from '../email-service.interface';
+import { PasswordResetEmailJob, StaffInvitationEmailJob } from '../email-service.interface';
 
 export const EMAIL_QUEUE_NAME = 'email-transactional-queue';
 export const EMAIL_DLQ_NAME = 'email-transactional-dlq';
@@ -60,15 +60,11 @@ export class EmailQueue implements OnModuleInit, OnModuleDestroy {
   }
 
   async addPasswordResetJob(payload: PasswordResetEmailJob): Promise<void> {
-    if (this.isTestMode || !this.queue) {
-      this.logger.debug(`Email password-reset omitido en test. Trace: ${payload.traceId}`);
-      return;
-    }
+    await this.addTransactionalJob('auth.password-reset', payload, 2);
+  }
 
-    await this.queue.add('auth.password-reset', payload, {
-      jobId: payload.traceId,
-      priority: 2,
-    });
+  async addStaffInvitationJob(payload: StaffInvitationEmailJob): Promise<void> {
+    await this.addTransactionalJob('staff.invitation', payload, 1);
   }
 
   async addDeadLetterJob(input: {
@@ -98,5 +94,17 @@ export class EmailQueue implements OnModuleInit, OnModuleDestroy {
     await this.queue?.close();
     await this.dlq?.close();
     await this.redisConnection?.quit();
+  }
+
+  private async addTransactionalJob(name: string, payload: PasswordResetEmailJob | StaffInvitationEmailJob, priority: number): Promise<void> {
+    if (this.isTestMode || !this.queue) {
+      this.logger.debug(`Email ${name} omitido en test. Trace: ${payload.traceId}`);
+      return;
+    }
+
+    await this.queue.add(name, payload, {
+      jobId: payload.traceId,
+      priority,
+    });
   }
 }

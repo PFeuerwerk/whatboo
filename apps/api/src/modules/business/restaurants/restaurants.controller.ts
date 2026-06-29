@@ -13,7 +13,8 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { DayOfWeek, UserRole } from '@prisma/client';
+import { DayOfWeek, ReservationStatus, UserRole } from '@prisma/client';
+import { OperationalReportQueryDto } from './dto/operational-report-query.dto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { JwtAuthGuard } from '../../platform/auth/guards/jwt-auth.guard';
@@ -410,6 +411,11 @@ export class RestaurantsController {
     return this.buildDailyAnalytics(req.tenantId, date);
   }
 
+  @Get('reports/operational')
+  async getOperationalReport(@Req() req: any, @Query() query: OperationalReportQueryDto) {
+    return this.buildOperationalReport(req.tenantId, query.from, query.to);
+  }
+
   @Get(':slug/analytics')
   @Header('Deprecation', 'true')
   @Header('Sunset', '2026-09-30')
@@ -605,6 +611,96 @@ export class RestaurantsController {
     };
   }
 
+  private async buildOperationalReport(restaurantId: string, from?: string, to?: string) {
+    const { start, end } = this.getRange(from, to);
+    const reservations = await this.prisma.reservation.findMany({
+      where: {
+        restaurantId,
+        deletedAt: null,
+        reservationStart: { gte: start, lte: end },
+      },
+      select: {
+        id: true,
+        reservationStart: true,
+        guestCount: true,
+        status: true,
+        source: true,
+      },
+      orderBy: { reservationStart: 'asc' },
+    });
+
+    const byStatus = this.countBy(reservations.map((reservation) => reservation.status));
+    const bySource = this.countBy(reservations.map((reservation) => reservation.source));
+    const totalReservations = reservations.length;
+    const totalPax = reservations.reduce((sum, reservation) => sum + reservation.guestCount, 0);
+    const completedReservations = byStatus[ReservationStatus.COMPLETED] ?? 0;
+    const cancelledReservations = byStatus[ReservationStatus.CANCELLED] ?? 0;
+    const noShowReservations = byStatus[ReservationStatus.NO_SHOW] ?? 0;
+    const attendedReservations = completedReservations + (byStatus[ReservationStatus.CONFIRMED] ?? 0);
+    const actionableReservations = totalReservations - cancelledReservations;
+
+    return {
+      from: start.toISOString(),
+      to: end.toISOString(),
+      totals: {
+        reservations: totalReservations,
+        pax: totalPax,
+        completed: completedReservations,
+        cancelled: cancelledReservations,
+        noShow: noShowReservations,
+        attendanceRate: actionableReservations > 0 ? Math.round((attendedReservations / actionableReservations) * 100) : 0,
+        cancellationRate: totalReservations > 0 ? Math.round((cancelledReservations / totalReservations) * 100) : 0,
+        noShowRate: totalReservations > 0 ? Math.round((noShowReservations / totalReservations) * 100) : 0,
+      },
+      byStatus,
+      bySource,
+      byDay: this.buildDailySeries(reservations),
+    };
+  }
+
+  private getRange(from?: string, to?: string): { start: Date; end: Date } {
+    const start = from ? new Date(from) : new Date();
+    if (Number.isNaN(start.getTime())) {
+      throw new BadRequestException('Fecha inicial inválida. Usa YYYY-MM-DD o ISO-8601.');
+    }
+    start.setHours(0, 0, 0, 0);
+
+    const end = to ? new Date(to) : new Date(start);
+    if (Number.isNaN(end.getTime())) {
+      throw new BadRequestException('Fecha final inválida. Usa YYYY-MM-DD o ISO-8601.');
+    }
+    end.setHours(23, 59, 59, 999);
+
+    if (end < start) {
+      throw new BadRequestException('La fecha final debe ser igual o posterior a la fecha inicial.');
+    }
+
+    return { start, end };
+  }
+
+  private countBy(values: string[]): Record<string, number> {
+    return values.reduce<Record<string, number>>((acc, value) => {
+      acc[value] = (acc[value] ?? 0) + 1;
+      return acc;
+    }, {});
+  }
+
+  private buildDailySeries(reservations: Array<{ reservationStart: Date; guestCount: number; status: string }>) {
+    const series = new Map<string, { date: string; reservations: number; pax: number; completed: number; cancelled: number; noShow: number }>();
+
+    for (const reservation of reservations) {
+      const date = reservation.reservationStart.toISOString().slice(0, 10);
+      const current = series.get(date) ?? { date, reservations: 0, pax: 0, completed: 0, cancelled: 0, noShow: 0 };
+      current.reservations += 1;
+      current.pax += reservation.guestCount;
+      if (reservation.status === ReservationStatus.COMPLETED) current.completed += 1;
+      if (reservation.status === ReservationStatus.CANCELLED) current.cancelled += 1;
+      if (reservation.status === ReservationStatus.NO_SHOW) current.noShow += 1;
+      series.set(date, current);
+    }
+
+    return Array.from(series.values()).sort((left, right) => left.date.localeCompare(right.date));
+  }
   private getDayRange(date?: string): { start: Date; end: Date } {
     const start = date ? new Date(date) : new Date();
 

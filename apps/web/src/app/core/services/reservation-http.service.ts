@@ -68,10 +68,18 @@ export class ReservationHttpService {
     return this.http.patch<Reservation>(`${this.baseUrl}/${reservationId}/status`, { status });
   }
 
-  public cancelReservation(reservationId: string, reason?: string): Observable<Reservation> {
+  public cancelReservation(reservationId: string, reason?: string, reasonCode = 'CUSTOMER_REQUEST'): Observable<Reservation> {
     return this.http.patch<Reservation>(`${this.baseUrl}/${reservationId}/cancel`, {
+      reasonCode,
       reason: reason?.trim() || 'Cancelada desde dashboard',
       source: 'DASHBOARD'
+    });
+  }
+
+  public markNoShow(reservationId: string, details?: string): Observable<Reservation> {
+    return this.http.patch<Reservation>(`${this.baseUrl}/${reservationId}/no-show`, {
+      reasonCode: 'CUSTOMER_DID_NOT_ARRIVE',
+      details: details?.trim() || 'Marcada como no-show desde dashboard'
     });
   }
 }
