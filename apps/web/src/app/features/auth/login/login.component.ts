@@ -34,6 +34,16 @@ export class LoginComponent implements OnInit {
     this.translate.use('es');
   }
 
+  public passwordResetQueryParams(): { restaurantSlug?: string; email?: string } {
+    const restaurantSlug = String(this.form?.value?.restaurantSlug ?? '').trim();
+    const email = String(this.form?.value?.email ?? '').trim().toLowerCase();
+
+    return {
+      ...(restaurantSlug ? { restaurantSlug } : {}),
+      ...(email ? { email } : {}),
+    };
+  }
+
   public submit(): void {
     if (this.form.invalid || this.isSubmitting()) return;
     this.isSubmitting.set(true);

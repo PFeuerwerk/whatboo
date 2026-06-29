@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -12,59 +12,65 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrls: ['./forgot-password.component.scss']
 })
 export class ForgotPasswordComponent implements OnInit {
-  forgotForm!: FormGroup;
-  isLoading = false;
-  successMessage: string | null = null;
-  errorMessage: string | null = null;
+  private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
+  private readonly authService = inject(AuthService);
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService
-  ) {}
+  readonly isLoading = signal(false);
+  readonly successMessage = signal<string | null>(null);
+  readonly errorMessage = signal<string | null>(null);
+
+  readonly forgotForm = this.fb.nonNullable.group({
+    restaurantSlug: ['', [Validators.required, Validators.pattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)]],
+    email: ['', [Validators.required, Validators.email]],
+  });
 
   ngOnInit(): void {
-    this.forgotForm = this.fb.group({
-      restaurantSlug: [localStorage.getItem('tenant_slug') ?? '', [Validators.required]],
-      email: ['', [Validators.required, Validators.email]]
+    const query = this.route.snapshot.queryParamMap;
+    const restaurantSlug = query.get('restaurantSlug') ?? localStorage.getItem('tenant_slug') ?? '';
+    const email = query.get('email') ?? '';
+
+    this.forgotForm.patchValue({
+      restaurantSlug: restaurantSlug.trim().toLowerCase(),
+      email: email.trim().toLowerCase(),
     });
   }
 
   onSubmit(): void {
-    if (this.forgotForm.invalid) {
+    if (this.forgotForm.invalid || this.isLoading()) {
       this.forgotForm.markAllAsTouched();
       this.focusFirstError();
       return;
     }
 
-    this.isLoading = true;
-    this.errorMessage = null;
-    this.successMessage = null;
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
 
     const payload = {
-      restaurantSlug: String(this.forgotForm.value.restaurantSlug ?? '').trim(),
-      email: String(this.forgotForm.value.email ?? '').trim().toLowerCase(),
+      restaurantSlug: this.forgotForm.controls.restaurantSlug.value.trim().toLowerCase(),
+      email: this.forgotForm.controls.email.value.trim().toLowerCase(),
     };
 
     this.authService.requestPasswordReset(payload).subscribe({
       next: () => {
-        this.isLoading = false;
-        this.successMessage = 'Si el correo coincide con un restaurante registrado, enviaremos un enlace de recuperacion.';
+        localStorage.setItem('tenant_slug', payload.restaurantSlug);
+        this.isLoading.set(false);
+        this.successMessage.set('Si el correo coincide con un usuario del restaurante, enviaremos un enlace de recuperación. Revisa Mailpit o tu bandeja de entrada.');
       },
       error: (error: HttpErrorResponse) => {
-        this.isLoading = false;
+        this.isLoading.set(false);
         if (error.status === 0) {
-          this.errorMessage = 'No se pudo conectar con el servidor. Verifica tu conexion a internet.';
-        } else {
-          this.errorMessage = error.error?.message || 'Ocurrio un error inesperado. Intentalo mas tarde.';
+          this.errorMessage.set('No se pudo conectar con el servidor. Verifica que la API esté encendida.');
+          return;
         }
+        this.errorMessage.set(error.error?.message || 'No se pudo solicitar el enlace. Inténtalo de nuevo en unos minutos.');
       }
     });
   }
 
   private focusFirstError(): void {
-    const firstInvalidControl: HTMLElement | null = document.querySelector('input.ng-invalid');
-    if (firstInvalidControl) {
-      firstInvalidControl.focus();
-    }
+    const firstInvalidControl = document.querySelector<HTMLInputElement>('input.ng-invalid');
+    firstInvalidControl?.focus();
   }
 }

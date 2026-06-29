@@ -66,7 +66,7 @@
         <div class="input-group">
           <div class="label-row">
             <label class="input-label">{{ 'AUTH.PASSWORD_LABEL' | translate }}</label>
-            <a routerLink="/auth/forgot-password" class="forgot-link">{{ 'AUTH.FORGOT_PASSWORD' | translate }}</a>
+            <a routerLink="/auth/forgot-password" [queryParams]="passwordResetQueryParams()" class="forgot-link">{{ 'AUTH.FORGOT_PASSWORD' | translate }}</a>
           </div>
           <input type="password" formControlName="password" class="form-input" placeholder="{{ 'AUTH.PASSWORD_PLACEHOLDER' | translate }}">
         </div>
