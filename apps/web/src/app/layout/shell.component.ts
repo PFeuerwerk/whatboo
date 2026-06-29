@@ -17,10 +17,12 @@ export class ShellComponent implements OnInit {
 
   public readonly userRole = signal<string>('OWNER');
   public readonly userEmail = signal<string>('viras_user@labellaitaliatest.com');
+  public readonly isPlatformAdmin = signal<boolean>(false);
 
   public ngOnInit(): void {
     const sessionRole = localStorage.getItem('user_role') || 'OWNER';
     this.userRole.set(sessionRole);
+    this.isPlatformAdmin.set(['ADMIN', 'PLATFORM_ADMIN'].includes(sessionRole));
     
     const sessionUser = this.authService.user();
     if (sessionUser?.email) {

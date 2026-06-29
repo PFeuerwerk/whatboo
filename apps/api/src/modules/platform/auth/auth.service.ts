@@ -131,7 +131,7 @@ export class AuthService {
     email: string,
     password: string,
     restaurantSlug: string,
-  ): Promise<{ accessToken: string }> {
+  ) {
     const restaurant = await this.prisma.restaurant.findUnique({
       where: { slug: restaurantSlug },
     });
@@ -183,7 +183,18 @@ export class AuthService {
       restaurantId: user.restaurantId,
     };
 
-    return { accessToken: this.jwtService.sign(payload) };
+    return {
+      accessToken: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        restaurantId: user.restaurantId,
+        restaurantSlug: restaurant.slug,
+      },
+    };
   }
   /**
    * Registra un nuevo restaurante e invita al dueño (Owner) enviando un token seguro de activación

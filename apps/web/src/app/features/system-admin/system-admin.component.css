@@ -1,10 +1,278 @@
 :host {
   display: block;
-  min-height: 100vh;
-  background: var(--color-bg-app);
 }
 
-.admin-it-wrapper .header-block {
-  border-bottom-color: var(--color-danger);
-  border-bottom-width: 2px;
+.platform-admin-page {
+  display: grid;
+  gap: 1rem;
+  color: var(--color-text-primary);
+}
+
+.platform-header,
+.panel,
+.metric-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.platform-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1rem;
+}
+
+.platform-header h1,
+.panel h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.platform-header p,
+.panel p,
+small {
+  color: var(--color-text-muted);
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+.metric-card {
+  padding: 1rem;
+}
+
+.metric-card span {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.metric-card strong {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1.6rem;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(20rem, 0.8fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.lower-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.panel {
+  min-width: 0;
+  padding: 1rem;
+}
+
+.panel-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+input,
+select {
+  width: 100%;
+  min-height: 2.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.filters input {
+  width: min(18rem, 100%);
+}
+
+.filters select {
+  width: 10rem;
+}
+
+.responsive-table {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+th {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+td strong,
+td small {
+  display: block;
+}
+
+.actions-cell {
+  text-align: right;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.6rem;
+  border-radius: 999px;
+  padding: 0 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.status-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-inactive {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.status-suspended {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.form-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+button {
+  min-height: 2.4rem;
+  border: 0;
+  border-radius: var(--radius-md);
+  padding: 0 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.primary-action {
+  background: var(--color-primary);
+  color: white;
+}
+
+.secondary-action,
+.text-action {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.danger-action {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.configuration-readout,
+.health-list,
+.event-list {
+  margin-top: 1rem;
+}
+
+.health-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.health-list div,
+.event-item {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.health-list div {
+  grid-template-columns: 1fr auto;
+}
+
+.event-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.admin-alert,
+.empty-state {
+  color: var(--color-text-muted);
+}
+
+.admin-alert {
+  padding: 0.75rem 1rem;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  background: #fef2f2;
+  color: #991b1b;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .platform-header,
+  .panel-toolbar {
+    flex-direction: column;
+  }
+
+  .admin-grid,
+  .lower-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filters,
+  .filters input,
+  .filters select {
+    width: 100%;
+  }
 }

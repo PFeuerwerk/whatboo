@@ -18,6 +18,8 @@ export interface LoginResponse {
     role: string;
     firstName?: string;
     lastName?: string;
+    restaurantId?: string;
+    restaurantSlug?: string;
   };
 }
 
@@ -57,6 +59,9 @@ export class AuthService {
           if (res?.accessToken) {
             localStorage.setItem(this.tokenKey, res.accessToken);
             localStorage.setItem('user_role', res.user?.role || 'OWNER');
+            if (res.user?.restaurantSlug) {
+              localStorage.setItem('tenant_slug', res.user.restaurantSlug);
+            }
             this.user.set(res.user || { email: payload.email, role: 'OWNER' });
           }
         })

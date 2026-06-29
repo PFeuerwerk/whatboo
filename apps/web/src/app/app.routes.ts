@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { platformAdminGuard } from './core/guards/platform-admin.guard';
 
 export const routes: Routes = [
   {
@@ -36,6 +37,11 @@ export const routes: Routes = [
       {
         path: 'users',
         loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent)
+      },
+      {
+        path: 'platform-admin',
+        canActivate: [platformAdminGuard],
+        loadComponent: () => import('./features/system-admin/system-admin.component').then(m => m.SystemAdminComponent)
       },
       {
         path: '',

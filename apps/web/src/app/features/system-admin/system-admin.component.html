@@ -1,41 +1,226 @@
-<div class="admin-it-wrapper animate-fade-in">
-  
-  <div class="header-block">
-    <h1 class="title-main">🚨 Panel Maestro de Infraestructura IT (WhatBoo Global)</h1>
-    <p class="subtitle-main">Consola suprema del sistema. Supervise inquilinos comerciales en PostgreSQL y elimine entornos de prueba en caliente.</p>
-  </div>
+<div class="platform-admin-page">
+  <header class="platform-header">
+    <div>
+      <h1>Platform Admin</h1>
+      <p>Administracion global del SaaS sin mezclar datos operativos de restaurantes.</p>
+    </div>
+    <button type="button" class="secondary-action" (click)="loadPlatformAdmin()" [disabled]="isLoading()">
+      Actualizar
+    </button>
+  </header>
 
-  <div class="table-card">
-    <table class="b2b-table">
-      <thead>
-        <tr>
-          <th class="th-item">ID del Sistema</th>
-          <th class="th-item">Nombre de la Marca</th>
-          <th class="th-item">Slug / URL</th>
-          <th class="th-item">Aforo Max</th>
-          <th class="th-item" style="text-align: right;">Mantenimiento Crítico</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (rest of restaurantList(); track rest.id) {
-          <tr>
-            <td class="td-item font-mono text-xs text-slate-400">{{ rest.id }}</td>
-            <td class="td-item font-bold text-slate-900">🏢 {{ rest.name }}</td>
-            <td class="td-item text-blue-600 font-bold">/{{ rest.slug }}</td>
-            <td class="td-item">{{ rest.maxCapacity || 100 }} Pax</td>
-            <td class="td-item" style="text-align: right;">
-              <button (click)="onDestroyRestaurant(rest.id)" class="destroy-btn">
-                🔥 Destruir e Invalidar Inquilino
-              </button>
-            </td>
-          </tr>
+  @if (errorMessage()) {
+    <div class="admin-alert">{{ errorMessage() }}</div>
+  }
+
+  <section class="metric-grid" aria-label="Metricas globales">
+    <article class="metric-card">
+      <span>Total restaurantes</span>
+      <strong>{{ dashboard()?.totals?.restaurants ?? 0 }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>Activos</span>
+      <strong>{{ activeTenantCount() }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>Suspendidos</span>
+      <strong>{{ dashboard()?.totals?.restaurantsSuspended ?? 0 }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>Usuarios</span>
+      <strong>{{ dashboard()?.totals?.users ?? 0 }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>Reservas</span>
+      <strong>{{ dashboard()?.totals?.reservations ?? 0 }}</strong>
+    </article>
+  </section>
+
+  <section class="admin-grid">
+    <div class="panel tenants-panel">
+      <div class="panel-toolbar">
+        <div>
+          <h2>Tenants</h2>
+          <p>Listado global de restaurantes registrados.</p>
+        </div>
+        <div class="filters">
+          <input
+            type="search"
+            [value]="searchTerm()"
+            (input)="onSearch($any($event.target).value)"
+            placeholder="Buscar tenant"
+            aria-label="Buscar tenant">
+          <select [value]="statusFilter()" (change)="onStatusFilter($any($event.target).value)" aria-label="Filtrar por estado">
+            <option value="ALL">Todos</option>
+            <option value="ACTIVE">Activos</option>
+            <option value="INACTIVE">Inactivos</option>
+            <option value="SUSPENDED">Suspendidos</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="responsive-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Restaurante</th>
+              <th>Estado</th>
+              <th>Uso</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (restaurant of restaurants(); track restaurant.id) {
+              <tr>
+                <td>
+                  <strong>{{ restaurant.name }}</strong>
+                  <small>{{ restaurant.slug }} · {{ restaurant.city || 'Sin ciudad' }}</small>
+                </td>
+                <td>
+                  <span class="status-pill" [ngClass]="statusClass(restaurant.status)">
+                    {{ restaurant.status }}
+                  </span>
+                </td>
+                <td>
+                  <small>
+                    {{ restaurant._count.users }} usuarios ·
+                    {{ restaurant._count.reservations }} reservas ·
+                    {{ restaurant._count.tables }} mesas
+                  </small>
+                </td>
+                <td class="actions-cell">
+                  <button type="button" class="text-action" (click)="viewRestaurant(restaurant)">Ver</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="empty-state">No hay tenants para los filtros actuales.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <aside class="panel detail-panel">
+      <h2>Detalle tenant</h2>
+      @if (selectedRestaurant(); as tenant) {
+        <div class="form-grid">
+          <label>
+            Nombre
+            <input [(ngModel)]="tenant.name">
+          </label>
+          <label>
+            Legal
+            <input [(ngModel)]="tenant.legalName">
+          </label>
+          <label>
+            Email
+            <input [(ngModel)]="tenant.email">
+          </label>
+          <label>
+            Telefono
+            <input [(ngModel)]="tenant.phone">
+          </label>
+          <label>
+            Ciudad
+            <input [(ngModel)]="tenant.city">
+          </label>
+          <label>
+            Pais
+            <input [(ngModel)]="tenant.country">
+          </label>
+          <label>
+            Timezone
+            <input [(ngModel)]="tenant.timezone">
+          </label>
+          <label>
+            Estado
+            <select [(ngModel)]="tenant.status">
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+              <option value="SUSPENDED">SUSPENDED</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="detail-actions">
+          <button type="button" class="primary-action" (click)="saveBasicTenantData()">Guardar</button>
+          <button type="button" class="secondary-action" (click)="updateTenantStatus(tenant, RestaurantStatus.ACTIVE)">Activar</button>
+          <button type="button" class="danger-action" (click)="updateTenantStatus(tenant, RestaurantStatus.SUSPENDED)">Suspender</button>
+        </div>
+
+        <div class="configuration-readout">
+          <h3>Configuracion asociada</h3>
+          <p>Duracion: {{ tenant.defaultReservationDuration }} min</p>
+          <p>Intervalo slots: {{ tenant.slotIntervalMinutes }} min</p>
+          <p>Buffer: {{ tenant.bufferTimeMinutes }} min</p>
+          <p>WhatsApp: {{ tenant.whatsappAccounts.length }} cuenta(s)</p>
+        </div>
+      } @else {
+        <p class="empty-state">Selecciona un tenant para ver su configuracion.</p>
+      }
+    </aside>
+  </section>
+
+  <section class="admin-grid lower-grid">
+    <div class="panel">
+      <h2>Usuarios platform</h2>
+      <div class="responsive-table compact">
+        <table>
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Tenant asociado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of platformUsers(); track user.id) {
+              <tr>
+                <td>{{ user.email }}</td>
+                <td>{{ user.role }}</td>
+                <td>{{ user.restaurant.name }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3" class="empty-state">No hay usuarios platform activos.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Observabilidad inicial</h2>
+      <div class="health-list">
+        <div>
+          <span>API</span>
+          <strong>{{ observability()?.api?.status ?? 'unknown' }}</strong>
+        </div>
+        <div>
+          <span>DB</span>
+          <strong>{{ observability()?.database?.status ?? 'unknown' }}</strong>
+        </div>
+        <div>
+          <span>Redis</span>
+          <strong>{{ observability()?.redis?.status ?? 'unknown' }}</strong>
+        </div>
+      </div>
+
+      <h3>Ultimos eventos</h3>
+      <div class="event-list">
+        @for (event of observability()?.recentEvents ?? []; track event.id) {
+          <div class="event-item">
+            <strong>{{ event.reason }}</strong>
+            <span>{{ event.createdAt }}</span>
+            <small>{{ event.errorMessage }}</small>
+          </div>
         } @empty {
-          <tr>
-            <td colspan="5" class="td-item text-center text-slate-400 p-8">No hay ningún restaurante registrado en el SaaS de WhatBoo en este instante.</td>
-          </tr>
+          <p class="empty-state">No hay eventos recientes registrados.</p>
         }
-      </tbody>
-    </table>
-  </div>
-
+      </div>
+    </div>
+  </section>
 </div>

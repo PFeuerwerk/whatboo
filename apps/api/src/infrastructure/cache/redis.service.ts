@@ -50,4 +50,8 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async set(key: string, value: string, ttlSeconds: number): Promise<void> {
     await this.client.set(key, value, 'EX', ttlSeconds);
   }
+
+  async ping(): Promise<string> {
+    return this.client.ping();
+  }
 }

@@ -34,6 +34,12 @@
           <span class="nav-icon">🧑‍💼</span>
           {{ 'NAV.STAFF' | translate }}
         </a>
+        @if (isPlatformAdmin()) {
+          <a routerLink="/platform-admin" routerLinkActive="nav-link-active" class="nav-link">
+            <span class="nav-icon">▦</span>
+            Platform Admin
+          </a>
+        }
       </nav>
     </div>
 
