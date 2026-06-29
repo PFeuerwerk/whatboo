@@ -60,6 +60,7 @@ model Restaurant {
   whatsappAccounts WhatsappAccount[]
   customers   Customer[]
   reservations Reservation[]
+  reservationCancellationAudits ReservationCancellationAudit[]
   tables        RestaurantTable[]
   openingHours  OpeningHour[]
   blockedDates  BlockedDate[]
@@ -105,6 +106,7 @@ model User {
 
   // Relación inversa con el token de recuperación
   passwordResetTokens PasswordResetToken[]
+  reservationCancellationAudits ReservationCancellationAudit[]
 
   @@unique([restaurantId, email])
   @@index([restaurantId])
@@ -213,6 +215,7 @@ model Reservation {
   completedAt DateTime?
   noShowAt DateTime?
   assignedTables ReservationTable[]
+  cancellationAudits ReservationCancellationAudit[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -223,6 +226,30 @@ model Reservation {
   @@index([status])
   @@index([reservationDate])
   @@map("reservations")
+}
+
+model ReservationCancellationAudit {
+  id String @id @default(uuid())
+
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+
+  cancelledByUserId String?
+  cancelledByUser   User? @relation(fields: [cancelledByUserId], references: [id])
+
+  reason String
+  source ReservationSource @default(DASHBOARD)
+
+  createdAt DateTime @default(now())
+
+  @@index([restaurantId])
+  @@index([reservationId])
+  @@index([cancelledByUserId])
+  @@index([createdAt])
+  @@map("reservation_cancellation_audits")
 }
 
 // =========================

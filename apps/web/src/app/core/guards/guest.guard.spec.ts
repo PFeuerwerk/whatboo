@@ -31,14 +31,14 @@ describe('guestGuard', () => {
     expect(router.createUrlTree).not.toHaveBeenCalled();
   });
 
-  it('should redirect to dashboard when user is already authenticated', () => {
+  it('should redirect to reservations when user is already authenticated', () => {
     authService.isAuthenticated.and.returnValue(true);
-    const urlTree = { toString: () => '/dashboard' };
+    const urlTree = { toString: () => '/reservations' } as unknown as ReturnType<Router['createUrlTree']>;
     router.createUrlTree.and.returnValue(urlTree as any);
 
     const result = TestBed.runInInjectionContext(() => guestGuard({} as any, {} as any));
 
-    expect(result).toEqual(urlTree);
-    expect(router.createUrlTree).toHaveBeenCalledWith(['/dashboard']);
+    expect(result).toBe(urlTree);
+    expect(router.createUrlTree).toHaveBeenCalledWith(['/reservations']);
   });
 });

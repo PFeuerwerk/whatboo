@@ -17,6 +17,8 @@ import * as bcrypt from 'bcrypt';
 import { JwtAuthGuard } from '../../../../modules/platform/auth/guards/jwt-auth.guard';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { JwtPayload } from '../../../../modules/platform/auth/strategies/jwt.strategy';
+import { CreateUserDto } from '../dto/create-user.dto';
+import { UpdateUserDto } from '../dto/update-user.dto';
 
 interface AuthRequest extends Request {
   user: JwtPayload;
@@ -72,7 +74,7 @@ export class UsersController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Request() req: AuthRequest, @Body() dto: any) {
+  async create(@Request() req: AuthRequest, @Body() dto: CreateUserDto) {
     this.assertManagementRole(req);
     const role = this.normalizeStaffRole(dto.role ?? UserRole.STAFF);
 
@@ -103,7 +105,7 @@ export class UsersController {
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
-  async update(@Request() req: AuthRequest, @Param('id') id: string, @Body() dto: any) {
+  async update(@Request() req: AuthRequest, @Param('id') id: string, @Body() dto: UpdateUserDto) {
     this.assertManagementRole(req);
     const restaurantId = this.getTenantId(req);
 

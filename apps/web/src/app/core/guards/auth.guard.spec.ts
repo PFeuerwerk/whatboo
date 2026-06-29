@@ -33,12 +33,12 @@ describe('authGuard', () => {
 
   it('should redirect to login when user is not authenticated', () => {
     authService.isAuthenticated.and.returnValue(false);
-    const urlTree = { toString: () => '/auth/login' };
+    const urlTree = { toString: () => '/auth/login' } as unknown as ReturnType<Router['createUrlTree']>;
     router.createUrlTree.and.returnValue(urlTree as any);
 
     const result = TestBed.runInInjectionContext(() => authGuard({} as any, {} as any));
 
-    expect(result).toEqual(urlTree);
+    expect(result).toBe(urlTree);
     expect(router.createUrlTree).toHaveBeenCalledWith(['/auth/login']);
   });
 });

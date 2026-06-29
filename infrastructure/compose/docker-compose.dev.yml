@@ -44,6 +44,19 @@ services:
       retries: 5
 
   # ==========================================
+  # SMTP LOCAL PARA DESARROLLO (MAILPIT)
+  # ==========================================
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: saas-mailpit-dev
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - saas-network
+    restart: unless-stopped
+
+  # ==========================================
   # API PRINCIPAL (NESTJS BACKEND)
   # ==========================================
   api:
@@ -59,13 +72,20 @@ services:
       - DATABASE_URL=postgresql://rene_admin:saas_secure_pass_2026@postgres:5432/restaurant_saas_db?schema=public
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - SMTP_SECURE=false
+      - EMAIL_FROM=no-reply@whatboo.local
       - JWT_SECRET=super_secret_jwt_key_saas_2026
       - FRONTEND_URL=http://localhost:80
+      - WEB_APP_URL=http://localhost:80
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     networks:
       - saas-network
     restart: unless-stopped
@@ -85,6 +105,9 @@ services:
       - DATABASE_URL=postgresql://rene_admin:saas_secure_pass_2026@postgres:5432/restaurant_saas_db?schema=public
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - SMTP_SECURE=false
     depends_on:
       redis:
         condition: service_healthy

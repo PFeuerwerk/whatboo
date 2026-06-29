@@ -7,14 +7,9 @@ import { ReservationEngineService } from '../services/reservation-engine.service
 import { ReservationRepository } from '../repositories/reservation.repository';
 import { CreateReservationDto } from '../dto/create-reservation.dto';
 import { UpdateReservationStatusDto } from '../dto/update-reservation-status.dto';
-
-interface UpdateReservationDto {
-  reservationStart?: string;
-  reservationEnd?: string;
-  guestCount?: number;
-  notes?: string | null;
-  tableId?: string | null;
-}
+import { ListReservationsQueryDto } from '../dto/list-reservations-query.dto';
+import { UpdateReservationDto } from '../dto/update-reservation.dto';
+import { CancelReservationDto } from '../dto/cancel-reservation.dto';
 
 @Controller('reservations')
 @UseGuards(JwtAuthGuard)
@@ -37,17 +32,26 @@ export class ReservationsController {
   }
 
   @Get()
-  async findAll(@Req() req: any, @Query('date') date?: string) {
+  async findAll(@Req() req: any, @Query() query: ListReservationsQueryDto) {
     const restaurantId = req['tenantId'];
+    const date = query.date;
+
+    if (this.shouldUseAdvancedList(query)) {
+      const range: { start?: Date; end?: Date } =
+        query.from || query.to || query.date ? this.resolveDateRange(query) : {};
+      return this.reservationRepository.list(restaurantId, {
+        from: range.start,
+        to: range.end,
+        status: query.status,
+        source: query.source,
+        q: query.q,
+        take: query.take,
+        skip: query.skip,
+      });
+    }
 
     if (date) {
-      const start = new Date(date);
-      if (Number.isNaN(start.getTime())) {
-        throw new BadRequestException('Formato de fecha inválido. Usa YYYY-MM-DD.');
-      }
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(start);
-      end.setHours(23, 59, 59, 999);
+      const { start, end } = this.resolveDateRange(query);
       return this.reservationRepository.findByDateRange(restaurantId, start, end);
     }
 
@@ -83,6 +87,10 @@ export class ReservationsController {
   @Patch(':id/status')
   async updateStatus(@Req() req: any, @Param('id') id: string, @Body() dto: UpdateReservationStatusDto) {
     const restaurantId = req['tenantId'];
+    if (dto.status === ReservationStatus.CANCELLED) {
+      throw new BadRequestException('Usa el endpoint dedicado de cancelacion para registrar un motivo estructurado.');
+    }
+
     const updated = await this.reservationRepository.updateStatus(restaurantId, id, dto.status);
 
     if (updated) {
@@ -93,7 +101,7 @@ export class ReservationsController {
   }
 
   @Patch(':id/cancel')
-  async cancel(@Req() req: any, @Param('id') id: string, @Body() dto?: { reason?: string }) {
+  async cancel(@Req() req: any, @Param('id') id: string, @Body() dto: CancelReservationDto) {
     const restaurantId = req['tenantId'];
     const current = await this.reservationRepository.findById(restaurantId, id);
 
@@ -107,7 +115,17 @@ export class ReservationsController {
       ReservationStatus.CANCELLED,
     );
 
-    if (updated && dto?.reason?.trim()) {
+    if (updated) {
+      await this.reservationRepository.createCancellationAudit({
+        restaurantId,
+        reservationId: id,
+        cancelledByUserId: req.user?.sub ?? req.user?.id ?? null,
+        reason: dto.reason.trim(),
+        source: dto.source,
+      });
+    }
+
+    if (updated && dto.reason.trim()) {
       const withReason = await this.reservationRepository.update(restaurantId, id, {
         notes: [updated.notes, `Cancelación dashboard: ${dto.reason.trim()}`]
           .filter(Boolean)
@@ -123,6 +141,18 @@ export class ReservationsController {
     }
 
     return updated;
+  }
+
+  @Get(':id/cancellation-audits')
+  async cancellationAudits(@Req() req: any, @Param('id') id: string) {
+    const restaurantId = req['tenantId'];
+    const current = await this.reservationRepository.findById(restaurantId, id);
+
+    if (!current) {
+      throw new BadRequestException('La reserva no existe o no pertenece al restaurante actual.');
+    }
+
+    return this.reservationRepository.listCancellationAudits(restaurantId, id);
   }
 
   @Patch(':id')
@@ -166,5 +196,42 @@ export class ReservationsController {
     const currentDurationMs = currentEnd.getTime() - currentStart.getTime();
     const safeDurationMs = currentDurationMs > 0 ? currentDurationMs : 90 * 60 * 1000;
     return new Date(nextStart.getTime() + safeDurationMs);
+  }
+
+  private shouldUseAdvancedList(query: ListReservationsQueryDto): boolean {
+    return Boolean(
+      query.from ||
+      query.to ||
+      query.status ||
+      query.source ||
+      query.q ||
+      query.take !== undefined ||
+      query.skip !== undefined,
+    );
+  }
+
+  private resolveDateRange(query: ListReservationsQueryDto): { start: Date; end: Date } {
+    const start = new Date(query.from ?? query.date ?? new Date());
+    if (Number.isNaN(start.getTime())) {
+      throw new BadRequestException('Formato de fecha inválido. Usa ISO-8601 o YYYY-MM-DD.');
+    }
+
+    if (!query.from && !query.to) {
+      start.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(start);
+      endOfDay.setHours(23, 59, 59, 999);
+      return { start, end: endOfDay };
+    }
+
+    const end = query.to ? new Date(query.to) : new Date(start);
+    if (Number.isNaN(end.getTime())) {
+      throw new BadRequestException('Formato de fecha final inválido. Usa ISO-8601 o YYYY-MM-DD.');
+    }
+
+    if (!query.to) {
+      end.setHours(23, 59, 59, 999);
+    }
+
+    return { start, end };
   }
 }

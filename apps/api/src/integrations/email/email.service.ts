@@ -15,6 +15,12 @@ export class EmailService implements IEmailService, OnModuleInit {
   constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit() {
+    if (this.configService.get<string>('NODE_ENV') === 'test') {
+      this.transporter = nodemailer.createTransport({ jsonTransport: true });
+      this.logger.log('Servicio SMTP inicializado con transporte JSON para entorno test.');
+      return;
+    }
+
     const host = this.configService.get<string>('SMTP_HOST', 'localhost');
     const port = this.configService.get<number>('SMTP_PORT', 1025);
     const user = this.configService.get<string>('SMTP_USER');

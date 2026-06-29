@@ -23,6 +23,24 @@ export interface UpdateReservationRepositoryInput {
   tableId?: string | null;
 }
 
+export interface ListReservationsRepositoryInput {
+  from?: Date;
+  to?: Date;
+  status?: ReservationStatus;
+  source?: ReservationSource;
+  q?: string;
+  take?: number;
+  skip?: number;
+}
+
+export interface CreateReservationCancellationAuditInput {
+  restaurantId: string;
+  reservationId: string;
+  cancelledByUserId?: string | null;
+  reason: string;
+  source?: ReservationSource;
+}
+
 @Injectable()
 export class ReservationRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -40,6 +58,54 @@ export class ReservationRepository {
       },
       orderBy: { reservationStart: 'asc' },
     });
+  }
+
+  async list(restaurantId: string, input: ListReservationsRepositoryInput) {
+    const take = Math.min(Math.max(Number(input.take ?? 50), 1), 100);
+    const skip = Math.max(Number(input.skip ?? 0), 0);
+    const q = input.q?.trim();
+    const where: Prisma.ReservationWhereInput = {
+      restaurantId,
+      deletedAt: null,
+      ...(input.status ? { status: input.status } : {}),
+      ...(input.source ? { source: input.source } : {}),
+      ...(input.from || input.to
+        ? {
+            reservationStart: {
+              ...(input.from ? { gte: input.from } : {}),
+              ...(input.to ? { lte: input.to } : {}),
+            },
+          }
+        : {}),
+      ...(q
+        ? {
+            OR: [
+              { confirmationCode: { contains: q, mode: 'insensitive' } },
+              { notes: { contains: q, mode: 'insensitive' } },
+              { customer: { firstName: { contains: q, mode: 'insensitive' } } },
+              { customer: { lastName: { contains: q, mode: 'insensitive' } } },
+              { customer: { phone: { contains: q } } },
+              { customer: { email: { contains: q, mode: 'insensitive' } } },
+            ],
+          }
+        : {}),
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.reservation.findMany({
+        where,
+        include: {
+          customer: true,
+          assignedTables: { include: { table: true } },
+        },
+        orderBy: { reservationStart: 'asc' },
+        take,
+        skip,
+      }),
+      this.prisma.reservation.count({ where }),
+    ]);
+
+    return { data, total, take, skip };
   }
 
   async findById(restaurantId: string, id: string) {
@@ -141,6 +207,37 @@ export class ReservationRepository {
         customer: true,
         assignedTables: { include: { table: true } },
       },
+    });
+  }
+
+  async createCancellationAudit(input: CreateReservationCancellationAuditInput) {
+    return this.prisma.reservationCancellationAudit.create({
+      data: {
+        restaurantId: input.restaurantId,
+        reservationId: input.reservationId,
+        cancelledByUserId: input.cancelledByUserId ?? null,
+        reason: input.reason,
+        source: input.source ?? ReservationSource.DASHBOARD,
+      },
+
+    });
+  }
+
+  async listCancellationAudits(restaurantId: string, reservationId: string) {
+    return this.prisma.reservationCancellationAudit.findMany({
+      where: { restaurantId, reservationId },
+      include: {
+        cancelledByUser: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
     });
   }
 

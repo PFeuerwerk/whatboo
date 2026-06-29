@@ -35,25 +35,35 @@ import { PlatformAdminModule } from './modules/platform/admin/platform-admin.mod
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        throttlers: [
-          {
-            name: 'short',
-            ttl: config.get<number>('RATE_LIMIT_SHORT_TTL_MS', 1000),
-            limit: config.get<number>('RATE_LIMIT_SHORT_LIMIT', 20),
+      useFactory: (config: ConfigService) => {
+        const baseConfig = {
+          throttlers: [
+            {
+              name: 'short',
+              ttl: config.get<number>('RATE_LIMIT_SHORT_TTL_MS', 1000),
+              limit: config.get<number>('RATE_LIMIT_SHORT_LIMIT', 20),
+            },
+            {
+              name: 'long',
+              ttl: config.get<number>('RATE_LIMIT_LONG_TTL_MS', 60000),
+              limit: config.get<number>('RATE_LIMIT_LONG_LIMIT', 300),
+            },
+          ],
+          getTracker: (req: Record<string, any>) => {
+            const forwarded = String(req.headers?.['x-forwarded-for'] ?? '').split(',')[0]?.trim();
+            return forwarded || req.ip || req.socket?.remoteAddress || 'unknown';
           },
-          {
-            name: 'long',
-            ttl: config.get<number>('RATE_LIMIT_LONG_TTL_MS', 60000),
-            limit: config.get<number>('RATE_LIMIT_LONG_LIMIT', 300),
-          },
-        ],
-        storage: new RedisThrottlerStorage(config),
-        getTracker: (req: Record<string, any>) => {
-          const forwarded = String(req.headers?.['x-forwarded-for'] ?? '').split(',')[0]?.trim();
-          return forwarded || req.ip || req.socket?.remoteAddress || 'unknown';
-        },
-      }),
+        };
+
+        if (config.get<string>('NODE_ENV') === 'test') {
+          return baseConfig;
+        }
+
+        return {
+          ...baseConfig,
+          storage: new RedisThrottlerStorage(config),
+        };
+      },
     }),
 
     PrismaModule,
