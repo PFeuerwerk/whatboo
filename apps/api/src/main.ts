@@ -2,14 +2,25 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+import { securityHeadersMiddleware } from './common/security/security-headers.middleware';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
+  const configService = app.get<ConfigService>(ConfigService);
+  const httpInstance = app.getHttpAdapter().getInstance() as { disable?: (name: string) => void };
+  httpInstance.disable?.('x-powered-by');
+  app.use(securityHeadersMiddleware(configService));
 
-  // 1. Configuración Robusta de Seguridad Perimetral CORS
+  const corsOrigins = configService
+    .get<string>('CORS_ORIGINS', 'http://localhost:4200,http://127.0.0.1:4200')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  // 1. Configuracion robusta de seguridad perimetral CORS
   app.enableCors({
-    origin: ['http://localhost:4200', 'http://127.0.0.1:4200'],
+    origin: corsOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-Tenant-Slug', 'X-Tenant-ID'],
@@ -27,10 +38,9 @@ async function bootstrap() {
     }),
   );
 
-  const configService = app.get<ConfigService>(ConfigService);
   const port = configService.get<number>('PORT', 3000);
 
   await app.listen(port);
-  logger.log(`🚀 API en ejecución de forma inmutable sobre: http://localhost:${port}/api/v1`);
+  logger.log(`API en ejecucion de forma inmutable sobre: http://localhost:${port}/api/v1`);
 }
 bootstrap();

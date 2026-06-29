@@ -3,6 +3,9 @@ import { Prisma, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { normalizePagination, paginatedResponse } from '../../../../common/pagination/paginated-response';
+import { AuditLogService } from '../../../../common/security/audit-log.service';
+import { PasswordPolicyService } from '../../../../common/security/password-policy.service';
+import { JwtPayload } from '../../../../modules/platform/auth/strategies/jwt.strategy';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { ListUsersQueryDto } from '../dto/list-users-query.dto';
@@ -10,9 +13,18 @@ import { ListUsersQueryDto } from '../dto/list-users-query.dto';
 const STAFF_ROLES: UserRole[] = [UserRole.OWNER, UserRole.MANAGER, UserRole.STAFF];
 const MANAGEMENT_ROLES: UserRole[] = [UserRole.OWNER, UserRole.MANAGER, UserRole.ADMIN, UserRole.PLATFORM_ADMIN];
 
+interface RequestMetadata {
+  ipAddress?: string;
+  userAgent?: string;
+}
+
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly auditLog: AuditLogService,
+    private readonly passwordPolicy: PasswordPolicyService,
+  ) {}
 
   async findAll(restaurantId: string, query: ListUsersQueryDto) {
     const { take, skip } = normalizePagination(query);
@@ -53,43 +65,80 @@ export class UsersService {
     });
   }
 
-  async create(restaurantId: string, actorRole: UserRole | string | undefined, dto: CreateUserDto) {
-    this.assertManagementRole(actorRole);
+  async create(restaurantId: string, actor: JwtPayload | undefined, dto: CreateUserDto, metadata?: RequestMetadata) {
+    this.assertManagementRole(actor?.role);
     const role = this.normalizeStaffRole(dto.role ?? UserRole.STAFF);
 
-    if (role === UserRole.OWNER && actorRole !== UserRole.OWNER) {
+    if (role === UserRole.OWNER && actor?.role !== UserRole.OWNER) {
       throw new ForbiddenException('Solo OWNER puede crear otros usuarios OWNER.');
     }
 
-    const passwordHash = await bcrypt.hash(this.normalizePassword(dto.password), 10);
+    const password = this.normalizePassword(dto.password);
+    this.passwordPolicy.validateOrThrow(password);
+    const passwordHash = await bcrypt.hash(password, 10);
 
-    return this.prisma.user.create({
-      data: {
-        email: this.normalizeEmail(dto.email),
-        firstName: this.normalizeRequiredText(dto.firstName, 'El nombre del usuario es obligatorio.'),
-        lastName: this.normalizeRequiredText(dto.lastName, 'El apellido del usuario es obligatorio.'),
-        passwordHash,
-        role,
-        restaurantId,
-        isActive: true,
-      },
-      select: this.safeUserSelect(),
+    const created = await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: this.normalizeEmail(dto.email),
+          firstName: this.normalizeRequiredText(dto.firstName, 'El nombre del usuario es obligatorio.'),
+          lastName: this.normalizeRequiredText(dto.lastName, 'El apellido del usuario es obligatorio.'),
+          passwordHash,
+          role,
+          restaurantId,
+          isActive: true,
+          mustChangePassword: true,
+          temporaryPasswordExpiresAt: this.passwordPolicy.temporaryPasswordExpiresAt(),
+        },
+        select: this.safeUserSelect(),
+      });
+
+      await tx.passwordHistory.create({
+        data: { userId: user.id, passwordHash },
+      });
+
+      return user;
     });
+
+    await this.auditLog.record({
+      tenantId: restaurantId,
+      actorUserId: actor?.sub,
+      actorRole: actor?.role,
+      action: 'USER_CREATED',
+      entity: 'User',
+      entityId: created.id,
+      newValue: created,
+      ipAddress: metadata?.ipAddress,
+      userAgent: metadata?.userAgent,
+      result: 'SUCCESS',
+    });
+
+    return created;
   }
 
-  async update(restaurantId: string, actorRole: UserRole | string | undefined, id: string, dto: UpdateUserDto) {
-    this.assertManagementRole(actorRole);
+  async update(restaurantId: string, actor: JwtPayload | undefined, id: string, dto: UpdateUserDto, metadata?: RequestMetadata) {
+    this.assertManagementRole(actor?.role);
 
     const current = await this.prisma.user.findFirst({
       where: { id, restaurantId },
-      select: { id: true, role: true },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        isActive: true,
+        passwordHash: true,
+        mustChangePassword: true,
+        temporaryPasswordExpiresAt: true,
+      },
     });
 
     if (!current) {
       throw new BadRequestException('El usuario no existe o no pertenece al restaurante actual.');
     }
 
-    if (current.role === UserRole.OWNER && actorRole !== UserRole.OWNER) {
+    if (current.role === UserRole.OWNER && actor?.role !== UserRole.OWNER) {
       throw new ForbiddenException('Solo OWNER puede modificar otro OWNER.');
     }
 
@@ -111,14 +160,51 @@ export class UsersService {
       data.lastName = this.normalizeRequiredText(dto.lastName, 'El apellido del usuario es obligatorio.');
     }
     if (dto.password !== undefined) {
-      data.passwordHash = await bcrypt.hash(this.normalizePassword(dto.password), 10);
+      const password = this.normalizePassword(dto.password);
+      this.passwordPolicy.validateOrThrow(password);
+      const recentHistory = await this.prisma.passwordHistory.findMany({
+        where: { userId: id },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      });
+      await this.passwordPolicy.assertNotReused(password, [current.passwordHash, ...recentHistory.map((item) => item.passwordHash)]);
+      const passwordHash = await bcrypt.hash(password, 10);
+      data.passwordHash = passwordHash;
+      data.mustChangePassword = true;
+      data.temporaryPasswordExpiresAt = this.passwordPolicy.temporaryPasswordExpiresAt();
     }
 
-    return this.prisma.user.update({
-      where: { id },
-      data,
-      select: this.safeUserSelect(),
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.update({
+        where: { id },
+        data,
+        select: this.safeUserSelect(),
+      });
+
+      if (dto.password !== undefined && typeof data.passwordHash === 'string') {
+        await tx.passwordHistory.create({
+          data: { userId: id, passwordHash: data.passwordHash },
+        });
+      }
+
+      return user;
     });
+
+    await this.auditLog.record({
+      tenantId: restaurantId,
+      actorUserId: actor?.sub,
+      actorRole: actor?.role,
+      action: 'USER_UPDATED',
+      entity: 'User',
+      entityId: id,
+      previousValue: current,
+      newValue: updated,
+      ipAddress: metadata?.ipAddress,
+      userAgent: metadata?.userAgent,
+      result: 'SUCCESS',
+    });
+
+    return updated;
   }
 
   private assertManagementRole(role?: UserRole | string): void {
@@ -160,8 +246,8 @@ export class UsersService {
   private normalizePassword(value: unknown): string {
     const password = String(value ?? '').trim();
 
-    if (password.length < 8) {
-      throw new BadRequestException('La contraseña temporal debe tener al menos 8 caracteres.');
+    if (!password) {
+      throw new BadRequestException('La contraseña temporal es obligatoria.');
     }
 
     return password;
@@ -175,6 +261,8 @@ export class UsersService {
       lastName: true,
       role: true,
       isActive: true,
+      mustChangePassword: true,
+      temporaryPasswordExpiresAt: true,
       lastLoginAt: true,
       createdAt: true,
     } as const;

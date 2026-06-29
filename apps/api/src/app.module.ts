@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { PhoneValidationModule } from './common/phone/phone-validation.module';
+import { SecurityModule } from './common/security/security.module';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 
 import { PrismaModule } from './infrastructure/database/prisma.module';
@@ -71,6 +72,7 @@ import { OpenApiModule } from './modules/platform/openapi/openapi.module';
     RedisModule,
     EventsModule,
     PhoneValidationModule,
+    SecurityModule,
     AiModule,
     RestaurantsModule,
     CustomersModule,

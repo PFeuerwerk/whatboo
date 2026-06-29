@@ -50,7 +50,7 @@ export class UsersController {
   @UseGuards(RolesGuard)
   @Roles(...MANAGEMENT_ROLES)
   async create(@Request() req: AuthRequest, @Body() dto: CreateUserDto) {
-    return this.usersService.create(this.getTenantId(req), req.user?.role, dto);
+    return this.usersService.create(this.getTenantId(req), req.user, dto, this.requestMetadata(req));
   }
 
   @Patch(':id')
@@ -58,7 +58,15 @@ export class UsersController {
   @UseGuards(RolesGuard)
   @Roles(...MANAGEMENT_ROLES)
   async update(@Request() req: AuthRequest, @Param('id') id: string, @Body() dto: UpdateUserDto) {
-    return this.usersService.update(this.getTenantId(req), req.user?.role, id, dto);
+    return this.usersService.update(this.getTenantId(req), req.user, id, dto, this.requestMetadata(req));
+  }
+
+  private requestMetadata(req: any) {
+    const forwarded = String(req.headers?.['x-forwarded-for'] ?? '').split(',')[0]?.trim();
+    return {
+      ipAddress: forwarded || req.ip || req.socket?.remoteAddress,
+      userAgent: String(req.headers?.['user-agent'] ?? ''),
+    };
   }
 
   private getTenantId(req: AuthRequest): string {

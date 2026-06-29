@@ -22,6 +22,8 @@ export const envValidationSchema = Joi.object({
   WHATSAPP_WORKER_ENABLED: Joi.boolean().truthy('true').falsy('false').default(true),
 
   JWT_SECRET: Joi.string().required(),
+  JWT_SECRETS: Joi.string().optional().allow(''),
+  JWT_ACTIVE_KID: Joi.string().optional().allow(''),
   JWT_EXPIRES_IN: Joi.string().default('7d'),
 
   WHATSAPP_VERIFY_TOKEN: Joi.string().optional().allow(''),
@@ -46,6 +48,18 @@ export const envValidationSchema = Joi.object({
   EMAIL_QUEUE_BACKOFF_MS: Joi.number().default(5000),
   EMAIL_WORKER_ENABLED: Joi.boolean().truthy('true').falsy('false').default(true),
   EMAIL_WORKER_CONCURRENCY: Joi.number().default(5),
+
+  CORS_ORIGINS: Joi.string().default('http://localhost:4200,http://127.0.0.1:4200'),
+  HTTP_CSP: Joi.string().optional().allow(''),
+
+  PASSWORD_MIN_LENGTH: Joi.number().default(12),
+  PASSWORD_MAX_LENGTH: Joi.number().default(128),
+  PASSWORD_REQUIRE_UPPERCASE: Joi.boolean().truthy('true').falsy('false').default(true),
+  PASSWORD_REQUIRE_LOWERCASE: Joi.boolean().truthy('true').falsy('false').default(true),
+  PASSWORD_REQUIRE_NUMBER: Joi.boolean().truthy('true').falsy('false').default(true),
+  PASSWORD_REQUIRE_SYMBOL: Joi.boolean().truthy('true').falsy('false').default(true),
+  PASSWORD_HISTORY_LIMIT: Joi.number().default(5),
+  TEMP_PASSWORD_TTL_HOURS: Joi.number().default(24),
 
   WEB_APP_URL: Joi.string().uri().default('http://localhost:4200'),
 });

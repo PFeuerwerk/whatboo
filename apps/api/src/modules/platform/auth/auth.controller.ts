@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, NotFoundException } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, NotFoundException, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -14,8 +14,8 @@ export class AuthController {
    */
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() dto: LoginDto) {
-    return this.authService.login(dto.email, dto.password, dto.restaurantSlug);
+  async login(@Body() dto: LoginDto, @Req() req: any) {
+    return this.authService.login(dto.email, dto.password, dto.restaurantSlug, this.requestMetadata(req));
   }
 
   /**
@@ -46,8 +46,8 @@ export class AuthController {
    */
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
-    await this.authService.handleResetPassword(dto);
+  async resetPassword(@Body() dto: ResetPasswordDto, @Req() req: any): Promise<{ message: string }> {
+    await this.authService.handleResetPassword(dto, this.requestMetadata(req));
     
     return {
       message: 'Tu contraseña ha sido restaurada con éxito. Ya puedes iniciar sesión en tu panel.',
@@ -60,5 +60,13 @@ export class AuthController {
   @Post("register-tenant")
   async registerTenant(@Body() dto: CreateTenantDto) {
     return this.authService.provisionTenant(dto);
+  }
+
+  private requestMetadata(req: any) {
+    const forwarded = String(req.headers?.['x-forwarded-for'] ?? '').split(',')[0]?.trim();
+    return {
+      ipAddress: forwarded || req.ip || req.socket?.remoteAddress,
+      userAgent: req.headers?.['user-agent'],
+    };
   }
 }

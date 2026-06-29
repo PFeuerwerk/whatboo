@@ -7,17 +7,23 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { EmailModule } from '../../../integrations/email/email.module';
+import { SecurityModule } from '../../../common/security/security.module';
+import { getActiveJwtSecret } from '../../../common/security/jwt-secrets.util';
 
 @Module({
   imports: [
     PassportModule,
     EmailModule, // Integración limpia del módulo Open Source de mensajería
+    SecurityModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: (configService.get<string>('JWT_EXPIRES_IN', '7d')) as any },
+        secret: getActiveJwtSecret(configService).secret,
+        signOptions: {
+          expiresIn: (configService.get<string>('JWT_EXPIRES_IN', '7d')) as any,
+          header: { alg: 'HS256', kid: getActiveJwtSecret(configService).kid },
+        },
       }),
     }),
   ],

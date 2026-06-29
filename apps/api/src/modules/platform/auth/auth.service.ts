@@ -3,6 +3,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { EmailQueue } from '../../../integrations/email/queues/email.queue';
+import { AuditLogService } from '../../../common/security/audit-log.service';
+import { PasswordPolicyService } from '../../../common/security/password-policy.service';
 import { JwtPayload } from './strategies/jwt.strategy';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -18,12 +20,14 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly emailQueue: EmailQueue,
+    private readonly auditLog: AuditLogService,
+    private readonly passwordPolicy: PasswordPolicyService,
   ) {}
 
   /**
    * Procesa la validación del token y cambia la contraseña de forma real
    */
-  async handleResetPassword(dto: ResetPasswordDto): Promise<void> {
+  async handleResetPassword(dto: ResetPasswordDto, metadata?: { ipAddress?: string; userAgent?: string }): Promise<void> {
     const { token, newPassword } = dto;
 
     // 1. Recrear el hash SHA-256 del token crudo recibido para buscarlo de forma segura
@@ -43,6 +47,14 @@ export class AuthService {
       throw new BadRequestException('El enlace de recuperación es inválido o ha expirado.');
     }
 
+    this.passwordPolicy.validateOrThrow(newPassword);
+    const recentHistory = await this.prisma.passwordHistory.findMany({
+      where: { userId: resetToken.userId },
+      orderBy: { createdAt: 'desc' },
+      take: this.configService.get<number>('PASSWORD_HISTORY_LIMIT', 5),
+    });
+    await this.passwordPolicy.assertNotReused(newPassword, [resetToken.user.passwordHash, ...recentHistory.map((item) => item.passwordHash)]);
+
     // 3. Encriptar la nueva contraseña de forma segura usando bcrypt
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(newPassword, saltRounds);
@@ -56,6 +68,9 @@ export class AuthService {
           passwordHash,
           failedLoginAttempts: 0, // Reiniciar intentos fallidos por seguridad
           lockedUntil: null,      // Desbloquear si estaba penalizado
+          mustChangePassword: false,
+          temporaryPasswordExpiresAt: null,
+          passwordChangedAt: new Date(),
         },
       }),
       // Invalidar el token inmediatamente para evitar que se use otra vez
@@ -63,7 +78,22 @@ export class AuthService {
         where: { id: resetToken.id },
         data: { isUsed: true },
       }),
+      this.prisma.passwordHistory.create({
+        data: { userId: resetToken.userId, passwordHash },
+      }),
     ]);
+
+    await this.auditLog.record({
+      tenantId: resetToken.user.restaurantId,
+      actorUserId: resetToken.userId,
+      actorRole: resetToken.user.role,
+      action: 'PASSWORD_RESET_COMPLETED',
+      entity: 'User',
+      entityId: resetToken.userId,
+      ipAddress: metadata?.ipAddress,
+      userAgent: metadata?.userAgent,
+      result: 'SUCCESS',
+    });
   }
 
   /**
@@ -137,25 +167,80 @@ export class AuthService {
     email: string,
     password: string,
     restaurantSlug: string,
+    metadata?: { ipAddress?: string; userAgent?: string },
   ) {
+    const startedAt = Date.now();
+    const normalizedEmail = email.toLowerCase().trim();
     const restaurant = await this.prisma.restaurant.findUnique({
       where: { slug: restaurantSlug },
     });
 
     if (!restaurant) {
+      await this.auditLog.record({
+        action: 'LOGIN_FAILED',
+        entity: 'User',
+        result: 'FAILURE',
+        metadata: { reason: 'TENANT_NOT_FOUND', email: normalizedEmail },
+        ipAddress: metadata?.ipAddress,
+        userAgent: metadata?.userAgent,
+        durationMs: Date.now() - startedAt,
+      });
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const user = await this.prisma.user.findFirst({
-      where: { email, restaurantId: restaurant.id, isActive: true },
+      where: { email: normalizedEmail, restaurantId: restaurant.id, isActive: true },
     });
 
     if (!user) {
+      await this.auditLog.record({
+        tenantId: restaurant.id,
+        tenantSlug: restaurant.slug,
+        action: 'LOGIN_FAILED',
+        entity: 'User',
+        result: 'FAILURE',
+        metadata: { reason: 'USER_NOT_FOUND', email: normalizedEmail },
+        ipAddress: metadata?.ipAddress,
+        userAgent: metadata?.userAgent,
+        durationMs: Date.now() - startedAt,
+      });
       throw new UnauthorizedException('Invalid credentials');
     }
 
     if (user.lockedUntil && user.lockedUntil > new Date()) {
+      await this.auditLog.record({
+        tenantId: restaurant.id,
+        tenantSlug: restaurant.slug,
+        actorUserId: user.id,
+        actorRole: user.role,
+        action: 'LOGIN_BLOCKED',
+        entity: 'User',
+        entityId: user.id,
+        result: 'FAILURE',
+        metadata: { reason: 'ACCOUNT_LOCKED' },
+        ipAddress: metadata?.ipAddress,
+        userAgent: metadata?.userAgent,
+        durationMs: Date.now() - startedAt,
+      });
       throw new UnauthorizedException('Account is temporarily locked');
+    }
+
+    if (user.temporaryPasswordExpiresAt && user.temporaryPasswordExpiresAt < new Date()) {
+      await this.auditLog.record({
+        tenantId: restaurant.id,
+        tenantSlug: restaurant.slug,
+        actorUserId: user.id,
+        actorRole: user.role,
+        action: 'LOGIN_BLOCKED',
+        entity: 'User',
+        entityId: user.id,
+        result: 'FAILURE',
+        metadata: { reason: 'TEMPORARY_PASSWORD_EXPIRED' },
+        ipAddress: metadata?.ipAddress,
+        userAgent: metadata?.userAgent,
+        durationMs: Date.now() - startedAt,
+      });
+      throw new UnauthorizedException('Temporary password expired. Request a password reset.');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
@@ -170,6 +255,20 @@ export class AuthService {
             : null,
         },
       });
+      await this.auditLog.record({
+        tenantId: restaurant.id,
+        tenantSlug: restaurant.slug,
+        actorUserId: user.id,
+        actorRole: user.role,
+        action: 'LOGIN_FAILED',
+        entity: 'User',
+        entityId: user.id,
+        result: 'FAILURE',
+        metadata: { reason: 'INVALID_PASSWORD' },
+        ipAddress: metadata?.ipAddress,
+        userAgent: metadata?.userAgent,
+        durationMs: Date.now() - startedAt,
+      });
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -180,6 +279,20 @@ export class AuthService {
         lockedUntil: null,
         lastLoginAt: new Date(),
       },
+    });
+
+    await this.auditLog.record({
+      tenantId: restaurant.id,
+      tenantSlug: restaurant.slug,
+      actorUserId: user.id,
+      actorRole: user.role,
+      action: 'LOGIN_SUCCEEDED',
+      entity: 'User',
+      entityId: user.id,
+      result: 'SUCCESS',
+      ipAddress: metadata?.ipAddress,
+      userAgent: metadata?.userAgent,
+      durationMs: Date.now() - startedAt,
     });
 
     const payload: JwtPayload = {
@@ -199,10 +312,10 @@ export class AuthService {
         lastName: user.lastName,
         restaurantId: user.restaurantId,
         restaurantSlug: restaurant.slug,
+        mustChangePassword: user.mustChangePassword,
       },
     };
-  }
-  /**
+  }  /**
    * Registra un nuevo restaurante e invita al dueño (Owner) enviando un token seguro de activación
    */
     async provisionTenant(dto: CreateTenantDto): Promise<{ accessToken: string }> {
@@ -270,6 +383,8 @@ export class AuthService {
           passwordHash: dummyPasswordHash,
           role: UserRole.OWNER,
           isActive: true,
+          mustChangePassword: true,
+          temporaryPasswordExpiresAt: this.passwordPolicy.temporaryPasswordExpiresAt(),
           restaurantId: restaurant.id,
           failedLoginAttempts: 0
         },
