@@ -1,14 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EmailService } from './email.service';
+import { EmailQueue } from './queues/email.queue';
+import { EmailWorker } from './workers/email.worker';
 
 @Module({
-  imports: [
-    // Inyectamos ConfigModule para asegurar que el EmailService 
-    // tenga acceso a las variables de entorno SMTP (SMTP_HOST, SMTP_PORT, etc.)
-    ConfigModule,
-  ],
-  providers: [EmailService],
-  exports: [EmailService], // Exportación profesional para permitir su uso en AuthModule
+  imports: [ConfigModule],
+  providers: [EmailService, EmailQueue, EmailWorker],
+  exports: [EmailService, EmailQueue],
 })
 export class EmailModule {}

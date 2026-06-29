@@ -34,6 +34,18 @@ export const envValidationSchema = Joi.object({
   SMTP_USER: Joi.string().optional().allow(''),
   SMTP_PASS: Joi.string().optional().allow(''),
   SMTP_SECURE: Joi.boolean().truthy('true').falsy('false').default(false),
-  EMAIL_FROM: Joi.string().default('no-reply@whatboo.local'),
+  SMTP_CONNECTION_TIMEOUT_MS: Joi.number().default(10000),
+  SMTP_MAX_CONNECTIONS: Joi.number().default(5),
+  SMTP_MAX_MESSAGES: Joi.number().default(100),
+
+  EMAIL_FROM: Joi.string().email().default('no-reply@whatboo.local'),
+  EMAIL_FROM_NAME: Joi.string().default('Whatboo'),
+  EMAIL_REPLY_TO: Joi.string().email().optional().allow(''),
+  EMAIL_TEMPLATE_DIR: Joi.string().optional().allow(''),
+  EMAIL_QUEUE_ATTEMPTS: Joi.number().default(5),
+  EMAIL_QUEUE_BACKOFF_MS: Joi.number().default(5000),
+  EMAIL_WORKER_ENABLED: Joi.boolean().truthy('true').falsy('false').default(true),
+  EMAIL_WORKER_CONCURRENCY: Joi.number().default(5),
+
   WEB_APP_URL: Joi.string().uri().default('http://localhost:4200'),
 });

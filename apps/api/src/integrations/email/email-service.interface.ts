@@ -1,22 +1,43 @@
+export type EmailTemplateName = 'auth/forgot-password';
+
+export interface EmailRecipient {
+  email: string;
+  name?: string;
+}
+
 export interface SendEmailOptions {
-  to: string;
+  to: string | string[] | EmailRecipient[];
   subject: string;
-  template: string;
-  context: Record<string, any>;
+  templateName: EmailTemplateName;
+  context: Record<string, unknown>;
+  restaurantId?: string;
+  tenantId?: string;
+  locale?: string;
+  replyTo?: string;
+  traceId?: string;
+}
+
+export interface SendRenderedEmailOptions {
+  to: SendEmailOptions['to'];
+  subject: string;
+  html: string;
+  replyTo?: string;
+  traceId?: string;
+}
+
+export interface PasswordResetEmailJob {
+  tenantId: string;
+  restaurantId: string;
+  templateName: 'auth/forgot-password';
+  locale: string;
+  to: string;
+  restaurantName: string;
+  resetLink: string;
+  traceId: string;
+  requestedAt: string;
 }
 
 export interface IEmailService {
-  /**
-   * Envía un correo electrónico basado en una plantilla y un contexto de datos.
-   */
   sendMail(options: SendEmailOptions): Promise<void>;
-
-  /**
-   * Envía específicamente el correo con el enlace seguro para restaurar la contraseña.
-   */
-  sendPasswordResetMail(
-    email: string,
-    restaurantName: string,
-    resetLink: string,
-  ): Promise<void>;
+  sendRenderedMail(options: SendRenderedEmailOptions): Promise<void>;
 }

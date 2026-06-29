@@ -37,7 +37,8 @@ RUN mkdir -p /tmp/prisma-generated \
 FROM node:${NODE_VERSION} AS runtime
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV WHATSAPP_WORKER_ENABLED=true
+ENV WHATSAPP_WORKER_ENABLED=false
+ENV EMAIL_WORKER_ENABLED=false
 WORKDIR /app
 RUN apk add --no-cache dumb-init libc6-compat openssl \
   && addgroup --system --gid 1001 nestjs \
@@ -47,6 +48,7 @@ COPY --from=prod-deps --chown=nestjs:nestjs /app/node_modules ./node_modules
 COPY --from=prod-deps --chown=nestjs:nestjs /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=prod-deps --chown=nestjs:nestjs /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build --chown=nestjs:nestjs /app/apps/api/dist ./apps/api/dist
+COPY --from=build --chown=nestjs:nestjs /app/apps/api/src/integrations/email/templates ./apps/api/dist/integrations/email/templates
 COPY --from=build --chown=nestjs:nestjs /app/apps/api/prisma ./apps/api/prisma
 
 USER nestjs

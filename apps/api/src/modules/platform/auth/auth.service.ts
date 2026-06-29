@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException, NotFoundException, BadRequestExcepti
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
-import { EmailService } from '../../../integrations/email/email.service';
+import { EmailQueue } from '../../../integrations/email/queues/email.queue';
 import { JwtPayload } from './strategies/jwt.strategy';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -17,7 +17,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly emailService: EmailService,
+    private readonly emailQueue: EmailQueue,
   ) {}
 
   /**
@@ -116,12 +116,18 @@ export class AuthService {
     const webAppUrl = this.configService.get<string>('WEB_APP_URL', 'http://localhost:4200');
     const resetLink = `${webAppUrl}/auth/reset-password?token=${rawResetToken}`;
 
-    // 8. Despachar el correo en segundo plano consumiendo nuestra plantilla Handlebars responsiva
-    await this.emailService.sendPasswordResetMail(
-      user.email,
-      restaurant.name,
+    // 8. Encolar el correo para que la peticion HTTP nunca dependa del SMTP.
+    await this.emailQueue.addPasswordResetJob({
+      tenantId: restaurant.slug,
+      restaurantId: restaurant.id,
+      templateName: 'auth/forgot-password',
+      locale: restaurant.locale ?? 'es-ES',
+      to: user.email,
+      restaurantName: restaurant.name,
       resetLink,
-    );
+      traceId: crypto.randomUUID(),
+      requestedAt: new Date().toISOString(),
+    });
   }
 
   /**
