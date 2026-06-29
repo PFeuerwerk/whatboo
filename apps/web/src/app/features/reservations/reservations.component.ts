@@ -27,6 +27,7 @@ export class ReservationsComponent implements OnInit, OnDestroy {
   public readonly tables = signal<RestaurantTable[]>([]);
   public readonly activeFilter = signal<'ALL' | ReservationStatus>('ALL');
   public readonly isLoading = signal<boolean>(false);
+  public readonly errorMessage = signal<string | null>(null);
 
   public readonly filteredReservations = computed(() => {
     const filter = this.activeFilter();
@@ -64,6 +65,7 @@ export class ReservationsComponent implements OnInit, OnDestroy {
 
   public loadAgendaDiaria(): void {
     this.isLoading.set(true);
+    this.errorMessage.set(null);
     const date = formatDate(this.selectedDate(), 'yyyy-MM-dd', 'en-US');
 
     forkJoin({
@@ -79,6 +81,7 @@ export class ReservationsComponent implements OnInit, OnDestroy {
       },
       error: error => {
         console.error('Error al cargar agenda diaria:', error);
+        this.errorMessage.set('No se pudo cargar la agenda de reservas.');
         this.isLoading.set(false);
       }
     });
@@ -92,14 +95,20 @@ export class ReservationsComponent implements OnInit, OnDestroy {
     if (nextStatus === ReservationStatus.CANCELLED) {
       this.reservationHttpService.cancelReservation(id, 'Cancelada desde dashboard').subscribe({
         next: updated => this.upsertReservation(updated),
-        error: err => console.error('Error al cancelar reserva:', err)
+        error: err => {
+          console.error('Error al cancelar reserva:', err);
+          this.errorMessage.set('No se pudo cancelar la reserva.');
+        }
       });
       return;
     }
 
     this.reservationHttpService.updateReservationStatus(id, nextStatus).subscribe({
       next: updated => this.upsertReservation(updated),
-      error: err => console.error('Error al actualizar estado:', err)
+      error: err => {
+        console.error('Error al actualizar estado:', err);
+        this.errorMessage.set('No se pudo actualizar el estado de la reserva.');
+      }
     });
   }
 

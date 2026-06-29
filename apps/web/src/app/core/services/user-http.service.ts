@@ -1,8 +1,15 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { CreateStaffUserDto, StaffUser, UpdateStaffUserDto, UserRole } from '../models/restaurant.interfaces';
+
+interface PaginatedUsersResponse {
+  data: StaffUser[];
+  total: number;
+  take: number;
+  skip: number;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +19,9 @@ export class UserHttpService {
   private readonly baseUrl = `${environment.apiUrl}/users`;
 
   public getStaff(): Observable<StaffUser[]> {
-    return this.http.get<StaffUser[]>(this.baseUrl);
+    return this.http.get<StaffUser[] | PaginatedUsersResponse>(this.baseUrl).pipe(
+      map(response => Array.isArray(response) ? response : response.data)
+    );
   }
 
   public createStaff(user: CreateStaffUserDto): Observable<StaffUser> {

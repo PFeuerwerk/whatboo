@@ -34,6 +34,9 @@ export class CustomersComponent implements OnInit {
 
   public readonly customerList = signal<CustomerProfile[]>([]);
   public readonly searchTerm = signal('');
+  public readonly isLoading = signal(false);
+  public readonly errorMessage = signal<string | null>(null);
+  public readonly totalCustomers = signal(0);
 
   public ngOnInit(): void {
     this.loadCustomerCRM();
@@ -42,14 +45,21 @@ export class CustomersComponent implements OnInit {
   public loadCustomerCRM(): void {
     const q = this.searchTerm().trim();
     const params = q ? new HttpParams().set('q', q) : undefined;
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
 
     this.http.get<CustomerListResponse>(`${environment.apiUrl}/customers`, { params })
       .subscribe({
         next: (res) => {
           this.customerList.set((res?.data ?? []).map(customer => this.toCustomerProfile(customer)));
+          this.totalCustomers.set(res?.total ?? 0);
+          this.isLoading.set(false);
         },
         error: () => {
           this.customerList.set([]);
+          this.totalCustomers.set(0);
+          this.isLoading.set(false);
+          this.errorMessage.set('No se pudo cargar el CRM de clientes.');
         }
       });
   }

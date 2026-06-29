@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 import { BaseRepository } from '../../../../infrastructure/database/repositories/base.repository';
 import { Customer, Prisma } from '@prisma/client';
-import { normalizePhone } from "../../../../common/phone/phone-normalizer.util";
+import { normalizePhone } from '../../../../common/phone/phone-normalizer.util';
+import { PaginatedResponse, normalizePagination, paginatedResponse } from '../../../../common/pagination/paginated-response';
 
 @Injectable()
 export class CustomerRepository extends BaseRepository {
@@ -30,11 +31,11 @@ export class CustomerRepository extends BaseRepository {
 
   async findAll(restaurantId: string): Promise<Customer[]> {
     return this.prisma.customer.findMany({
-      where: { 
+      where: {
         restaurantId,
-        active: true 
+        active: true
       },
-      orderBy: { 
+      orderBy: {
         totalReservations: 'desc' // Ordenar por fidelización por defecto
       }
     });
@@ -47,12 +48,11 @@ export class CustomerRepository extends BaseRepository {
       take?: number;
       skip?: number;
     },
-  ): Promise<{ data: Customer[]; total: number }> {
+  ): Promise<PaginatedResponse<Customer>> {
     this.requireRestaurantId(restaurantId);
 
     const q = input.q?.trim();
-    const take = Math.min(Math.max(Number(input.take ?? 50), 1), 100);
-    const skip = Math.max(Number(input.skip ?? 0), 0);
+    const { take, skip } = normalizePagination(input);
     const where: Prisma.CustomerWhereInput = {
       restaurantId,
       active: true,
@@ -82,7 +82,7 @@ export class CustomerRepository extends BaseRepository {
       this.prisma.customer.count({ where }),
     ]);
 
-    return { data, total };
+    return paginatedResponse(data, total, { take, skip });
   }
 
 

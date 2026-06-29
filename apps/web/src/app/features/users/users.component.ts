@@ -99,11 +99,17 @@ export class UsersComponent implements OnInit {
 
   private patchStaff(userId: string, body: UpdateStaffUserDto): void {
     this.errorMessage.set(null);
+    const previous = this.staffList();
+    this.staffList.update(current => current.map(member =>
+      member.id === userId ? { ...member, ...body } as StaffUser : member
+    ));
+
     this.usersApi.updateStaff(userId, body).subscribe({
       next: (updated) => {
         this.staffList.update(current => current.map(member => member.id === updated.id ? updated : member));
       },
       error: () => {
+        this.staffList.set(previous);
         this.errorMessage.set('No se pudo actualizar el usuario. Verifica tus permisos.');
       }
     });

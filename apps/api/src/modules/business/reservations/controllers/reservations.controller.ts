@@ -52,7 +52,12 @@ export class ReservationsController {
 
     if (date) {
       const { start, end } = this.resolveDateRange(query);
-      return this.reservationRepository.findByDateRange(restaurantId, start, end);
+      return this.reservationRepository.list(restaurantId, {
+        from: start,
+        to: end,
+        take: query.take,
+        skip: query.skip,
+      });
     }
 
     return this.findToday(req);

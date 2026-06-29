@@ -9,6 +9,10 @@
     </button>
   </div>
 
+  @if (errorMessage()) {
+    <div class="table-card" style="margin-bottom:1rem;color:#991b1b;background:#fef2f2;border-color:#fecaca;">{{ errorMessage() }}</div>
+  }
+
   <div class="metrics-grid">
     <div class="metric-card">
       <div class="metric-label">Cubiertos asignados</div>

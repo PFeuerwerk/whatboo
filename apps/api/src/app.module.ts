@@ -22,6 +22,7 @@ import { UsersModule } from './modules/business/users/users.module';
 import { HealthModule } from './modules/platform/health/health.module';
 import { AuthModule } from './modules/platform/auth/auth.module';
 import { PlatformAdminModule } from './modules/platform/admin/platform-admin.module';
+import { OpenApiModule } from './modules/platform/openapi/openapi.module';
 
 @Module({
   imports: [
@@ -80,6 +81,7 @@ import { PlatformAdminModule } from './modules/platform/admin/platform-admin.mod
     HealthModule,
     AuthModule,
     PlatformAdminModule,
+    OpenApiModule,
   ],
   providers: [
     // Protección y Activación Global de Rate Limiting (Fase B)

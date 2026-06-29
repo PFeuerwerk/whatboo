@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   '/api/v1/auth/register-tenant',
   '/api/v1/auth/reset-password',
   '/api/v1/platform/admin',
+  '/api/v1/openapi.json',
   '/api/v1/whatsapp/webhook',
   '/api/v1/whatsapp/test-message',
   '/api/v1/health',

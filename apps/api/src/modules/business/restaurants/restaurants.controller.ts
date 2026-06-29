@@ -5,6 +5,7 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  Header,
   Param,
   Patch,
   Post,
@@ -410,11 +411,15 @@ export class RestaurantsController {
   }
 
   @Get(':slug/analytics')
+  @Header('Deprecation', 'true')
+  @Header('Sunset', '2026-09-30')
   async getAnalyticsBySlug(@Req() req: any, @Query('date') date?: string) {
     return this.buildDailyAnalytics(req.tenantId, date);
   }
 
   @Get(':slug/customers')
+  @Header('Deprecation', 'true')
+  @Header('Sunset', '2026-09-30')
   async getCustomers(@Req() req: any) {
     return this.prisma.customer.findMany({
       where: { restaurantId: req.tenantId },
@@ -423,6 +428,8 @@ export class RestaurantsController {
   }
 
   @Get(':slug/meta-credentials')
+  @Header('Deprecation', 'true')
+  @Header('Sunset', '2026-09-30')
   async getMetaCredentials(@Req() req: any) {
     this.assertManagementRole(req);
     const account = await this.prisma.whatsappAccount.findFirst({
@@ -439,6 +446,8 @@ export class RestaurantsController {
   }
 
   @Patch(':slug/meta-credentials')
+  @Header('Deprecation', 'true')
+  @Header('Sunset', '2026-09-30')
   async updateMetaCredentials(@Req() req: any, @Body() dto: any) {
     this.assertManagementRole(req);
     const phoneNumber = String(dto.phoneNumberId ?? '').trim();
@@ -464,6 +473,8 @@ export class RestaurantsController {
   }
 
   @Patch(':slug/staff/:userId')
+  @Header('Deprecation', 'true')
+  @Header('Sunset', '2026-09-30')
   async updateStaffStatusLegacy(@Req() req: any, @Param('userId') userId: string, @Body() dto: any) {
     return this.updateStaff(req, userId, dto);
   }
