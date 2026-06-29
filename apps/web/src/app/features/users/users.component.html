@@ -1,7 +1,7 @@
 <div class="staff-wrapper animate-fade-in">
   <div class="header-block">
-    <h1 class="title-main">Usuarios del Staff y Roles</h1>
-    <p class="subtitle-main">Controle accesos multi-tenant con roles OWNER, MANAGER y STAFF alineados con Prisma y NestJS.</p>
+    <h1 class="title-main">Equipo y accesos</h1>
+    <p class="subtitle-main">Crea usuarios del restaurante, asigna roles y controla quién puede entrar al panel.</p>
   </div>
 
   @if (successMessage()) {
@@ -14,7 +14,7 @@
 
   <div class="split-grid">
     <div class="form-card">
-      <h3 class="section-title">Alta de Usuario</h3>
+      <h3 class="section-title">Crear usuario</h3>
       <form [formGroup]="staffForm" (ngSubmit)="onCreateStaff()" class="space-y-4">
         <div class="input-group">
           <label class="input-label">Nombre</label>
@@ -49,7 +49,7 @@
 
     <div class="table-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-        <h3 class="section-title" style="margin:0;">Personal Activo: {{ activeStaffCount() }}</h3>
+        <h3 class="section-title" style="margin:0;">Personal activo: {{ activeStaffCount() }}</h3>
         @if (isLoading()) { <span class="text-xs text-slate-400 font-bold">Cargando...</span> }
       </div>
 

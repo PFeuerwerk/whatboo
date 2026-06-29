@@ -1,30 +1,65 @@
 {
   "NAV": {
-    "RESERVATIONS": "Agenda Diaria",
-    "FLOOR_PLAN": "Salón y Mesas",
-    "CONFIG": "Parámetros",
+    "RESERVATIONS": "Reservas",
+    "FLOOR_PLAN": "Mesas y áreas",
+    "CONFIG": "Configuración",
     "REPORTS": "Reportes",
-    "INTEGRATIONS": "Integración WhatsApp",
-    "STAFF": "Equipo y Permisos",
-    "LOGOUT": "Cerrar Sesión"
+    "INTEGRATIONS": "WhatsApp",
+    "STAFF": "Equipo",
+    "LOGOUT": "Cerrar sesión"
   },
   "AUTH": {
-    "HERO_BADGE": "🚀 Plataforma Multi-Tenant Enterprise",
-    "LOGIN_TITLE": "WhatBoo SaaS",
-    "HERO_SUBHEAD": "Gestión inteligente de aforo, asignación interactiva de mesas y automatización de reservas de alta gama para restaurantes.",
-    "OWNER_ROLE": "Propietario / Dueño",
-    "OWNER_HIGHLIGHT": "Control total inmutable de facturación, salones y configuración maestra perimetral.",
-    "MANAGER_ROLE": "Gerente / Maitre de Sala",
-    "MANAGER_HIGHLIGHT": "Operación del Drag & Drop, control de turnos de personal y lista de espera de comensales en caliente.",
-    "NEED_HELP": "¿Necesitas asistencia de infraestructura? Contactar con Soporte IT",
-    "LOGIN_DESCRIPTION": "Ingrese las credenciales corporativas asignadas para gestionar el aforo y la sala interactiva de su establecimiento.",
-    "RESTAURANT_SLUG_LABEL": "Identificador del Restaurante (Slug)",
+    "HERO_BADGE": "Plataforma multi-restaurante",
+    "LOGIN_TITLE": "Whatboo",
+    "HERO_SUBHEAD": "Gestiona reservas, mesas, equipo y automatizaciones de WhatsApp desde un panel claro y seguro.",
+    "OWNER_ROLE": "Propietario",
+    "OWNER_HIGHLIGHT": "Controla la configuración del restaurante, el equipo y la operación completa.",
+    "MANAGER_ROLE": "Gerente de sala",
+    "MANAGER_HIGHLIGHT": "Supervisa reservas, mesas, turnos y atención diaria del restaurante.",
+    "NEED_HELP": "¿Necesitas ayuda? Contacta con soporte",
+    "LOGIN_DESCRIPTION": "Ingresa con las credenciales de tu restaurante para acceder al panel.",
+    "RESTAURANT_SLUG_LABEL": "Restaurante",
     "RESTAURANT_SLUG_PLACEHOLDER": "Ej: la-bella-italia",
-    "EMAIL_LABEL": "Correo Electrónico Corporativo",
+    "EMAIL_LABEL": "Correo electrónico",
     "EMAIL_PLACEHOLDER": "ej: manager@restaurante.com",
-    "PASSWORD_LABEL": "Contraseña de Acceso",
-    "PASSWORD_PLACEHOLDER": "Escriba su contraseña...",
-    "FORGOT_PASSWORD": "¿Olvidó su contraseña?",
-    "LOGIN_SUBMIT": "Ingresar al Panel"
+    "PASSWORD_LABEL": "Contraseña",
+    "PASSWORD_PLACEHOLDER": "Escribe tu contraseña",
+    "FORGOT_PASSWORD": "Olvidé mi contraseña",
+    "LOGIN_SUBMIT": "Entrar al panel",
+    "REQUEST_RESET_TITLE": "Crear nueva contraseña",
+    "RESET_PASSWORD_HELP": "Introduce una contraseña segura para recuperar el acceso a tu panel.",
+    "RESET_SUCCESS_TITLE": "Contraseña actualizada",
+    "RESET_SUCCESS_DESCRIPTION": "Ya puedes iniciar sesión con tu nueva contraseña.",
+    "LOGIN_BUTTON": "Ir al inicio de sesión",
+    "NEW_PASSWORD_LABEL": "Nueva contraseña",
+    "CONFIRM_PASSWORD_LABEL": "Confirmar contraseña",
+    "PASSWORD_REQUIRED": "La contraseña es obligatoria.",
+    "PASSWORD_MINLENGTH": "La contraseña debe cumplir la política de seguridad.",
+    "PASSWORD_MISMATCH": "Las contraseñas no coinciden.",
+    "SAVING": "Guardando...",
+    "RESET_SUBMIT": "Actualizar contraseña",
+    "BACK_TO_LOGIN": "Volver al inicio de sesión",
+    "RESET_ERROR_NO_TOKEN": "El enlace no incluye un token válido.",
+    "RESET_ERROR_EXPIRED": "El enlace expiró o ya fue usado.",
+    "ERROR_NETWORK": "No se pudo conectar con el servidor.",
+    "LOGIN_GENERIC_ERROR": "No se pudo completar la operación. Inténtalo de nuevo."
+  },
+  "RESERVATIONS": {
+    "TITLE": "Reservas de hoy",
+    "SUBTITLE": "Consulta, organiza y actualiza las reservas del restaurante en tiempo real.",
+    "NO_RESERVATIONS": "No hay reservas para mostrar.",
+    "STATUS": {
+      "CONFIRMED": "Confirmadas",
+      "PENDING": "Pendientes",
+      "CANCELLED": "Canceladas",
+      "COMPLETED": "Completadas",
+      "NO_SHOW": "No asistieron"
+    }
+  },
+  "STATUS": {
+    "ALL": "Todas"
+  },
+  "CALENDAR": {
+    "DAILY_OCCUPATION": "Ocupación del día"
   }
 }

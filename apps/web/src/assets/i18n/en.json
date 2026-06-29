@@ -1,30 +1,65 @@
 {
   "NAV": {
-    "RESERVATIONS": "Daily Agenda",
-    "FLOOR_PLAN": "Floor & Tables",
+    "RESERVATIONS": "Reservations",
+    "FLOOR_PLAN": "Tables & areas",
     "CONFIG": "Settings",
-    "REPORTS": "Analytics",
-    "INTEGRATIONS": "WhatsApp Sync",
-    "STAFF": "Team & Perms",
-    "LOGOUT": "Sign Out"
+    "REPORTS": "Reports",
+    "INTEGRATIONS": "WhatsApp",
+    "STAFF": "Team",
+    "LOGOUT": "Sign out"
   },
   "AUTH": {
-    "HERO_BADGE": "🚀 Multi-Tenant Enterprise Platform",
-    "LOGIN_TITLE": "WhatBoo SaaS",
-    "HERO_SUBHEAD": "Intelligent capacity management, interactive table allocation, and high-end automated booking workflow for restaurants.",
-    "OWNER_ROLE": "Proprietor / Owner",
-    "OWNER_HIGHLIGHT": "Total immutable control over billing, floor plans, and master perimeter configuration.",
-    "MANAGER_ROLE": "Manager / Floor Maitre",
-    "MANAGER_HIGHLIGHT": "Drag & Drop operations, staff shift control, and real-time guest waitlist management.",
-    "NEED_HELP": "Need infrastructure assistance? Contact IT Support",
-    "LOGIN_DESCRIPTION": "Enter your corporate credentials to manage capacity and your establishment's interactive dining room.",
-    "RESTAURANT_SLUG_LABEL": "Restaurant Identifier (Slug)",
-    "RESTAURANT_SLUG_PLACEHOLDER": "E.g., la-bella-italia",
-    "EMAIL_LABEL": "Corporate Email Address",
-    "EMAIL_PLACEHOLDER": "e.g., manager@restaurant.com",
-    "PASSWORD_LABEL": "Access Password",
-    "PASSWORD_PLACEHOLDER": "Enter your password...",
+    "HERO_BADGE": "Multi-restaurant platform",
+    "LOGIN_TITLE": "Whatboo",
+    "HERO_SUBHEAD": "Manage reservations, tables, staff, and WhatsApp automation from a clear and secure dashboard.",
+    "OWNER_ROLE": "Owner",
+    "OWNER_HIGHLIGHT": "Control restaurant settings, team access, and the full operation.",
+    "MANAGER_ROLE": "Floor manager",
+    "MANAGER_HIGHLIGHT": "Supervise reservations, tables, shifts, and daily service.",
+    "NEED_HELP": "Need help? Contact support",
+    "LOGIN_DESCRIPTION": "Sign in with your restaurant credentials to access the dashboard.",
+    "RESTAURANT_SLUG_LABEL": "Restaurant",
+    "RESTAURANT_SLUG_PLACEHOLDER": "E.g. la-bella-italia",
+    "EMAIL_LABEL": "Email address",
+    "EMAIL_PLACEHOLDER": "e.g. manager@restaurant.com",
+    "PASSWORD_LABEL": "Password",
+    "PASSWORD_PLACEHOLDER": "Enter your password",
     "FORGOT_PASSWORD": "Forgot password?",
-    "LOGIN_SUBMIT": "Sign In to Dashboard"
+    "LOGIN_SUBMIT": "Open dashboard",
+    "REQUEST_RESET_TITLE": "Create a new password",
+    "RESET_PASSWORD_HELP": "Enter a secure password to recover access to your dashboard.",
+    "RESET_SUCCESS_TITLE": "Password updated",
+    "RESET_SUCCESS_DESCRIPTION": "You can now sign in with your new password.",
+    "LOGIN_BUTTON": "Go to sign in",
+    "NEW_PASSWORD_LABEL": "New password",
+    "CONFIRM_PASSWORD_LABEL": "Confirm password",
+    "PASSWORD_REQUIRED": "Password is required.",
+    "PASSWORD_MINLENGTH": "Password must meet the security policy.",
+    "PASSWORD_MISMATCH": "Passwords do not match.",
+    "SAVING": "Saving...",
+    "RESET_SUBMIT": "Update password",
+    "BACK_TO_LOGIN": "Back to sign in",
+    "RESET_ERROR_NO_TOKEN": "This link does not include a valid token.",
+    "RESET_ERROR_EXPIRED": "This link expired or was already used.",
+    "ERROR_NETWORK": "Could not connect to the server.",
+    "LOGIN_GENERIC_ERROR": "The operation could not be completed. Try again."
+  },
+  "RESERVATIONS": {
+    "TITLE": "Today's reservations",
+    "SUBTITLE": "Review, organize, and update restaurant reservations in real time.",
+    "NO_RESERVATIONS": "There are no reservations to show.",
+    "STATUS": {
+      "CONFIRMED": "Confirmed",
+      "PENDING": "Pending",
+      "CANCELLED": "Cancelled",
+      "COMPLETED": "Completed",
+      "NO_SHOW": "No-show"
+    }
+  },
+  "STATUS": {
+    "ALL": "All"
+  },
+  "CALENDAR": {
+    "DAILY_OCCUPATION": "Daily occupancy"
   }
 }

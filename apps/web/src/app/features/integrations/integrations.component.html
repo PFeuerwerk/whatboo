@@ -1,8 +1,8 @@
 <div class="integrations-wrapper animate-fade-in">
   
   <div class="header-block">
-    <h1 class="title-main">Integración de Meta Cloud API</h1>
-    <p class="subtitle-main">Vincule los identificadores oficiales de su suite de Facebook Developers para activar los bots automatizados de WhatsApp.</p>
+    <h1 class="title-main">WhatsApp del restaurante</h1>
+    <p class="subtitle-main">Conecta la cuenta oficial de WhatsApp para recibir mensajes, automatizar reservas y mantener la comunicación con clientes.</p>
   </div>
 
   <div class="panel-card">
@@ -14,14 +14,14 @@
     }
 
     <div class="webhook-info-box">
-      <div class="info-title">🔗 URL de Callback para Meta Developers</div>
+      <div class="info-title">🔗 URL de callback para WhatsApp</div>
       <div class="info-url">http://localhost:3000/api/v1/whatsapp/webhook</div>
     </div>
 
     <form [formGroup]="integrationsForm" (ngSubmit)="onSaveIntegrations()" class="space-y-6">
       
       <div class="section-block">
-        <h3 class="section-title">Credenciales de Acceso e Identificadores</h3>
+        <h3 class="section-title">Datos de conexión de Meta</h3>
         
         <div class="input-group">
           <label class="input-label">WhatsApp Business Phone Number ID</label>
@@ -35,7 +35,7 @@
       </div>
 
       <div class="section-block">
-        <h3 class="section-title">Tokens Criptográficos de Seguridad</h3>
+        <h3 class="section-title">Seguridad del webhook</h3>
         
         <div class="input-group">
           <label class="input-label">Meta Permanent Access Token (Bearer Token)</label>

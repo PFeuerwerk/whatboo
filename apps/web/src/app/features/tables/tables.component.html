@@ -1,8 +1,8 @@
 <div class="tables-wrapper animate-fade-in">
   <div class="header-block">
     <div>
-      <h1 class="title-main">Layout de Planta y Salones</h1>
-      <p class="subtitle-main">Gestioná zonas, prioridad de llenado automático, mesas y aforo real del restaurante.</p>
+      <h1 class="title-main">Salones, áreas y mesas</h1>
+      <p class="subtitle-main">Organiza las áreas del restaurante, crea mesas y define capacidades para que las reservas se asignen correctamente.</p>
     </div>
 
     <div class="capacity-card">
@@ -19,7 +19,7 @@
   <div class="split-grid">
     <div class="controls-stack">
       <div class="form-card">
-        <h3 class="section-title">{{ editingZoneId() ? 'Editar Zona' : 'Añadir Zona' }}</h3>
+        <h3 class="section-title">{{ editingZoneId() ? 'Editar área' : 'Añadir área' }}</h3>
         <form [formGroup]="zoneForm" (ngSubmit)="onCreateOrUpdateZone()">
           <div class="input-group">
             <label class="input-label">Nombre de Zona</label>
@@ -43,7 +43,7 @@
       </div>
 
       <div class="form-card">
-        <h3 class="section-title">{{ editingTableId() ? 'Editar Mesa' : 'Añadir Mesa' }}</h3>
+        <h3 class="section-title">{{ editingTableId() ? 'Editar mesa' : 'Añadir mesa' }}</h3>
         <form [formGroup]="tableForm" (ngSubmit)="onCreateOrUpdateTable()">
           <div class="input-group">
             <label class="input-label">Número o Código de Mesa</label>

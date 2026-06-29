@@ -1,8 +1,8 @@
 <div class="platform-admin-page">
   <header class="platform-header">
     <div>
-      <h1>Platform Admin</h1>
-      <p>Administracion global del SaaS sin mezclar datos operativos de restaurantes.</p>
+      <h1>Administración de la plataforma</h1>
+      <p>Administración global del SaaS sin mezclar datos operativos de restaurantes.</p>
     </div>
     <button type="button" class="secondary-action" (click)="loadPlatformAdmin()" [disabled]="isLoading()">
       Actualizar
@@ -40,7 +40,7 @@
     <div class="panel tenants-panel">
       <div class="panel-toolbar">
         <div>
-          <h2>Tenants</h2>
+          <h2>Restaurantes</h2>
           <p>Listado global de restaurantes registrados.</p>
         </div>
         <div class="filters">
@@ -103,7 +103,7 @@
     </div>
 
     <aside class="panel detail-panel">
-      <h2>Detalle tenant</h2>
+      <h2>Detalle del restaurante</h2>
       @if (selectedRestaurant(); as tenant) {
         <div class="form-grid">
           <label>
@@ -151,7 +151,7 @@
         </div>
 
         <div class="configuration-readout">
-          <h3>Configuracion asociada</h3>
+          <h3>Configuración asociada</h3>
           <p>Duracion: {{ tenant.defaultReservationDuration }} min</p>
           <p>Intervalo slots: {{ tenant.slotIntervalMinutes }} min</p>
           <p>Buffer: {{ tenant.bufferTimeMinutes }} min</p>
@@ -165,7 +165,7 @@
 
   <section class="admin-grid lower-grid">
     <div class="panel">
-      <h2>Usuarios platform</h2>
+      <h2>Usuarios de plataforma</h2>
       <div class="responsive-table compact">
         <table>
           <thead>
@@ -193,7 +193,7 @@
     </div>
 
     <div class="panel">
-      <h2>Observabilidad inicial</h2>
+      <h2>Estado del sistema</h2>
       <div class="health-list">
         <div>
           <span>API</span>

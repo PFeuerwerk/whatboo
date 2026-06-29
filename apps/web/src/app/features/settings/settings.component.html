@@ -1,7 +1,7 @@
 <div class="settings-wrapper animate-fade-in">
   <div class="header-block">
-    <h1 class="title-main">Configuración Operativa</h1>
-    <p class="subtitle-main">Administre franjas horarias, capacidad, restricciones de aforo y reglas automáticas usadas por la API.</p>
+    <h1 class="title-main">Configuración del restaurante</h1>
+    <p class="subtitle-main">Define horarios, capacidad, duración de reservas y reglas que usa el sistema para aceptar o rechazar solicitudes.</p>
   </div>
 
   <div class="panel-card">
@@ -19,7 +19,7 @@
 
     <form [formGroup]="settingsForm" (ngSubmit)="onSaveSettings()" class="space-y-6">
       <div class="section-block">
-        <h3 class="section-title">Slots, Duración y Capacidad Base</h3>
+        <h3 class="section-title">Horarios, duración y capacidad</h3>
         <div class="row-inputs">
           <div class="input-group">
             <label class="input-label">Intervalo de Bloques</label>
@@ -50,7 +50,7 @@
       </div>
 
       <div class="section-block" formGroupName="capacityRule">
-        <h3 class="section-title">Restricciones de Aforo de la API</h3>
+        <h3 class="section-title">Límites de capacidad</h3>
         <div class="row-inputs">
           <div class="input-group">
             <label class="input-label">Máximo de Personas por Reserva</label>
@@ -78,7 +78,7 @@
         <div class="toggle-container row-spacing-buffer">
           <div class="toggle-row">
             <div class="toggle-info">
-              <h4 class="toggle-title">Permitir Sobreventa Controlada</h4>
+              <h4 class="toggle-title">Permitir sobreventa controlada</h4>
               <p class="toggle-desc">Habilita overbooking únicamente cuando el flujo operativo lo permita.</p>
             </div>
             <input type="checkbox" formControlName="overbookingAllowed" class="checkbox-custom">
@@ -87,7 +87,7 @@
       </div>
 
       <div class="section-block">
-        <h3 class="section-title">Franjas Horarias Semanales</h3>
+        <h3 class="section-title">Horario semanal</h3>
         <div formArrayName="openingHours" class="toggle-container">
           @for (hour of openingHours.controls; track hour.value.dayOfWeek; let i = $index) {
             <div class="toggle-row" [formGroupName]="i">
@@ -108,18 +108,18 @@
       </div>
 
       <div class="section-block">
-        <h3 class="section-title">Automatización WhatsApp</h3>
+        <h3 class="section-title">Automatización de WhatsApp</h3>
         <div class="toggle-container">
           <div class="toggle-row">
             <div class="toggle-info">
-              <h4 class="toggle-title">Confirmación Inmediata</h4>
+              <h4 class="toggle-title">Confirmación inmediata</h4>
               <p class="toggle-desc">El bot confirma automáticamente si la capacidad y horario son válidos.</p>
             </div>
             <input type="checkbox" formControlName="autoConfirm" class="checkbox-custom">
           </div>
           <div class="toggle-row">
             <div class="toggle-info">
-              <h4 class="toggle-title">Lista de Espera Automática</h4>
+              <h4 class="toggle-title">Lista de espera automática</h4>
               <p class="toggle-desc">Encola solicitudes cuando no hay disponibilidad en el slot requerido.</p>
             </div>
             <input type="checkbox" formControlName="allowWaitlist" class="checkbox-custom">
@@ -130,7 +130,7 @@
       <div class="footer-row">
         <button type="submit" [disabled]="settingsForm.invalid || isSaving()" class="save-btn">
           @if (isSaving()) { <span>⏳</span> }
-          Guardar Configuración Operativa
+          Guardar Configuración del restaurante
         </button>
       </div>
     </form>
