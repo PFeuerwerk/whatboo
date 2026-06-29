@@ -24,6 +24,7 @@ export class ForgotPasswordComponent implements OnInit {
 
   ngOnInit(): void {
     this.forgotForm = this.fb.group({
+      restaurantSlug: [localStorage.getItem('tenant_slug') ?? '', [Validators.required]],
       email: ['', [Validators.required, Validators.email]]
     });
   }
@@ -39,19 +40,22 @@ export class ForgotPasswordComponent implements OnInit {
     this.errorMessage = null;
     this.successMessage = null;
 
-    this.authService.requestPasswordReset(this.forgotForm.value.email).subscribe({
+    const payload = {
+      restaurantSlug: String(this.forgotForm.value.restaurantSlug ?? '').trim(),
+      email: String(this.forgotForm.value.email ?? '').trim().toLowerCase(),
+    };
+
+    this.authService.requestPasswordReset(payload).subscribe({
       next: () => {
         this.isLoading = false;
-        this.successMessage = 'Hemos enviado un enlace de recuperación a tu correo electrónico registrado.';
+        this.successMessage = 'Si el correo coincide con un restaurante registrado, enviaremos un enlace de recuperacion.';
       },
       error: (error: HttpErrorResponse) => {
         this.isLoading = false;
-        if (error.status === 404) {
-          this.errorMessage = 'No encontramos ningún restaurante registrado con ese correo.';
-        } else if (error.status === 0) {
-          this.errorMessage = 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
+        if (error.status === 0) {
+          this.errorMessage = 'No se pudo conectar con el servidor. Verifica tu conexion a internet.';
         } else {
-          this.errorMessage = error.error?.message || 'Ocurrió un error inesperado. Inténtalo más tarde.';
+          this.errorMessage = error.error?.message || 'Ocurrio un error inesperado. Intentalo mas tarde.';
         }
       }
     });
