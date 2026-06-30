@@ -1,17 +1,20 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, BadRequestException } from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, BadRequestException, Logger } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { RedisService } from '../../infrastructure/cache/redis.service';
+import { TenantRequest } from '../http/tenant-request';
 
 @Injectable()
 export class TenantInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(TenantInterceptor.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
   ) {}
 
-  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
-    const request = context.switchToHttp().getRequest();
+  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<unknown>> {
+    const request = context.switchToHttp().getRequest<TenantRequest>();
     const host = request.headers.host || '';
     const tenantSlugHeader = request.headers['x-tenant-slug'] as string;
     
@@ -40,12 +43,9 @@ export class TenantInterceptor implements NestInterceptor {
 
     // Tolerancia a fallos: Lectura blindada de la caché de Redis
     try {
-      const redisClient = (this.redis as any).client || (this.redis as any).getDriver?.() || this.redis;
-      if (redisClient && typeof redisClient.get === 'function') {
-        restaurantId = await redisClient.get(cacheKey);
-      }
+      restaurantId = await this.redis.get(cacheKey);
     } catch (e) {
-      console.warn('⚠️ Alerta de Caché: Falló la lectura en Redis, recurriendo a PostgreSQL de respaldo.');
+      this.logger.warn('Fallo la lectura de tenant en Redis; se usara PostgreSQL como respaldo.');
     }
 
     // Fallback elástico a PostgreSQL con validación estricta de estado corporativo
@@ -63,11 +63,10 @@ export class TenantInterceptor implements NestInterceptor {
 
       // Persistencia asíncrona de alta velocidad en Redis
       try {
-        const redisClient = (this.redis as any).client || (this.redis as any).getDriver?.() || this.redis;
-        if (redisClient && typeof redisClient.set === 'function') {
-          await redisClient.set(cacheKey, restaurantId, 'EX', 3600); // Guardar 1 hora
-        }
-      } catch (e) {}
+        await this.redis.set(cacheKey, restaurantId, 3600);
+      } catch (e) {
+        this.logger.warn('Fallo la escritura de tenant en Redis; PostgreSQL sigue siendo la fuente de verdad.');
+      }
     }
 
     // 3. Aislamiento de contexto inmutable compatible con el tipado de compilación de Express/NestJS

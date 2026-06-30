@@ -1,4 +1,4 @@
-import { DateLike, RestaurantStatus, UserRole, WhatsappAccountStatus } from './restaurant.interfaces';
+import { BillingPlan, BillingStatus, DateLike, RestaurantStatus, UserRole, WhatsappAccountStatus } from './restaurant.interfaces';
 
 export interface PlatformTenantMetric {
   id: string;
@@ -17,6 +17,10 @@ export interface PlatformDashboard {
     restaurantsActive: number;
     restaurantsInactive: number;
     restaurantsSuspended: number;
+    billingTrial: number;
+    billingActive: number;
+    billingPastDue: number;
+    billingSuspended: number;
     users: number;
     reservations: number;
   };
@@ -37,6 +41,8 @@ export interface PlatformRestaurantListItem {
   locale: string;
   maxCapacity: number | null;
   status: RestaurantStatus;
+  billingPlan: BillingPlan;
+  billingStatus: BillingStatus;
   createdAt: DateLike;
   updatedAt: DateLike;
   _count: {
@@ -53,6 +59,10 @@ export interface PlatformRestaurantDetail extends PlatformRestaurantListItem {
   addressLine1: string | null;
   allowWaitlist: boolean;
   autoConfirm: boolean;
+  billingEmail: string | null;
+  billingCustomerReference: string | null;
+  trialEndsAt: DateLike | null;
+  currentPeriodEndsAt: DateLike | null;
   defaultReservationDuration: number;
   slotIntervalMinutes: number;
   bufferTimeMinutes: number;
@@ -71,6 +81,8 @@ export interface PlatformRestaurantDetail extends PlatformRestaurantListItem {
 export interface PlatformListResponse<T> {
   data: T[];
   total: number;
+  take: number;
+  skip: number;
 }
 
 export interface PlatformUser {
@@ -126,4 +138,10 @@ export interface UpdatePlatformRestaurantDto {
   locale?: string;
   maxCapacity?: number | null;
   status?: RestaurantStatus;
+  billingPlan?: BillingPlan;
+  billingStatus?: BillingStatus;
+  billingEmail?: string | null;
+  billingCustomerReference?: string | null;
+  trialEndsAt?: DateLike | null;
+  currentPeriodEndsAt?: DateLike | null;
 }

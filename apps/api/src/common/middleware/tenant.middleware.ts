@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable, NestMiddleware } from '@nestjs/common';
-import { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { RedisService } from '../../infrastructure/cache/redis.service';
+import { OptionalTenantRequest } from '../http/tenant-request';
 
 const PUBLIC_PATHS = [
   '/api/v1/auth/register-tenant',
@@ -11,6 +12,14 @@ const PUBLIC_PATHS = [
   '/api/v1/whatsapp/webhook',
   '/api/v1/whatsapp/test-message',
   '/api/v1/health',
+  '/auth/register-tenant',
+  '/auth/reset-password',
+  '/platform/admin',
+  '/openapi.json',
+  '/whatsapp/webhook',
+  '/whatsapp/test-message',
+  '/register-tenant',
+  '/reset-password',
   '/health',
 ];
 
@@ -23,8 +32,8 @@ export class TenantMiddleware implements NestMiddleware {
     private readonly redis: RedisService,
   ) {}
 
-  async use(req: Request & { tenantId?: string; tenantSlug?: string }, _res: Response, next: NextFunction) {
-    if (this.isPublicPath(req.path)) {
+  async use(req: OptionalTenantRequest, _res: Response, next: NextFunction) {
+    if (this.isPublicRequest(req)) {
       return next();
     }
 
@@ -43,6 +52,10 @@ export class TenantMiddleware implements NestMiddleware {
     req.tenantId = restaurant.id;
     req.tenantSlug = restaurant.slug;
     return next();
+  }
+
+  private isPublicRequest(req: Request): boolean {
+    return [req.path, req.url, req.originalUrl].some((path) => this.isPublicPath(path));
   }
 
   private isPublicPath(path: string): boolean {

@@ -17,6 +17,7 @@ export class GridComponent {
   public readonly tables = input<RestaurantTable[]>([]);
   public readonly reservations = input<Reservation[]>([]);
   public readonly onGridUpdated = output<Reservation>();
+  public readonly errorMessage = signal<string | null>(null);
 
   public readonly timelineHours = [
     '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00',
@@ -57,8 +58,11 @@ export class GridComponent {
       reservationStart,
       tableId
     }).subscribe({
-      next: updated => this.onGridUpdated.emit(updated),
-      error: err => console.error('Error al reasignar mesa/reserva:', err)
+      next: updated => {
+        this.errorMessage.set(null);
+        this.onGridUpdated.emit(updated);
+      },
+      error: () => this.errorMessage.set('No se pudo reasignar la reserva en el plano.')
     });
   }
 

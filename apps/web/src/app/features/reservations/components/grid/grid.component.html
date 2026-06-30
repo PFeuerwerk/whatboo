@@ -1,4 +1,8 @@
 <div class="grid-container" cdkDropListGroup>
+  @if (errorMessage()) {
+    <div class="grid-error">{{ errorMessage() }}</div>
+  }
+
   <div class="grid-header">
     <h3 class="grid-title">Plano diario estructurado por turnos</h3>
 

@@ -111,6 +111,19 @@ export class CustomersComponent implements OnInit {
     return name || customer.phone;
   }
 
+  public phoneHref(phone: string): string {
+    return `tel:${phone.replace(/\s+/g, '')}`;
+  }
+
+  public whatsappHref(phone: string): string {
+    const normalized = phone.replace(/[^\d]/g, '');
+    return `https://wa.me/${normalized}`;
+  }
+
+  public emailHref(email?: string | null): string | null {
+    return email ? `mailto:${email}` : null;
+  }
+
   private toCustomerProfile(customer: Customer): CustomerProfile {
     return {
       id: customer.id,

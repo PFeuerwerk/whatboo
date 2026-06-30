@@ -18,6 +18,21 @@ enum RestaurantStatus {
   SUSPENDED
 }
 
+enum BillingPlan {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum BillingStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+  CANCELLED
+}
+
 // =========================
 //   RESTAURANTS
 // =========================
@@ -52,6 +67,13 @@ model Restaurant {
 
   status RestaurantStatus @default(ACTIVE)
 
+  billingPlan              BillingPlan   @default(FREE)
+  billingStatus            BillingStatus @default(TRIAL)
+  billingEmail             String?
+  billingCustomerReference String?
+  trialEndsAt              DateTime?
+  currentPeriodEndsAt      DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
@@ -62,6 +84,7 @@ model Restaurant {
   customers   Customer[]
   reservations Reservation[]
   reservationCancellationAudits ReservationCancellationAudit[]
+  reservationNoShowAudits ReservationNoShowAudit[]
   tables        RestaurantTable[]
   openingHours  OpeningHour[]
   blockedDates  BlockedDate[]
@@ -113,6 +136,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   passwordHistory PasswordHistory[]
   reservationCancellationAudits ReservationCancellationAudit[]
+  reservationNoShowAudits ReservationNoShowAudit[]
 
   @@unique([restaurantId, email])
   @@index([restaurantId])
@@ -274,6 +298,7 @@ model Reservation {
   noShowAt DateTime?
   assignedTables ReservationTable[]
   cancellationAudits ReservationCancellationAudit[]
+  noShowAudits ReservationNoShowAudit[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -308,6 +333,31 @@ model ReservationCancellationAudit {
   @@index([cancelledByUserId])
   @@index([createdAt])
   @@map("reservation_cancellation_audits")
+}
+
+model ReservationNoShowAudit {
+  id String @id @default(uuid())
+
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+
+  markedByUserId String?
+  markedByUser   User? @relation(fields: [markedByUserId], references: [id])
+
+  reasonCode String
+  details String?
+  source ReservationSource @default(DASHBOARD)
+
+  createdAt DateTime @default(now())
+
+  @@index([restaurantId])
+  @@index([reservationId])
+  @@index([markedByUserId])
+  @@index([createdAt])
+  @@map("reservation_no_show_audits")
 }
 
 // =========================

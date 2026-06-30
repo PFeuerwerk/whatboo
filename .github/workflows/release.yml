@@ -1,0 +1,70 @@
+name: Release Artifacts
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-artifacts:
+    name: Build API and Web artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate OpenAPI contract
+        run: pnpm --filter api openapi:validate
+
+      - name: Generate Prisma Client
+        run: pnpm --filter api exec prisma generate
+
+      - name: Build API
+        run: pnpm --filter api build
+
+      - name: Build Web
+        run: pnpm --filter web build
+
+      - name: Package API artifact
+        run: tar -czf api-dist.tar.gz -C apps/api dist package.json prisma
+
+      - name: Package Web artifact
+        run: tar -czf web-dist.tar.gz -C apps/web dist
+
+      - name: Upload API artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-dist
+          path: api-dist.tar.gz
+          if-no-files-found: error
+
+      - name: Upload Web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: web-dist.tar.gz
+          if-no-files-found: error

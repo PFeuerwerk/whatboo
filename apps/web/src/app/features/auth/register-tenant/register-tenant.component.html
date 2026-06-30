@@ -41,6 +41,11 @@
         <input type="email" formControlName="email" class="form-input" placeholder="ej: dueno@asador.com">
       </div>
 
+      <div class="input-group">
+        <label class="input-label">Código de Invitación</label>
+        <input type="password" formControlName="inviteCode" class="form-input" autocomplete="off">
+      </div>
+
       <button type="submit" [disabled]="registerForm.invalid || isSaving()" class="submit-btn">
         @if (isSaving()) { <span>⏳ Aprovisionando PostgreSQL...</span> }
         @else { Lanzar mi Restaurante }

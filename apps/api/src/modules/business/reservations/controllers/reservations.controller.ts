@@ -4,6 +4,8 @@ import { ReservationSource, ReservationStatus } from '@prisma/client';
 import { JwtAuthGuard } from '../../../platform/auth/guards/jwt-auth.guard';
 import { DashboardGateway } from '../../../../infrastructure/observability/events/dashboard.gateway';
 import { AuditLogService } from '../../../../common/security/audit-log.service';
+import { TenantRequest, requestMetadata } from '../../../../common/http/tenant-request';
+import { AvailabilityService } from '../../availability/services/availability.service';
 import { ReservationEngineService } from '../services/reservation-engine.service';
 import { ReservationRepository } from '../repositories/reservation.repository';
 import { CreateReservationDto } from '../dto/create-reservation.dto';
@@ -22,10 +24,11 @@ export class ReservationsController {
     private readonly reservationRepository: ReservationRepository,
     private readonly dashboardGateway: DashboardGateway,
     private readonly auditLog: AuditLogService,
+    private readonly availabilityService: AvailabilityService,
   ) {}
 
   @Get('today')
-  async findToday(@Req() req: any) {
+  async findToday(@Req() req: TenantRequest) {
     const restaurantId = req['tenantId'];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -35,7 +38,7 @@ export class ReservationsController {
   }
 
   @Get()
-  async findAll(@Req() req: any, @Query() query: ListReservationsQueryDto) {
+  async findAll(@Req() req: TenantRequest, @Query() query: ListReservationsQueryDto) {
     const restaurantId = req['tenantId'];
     const date = query.date;
 
@@ -67,13 +70,13 @@ export class ReservationsController {
   }
 
   @Get(':id')
-  async findOne(@Req() req: any, @Param('id') id: string) {
+  async findOne(@Req() req: TenantRequest, @Param('id') id: string) {
     const restaurantId = req['tenantId'];
     return this.reservationRepository.findById(restaurantId, id);
   }
 
   @Post()
-  async create(@Req() req: any, @Body() dto: CreateReservationDto) {
+  async create(@Req() req: TenantRequest, @Body() dto: CreateReservationDto) {
     const restaurantId = req['tenantId'];
     const phoneValidation = this.phoneValidationService.validate(dto.phone);
 
@@ -93,7 +96,7 @@ export class ReservationsController {
   }
 
   @Patch(':id/status')
-  async updateStatus(@Req() req: any, @Param('id') id: string, @Body() dto: UpdateReservationStatusDto) {
+  async updateStatus(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: UpdateReservationStatusDto) {
     const restaurantId = req['tenantId'];
     if (dto.status === ReservationStatus.CANCELLED) {
       throw new BadRequestException('Usa el endpoint dedicado de cancelacion para registrar un motivo estructurado.');
@@ -112,7 +115,7 @@ export class ReservationsController {
   }
 
   @Patch(':id/cancel')
-  async cancel(@Req() req: any, @Param('id') id: string, @Body() dto: CancelReservationDto) {
+  async cancel(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: CancelReservationDto) {
     const restaurantId = req['tenantId'];
     const current = await this.reservationRepository.findById(restaurantId, id);
 
@@ -137,17 +140,6 @@ export class ReservationsController {
       });
     }
 
-    if (updated && reason) {
-      const withReason = await this.reservationRepository.update(restaurantId, id, {
-        notes: [updated.notes, `Cancelación dashboard: ${reason}`]
-          .filter(Boolean)
-          .join('\n'),
-      });
-
-      this.dashboardGateway.emitToRestaurant(restaurantId, 'reservation_updated', withReason);
-      return withReason;
-    }
-
     if (updated) {
       this.dashboardGateway.emitToRestaurant(restaurantId, 'reservation_updated', updated);
     }
@@ -156,7 +148,7 @@ export class ReservationsController {
   }
 
   @Patch(':id/no-show')
-  async markNoShow(@Req() req: any, @Param('id') id: string, @Body() dto: NoShowReservationDto) {
+  async markNoShow(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: NoShowReservationDto) {
     const restaurantId = req['tenantId'];
     const current = await this.reservationRepository.findById(restaurantId, id);
 
@@ -168,6 +160,17 @@ export class ReservationsController {
     const reasonCode = dto.reasonCode ?? 'CUSTOMER_DID_NOT_ARRIVE';
     const details = dto.details?.trim() || undefined;
 
+    if (updated) {
+      await this.reservationRepository.createNoShowAudit({
+        restaurantId,
+        reservationId: id,
+        markedByUserId: req.user?.sub ?? req.user?.id ?? null,
+        reasonCode,
+        details,
+        source: ReservationSource.DASHBOARD,
+      });
+    }
+
     await this.auditLog.record({
       tenantId: restaurantId,
       actorUserId: req.user?.sub ?? req.user?.id,
@@ -178,8 +181,7 @@ export class ReservationsController {
       previousValue: { status: current.status },
       newValue: { status: ReservationStatus.NO_SHOW, reasonCode, details },
       metadata: { reasonCode, details, customerId: current.customerId },
-      ipAddress: this.clientIp(req),
-      userAgent: String(req.headers?.['user-agent'] ?? ''),
+      ...requestMetadata(req),
       result: 'SUCCESS',
     });
 
@@ -191,7 +193,7 @@ export class ReservationsController {
   }
 
   @Get(':id/cancellation-audits')
-  async cancellationAudits(@Req() req: any, @Param('id') id: string) {
+  async cancellationAudits(@Req() req: TenantRequest, @Param('id') id: string) {
     const restaurantId = req['tenantId'];
     const current = await this.reservationRepository.findById(restaurantId, id);
 
@@ -202,8 +204,20 @@ export class ReservationsController {
     return this.reservationRepository.listCancellationAudits(restaurantId, id);
   }
 
+  @Get(':id/no-show-audits')
+  async noShowAudits(@Req() req: TenantRequest, @Param('id') id: string) {
+    const restaurantId = req['tenantId'];
+    const current = await this.reservationRepository.findById(restaurantId, id);
+
+    if (!current) {
+      throw new BadRequestException('La reserva no existe o no pertenece al restaurante actual.');
+    }
+
+    return this.reservationRepository.listNoShowAudits(restaurantId, id);
+  }
+
   @Patch(':id')
-  async update(@Req() req: any, @Param('id') id: string, @Body() dto: UpdateReservationDto) {
+  async update(@Req() req: TenantRequest, @Param('id') id: string, @Body() dto: UpdateReservationDto) {
     const restaurantId = req['tenantId'];
     const current = await this.reservationRepository.findById(restaurantId, id);
 
@@ -224,12 +238,24 @@ export class ReservationsController {
       throw new BadRequestException('reservationEnd inválido. Usa ISO-8601.');
     }
 
+    const tableId = await this.resolveAvailableTableForUpdate(
+      restaurantId,
+      id,
+      current,
+      {
+        reservationStart,
+        reservationEnd,
+        guestCount: dto.guestCount,
+        tableId: dto.tableId,
+      },
+    );
+
     const updated = await this.reservationRepository.update(restaurantId, id, {
       reservationStart,
       reservationEnd,
       guestCount: dto.guestCount,
       notes: dto.notes,
-      tableId: dto.tableId !== undefined ? dto.tableId : undefined,
+      tableId,
     });
 
     if (updated) {
@@ -243,6 +269,64 @@ export class ReservationsController {
     const currentDurationMs = currentEnd.getTime() - currentStart.getTime();
     const safeDurationMs = currentDurationMs > 0 ? currentDurationMs : 90 * 60 * 1000;
     return new Date(nextStart.getTime() + safeDurationMs);
+  }
+
+  private async resolveAvailableTableForUpdate(
+    restaurantId: string,
+    reservationId: string,
+    current: NonNullable<Awaited<ReturnType<ReservationRepository['findById']>>>,
+    input: {
+      reservationStart?: Date;
+      reservationEnd?: Date;
+      guestCount?: number;
+      tableId?: string | null;
+    },
+  ): Promise<string | null | undefined> {
+    const scheduleChanged = input.reservationStart !== undefined || input.reservationEnd !== undefined;
+    const guestCountChanged = input.guestCount !== undefined && input.guestCount !== current.guestCount;
+    const tableChanged = input.tableId !== undefined;
+
+    if (!scheduleChanged && !guestCountChanged && !tableChanged) {
+      return undefined;
+    }
+
+    const reservationStart = input.reservationStart ?? current.reservationStart;
+    const reservationEnd = input.reservationEnd ?? current.reservationEnd;
+    const guestCount = input.guestCount ?? current.guestCount;
+
+    if (reservationEnd <= reservationStart) {
+      throw new BadRequestException('reservationEnd debe ser posterior a reservationStart.');
+    }
+
+    await this.availabilityService.ensureReservable(restaurantId, reservationStart);
+
+    if (input.tableId === null) {
+      return null;
+    }
+
+    const availableTables = await this.availabilityService.findBestAvailableTables(
+      restaurantId,
+      reservationStart,
+      reservationEnd,
+      guestCount,
+      reservationId,
+    );
+
+    if (availableTables.length === 0) {
+      throw new BadRequestException('No hay mesas disponibles para el horario y comensales solicitados.');
+    }
+
+    if (input.tableId !== undefined) {
+      const requestedTable = availableTables.find((table) => table.id === input.tableId);
+      if (!requestedTable) {
+        throw new BadRequestException('La mesa solicitada no esta disponible para el nuevo horario o comensales.');
+      }
+      return requestedTable.id;
+    }
+
+    const currentTableId = current.assignedTables[0]?.tableId;
+    const currentTableStillAvailable = availableTables.find((table) => table.id === currentTableId);
+    return currentTableStillAvailable?.id ?? availableTables[0].id;
   }
 
   private shouldUseAdvancedList(query: ListReservationsQueryDto): boolean {
@@ -295,8 +379,4 @@ export class ReservationsController {
     return `${reasonCode}: ${reason}`;
   }
 
-  private clientIp(req: any): string | undefined {
-    const forwarded = String(req.headers?.['x-forwarded-for'] ?? '').split(',')[0]?.trim();
-    return forwarded || req.ip || req.socket?.remoteAddress;
-  }
 }

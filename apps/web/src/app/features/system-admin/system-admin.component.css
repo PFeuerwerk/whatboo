@@ -166,6 +166,27 @@ td small {
   color: #991b1b;
 }
 
+.billing-pill {
+  margin-top: 0.35rem;
+}
+
+.billing-trial {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.billing-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.billing-past-due,
+.billing-suspended,
+.billing-cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .form-grid {
   display: grid;
   gap: 0.75rem;
@@ -216,10 +237,16 @@ button:disabled {
   color: #991b1b;
 }
 
+.billing-panel,
 .configuration-readout,
 .health-list,
 .event-list {
   margin-top: 1rem;
+}
+
+.billing-panel {
+  border-top: 1px solid var(--color-border);
+  padding-top: 1rem;
 }
 
 .health-list {

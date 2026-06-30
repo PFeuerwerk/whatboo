@@ -8,6 +8,8 @@
     "start:dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/main.ts",
     "start:watch": "ts-node --watch src/main.ts",
     "test:e2e": "NODE_ENV=test prisma migrate deploy && NODE_ENV=test node --test --test-force-exit -r ts-node/register/transpile-only test/dashboard-api.e2e-spec.ts",
+    "openapi:validate": "node scripts/validate-openapi.mjs",
+    "smoke": "node scripts/smoke-api.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",

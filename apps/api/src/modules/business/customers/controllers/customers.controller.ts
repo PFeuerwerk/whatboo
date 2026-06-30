@@ -1,12 +1,8 @@
 import { Controller, Get, UseGuards, Request, HttpStatus, HttpCode, Param, Query } from '@nestjs/common';
+import { TenantRequest } from '../../../../common/http/tenant-request';
 import { JwtAuthGuard } from '../../../../modules/platform/auth/guards/jwt-auth.guard';
-import { JwtPayload } from '../../../../modules/platform/auth/strategies/jwt.strategy';
 import { ListCustomersQueryDto } from '../dto/list-customers-query.dto';
 import { CustomersService } from '../services/customers.service';
-
-interface AuthRequest extends Request {
-  user: JwtPayload;
-}
 
 @Controller('customers')
 @UseGuards(JwtAuthGuard)
@@ -16,7 +12,7 @@ export class CustomersController {
   @Get()
   @HttpCode(HttpStatus.OK)
   async findAll(
-    @Request() req: AuthRequest & { tenantId?: string },
+    @Request() req: TenantRequest,
     @Query() query: ListCustomersQueryDto,
   ) {
     const restaurantId = this.getTenantId(req);
@@ -26,7 +22,7 @@ export class CustomersController {
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   async findOne(
-    @Request() req: AuthRequest & { tenantId?: string },
+    @Request() req: TenantRequest,
     @Param('id') id: string,
     @Query() query: ListCustomersQueryDto,
   ) {
@@ -34,7 +30,7 @@ export class CustomersController {
     return this.customersService.getProfile(restaurantId, id, query);
   }
 
-  private getTenantId(req: AuthRequest & { tenantId?: string }): string {
+  private getTenantId(req: TenantRequest): string {
     return req.tenantId ?? req.user.restaurantId!;
   }
 }

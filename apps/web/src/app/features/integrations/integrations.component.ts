@@ -31,9 +31,7 @@ export class IntegrationsComponent implements OnInit {
   }
 
   public loadMetaSettings(): void {
-    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
-    
-    this.http.get<any>(`${environment.apiUrl}/restaurants/${slug}/meta-credentials`)
+    this.http.get<any>(`${environment.apiUrl}/restaurants/meta-credentials`)
       .subscribe({
         next: (res) => {
           if (res) {
@@ -53,9 +51,7 @@ export class IntegrationsComponent implements OnInit {
     this.isSaving.set(true);
     this.successMessage.set(null);
 
-    const slug = localStorage.getItem('tenant_slug') || 'la-bella-italia';
-
-    this.http.patch(`${environment.apiUrl}/restaurants/${slug}/meta-credentials`, this.integrationsForm.value)
+    this.http.patch(`${environment.apiUrl}/restaurants/meta-credentials`, this.integrationsForm.value)
       .subscribe({
         next: () => {
           this.isSaving.set(false);

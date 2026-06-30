@@ -1,7 +1,8 @@
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
+import { of } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { LoginComponent } from './login.component';
 
@@ -12,7 +13,13 @@ describe('LoginComponent', () => {
   let router: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    const routerSpy = jasmine.createSpyObj(
+      'Router',
+      ['navigate', 'createUrlTree', 'serializeUrl'],
+      { events: of() },
+    );
+    routerSpy.createUrlTree.and.returnValue({} as ReturnType<Router['createUrlTree']>);
+    routerSpy.serializeUrl.and.returnValue('/auth/login');
     localStorage.clear();
 
     await TestBed.configureTestingModule({
@@ -23,6 +30,18 @@ describe('LoginComponent', () => {
       ],
       providers: [
         { provide: Router, useValue: routerSpy },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { queryParamMap: convertToParamMap({}) },
+            queryParamMap: of(convertToParamMap({})),
+            queryParams: of({}),
+            params: of({}),
+            data: of({}),
+            fragment: of(null),
+            url: of([]),
+          },
+        },
       ],
     }).compileComponents();
 

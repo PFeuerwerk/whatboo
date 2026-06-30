@@ -26,6 +26,24 @@ interface WhatsappMessage {
   toPhoneNumber: string;
   text: string;
   messageId: string;
+  audioId?: string | null;
+}
+
+interface WhatsappWebhookBody {
+  entry?: Array<{
+    changes?: Array<{
+      value?: {
+        metadata?: { display_phone_number?: string };
+        messages?: Array<{
+          id?: string;
+          from?: string;
+          type?: string;
+          text?: { body?: string };
+          audio?: { id?: string };
+        }>;
+      };
+    }>;
+  }>;
 }
 
 interface ExtractedReservationData {
@@ -92,25 +110,8 @@ export class WhatsappService {
           `Mensaje entrante de WhatsApp desde ${message.from} hacia ${message.toPhoneNumber}: ${message.text}`,
         );
 
-        if ((message as any).audioId) {
-          this.logger.log(`[Whisper STT] Detectada nota de voz. Descargando recurso Media ID: ${(message as any).audioId}`);
-          const token = this.configService.get<string>("WHATSAPP_ACCESS_TOKEN");
-          const mediaUrlResponse = await axios.get(`https://facebook.com{(message as any).audioId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const downloadUrl = mediaUrlResponse.data?.url;
-          if (downloadUrl) {
-            const audioDownload = await axios.get(downloadUrl, {
-              headers: { Authorization: `Bearer ${token}` },
-              responseType: "arraybuffer"
-            });
-            const audioBuffer = Buffer.from(audioDownload.data);
-            const transcribedText = await this.groqService.transcribeAudioBuffer(audioBuffer, "voice.ogg");
-            this.logger.log(`[Whisper STT Result] Audio transcrito con éxito: "${transcribedText}"`);
-            message.text = transcribedText;
-          } else {
-            throw new Error("No se pudo obtener la URL de descarga de audio desde Meta Cloud API.");
-          }
+        if (message.audioId) {
+          message.text = await this.transcribeAudioMessage(message.audioId);
         }
 
 
@@ -133,7 +134,7 @@ export class WhatsappService {
   }
 
   public validateSignature(
-    body: Record<string, unknown>,
+    rawBody: Buffer | string,
     signature: string,
   ): void {
     const appSecret =
@@ -148,50 +149,46 @@ export class WhatsappService {
       return;
     }
 
+    const expectedSignature =
+      signature.startsWith('sha256=')
+        ? signature.substring(7)
+        : signature;
+
+    if (!/^[a-f0-9]{64}$/i.test(expectedSignature)) {
+      throw new UnauthorizedException('La firma x-hub-signature-256 tiene un formato inválido.');
+    }
+
     try {
-      const expectedSignature =
-        signature.startsWith('sha256=')
-          ? signature.substring(7)
-          : signature;
-
-      const rawBody = JSON.stringify(body);
-
       const actualSignature = crypto
         .createHmac('sha256', appSecret)
         .update(rawBody)
         .digest('hex');
 
-      const isSignatureValid =
-        crypto.timingSafeEqual(
-          Buffer.from(
-            actualSignature,
-            'utf-8',
-          ),
-          Buffer.from(
-            expectedSignature,
-            'utf-8',
-          ),
-        );
+      const actual = Buffer.from(actualSignature, 'hex');
+      const expected = Buffer.from(expectedSignature, 'hex');
+      const isSignatureValid = actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
 
       if (!isSignatureValid) {
         throw new UnauthorizedException(
           'La firma x-hub-signature-256 no coincide con el payload enviado.',
         );
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
       this.logger.error(
         'Error durante la validación de la firma criptográfica de WhatsApp.',
+        error instanceof Error ? error.stack : String(error),
       );
-
-      throw new UnauthorizedException(
-        'Fallo de validación de firma en la infraestructura de WhatsApp.',
-      );
+      throw new UnauthorizedException('Fallo de validación de firma en la infraestructura de WhatsApp.');
     }
   }
 
-  private extractMessage(body: any) {
+  private extractMessage(body: Record<string, unknown>): WhatsappMessage | null {
     try {
-      const value = body?.entry?.[0]?.changes?.[0]?.value;
+      const value = (body as WhatsappWebhookBody)?.entry?.[0]?.changes?.[0]?.value;
       const metadata = value?.metadata;
       const toPhoneNumber = metadata?.display_phone_number;
       const messages = value?.messages;
@@ -208,14 +205,45 @@ export class WhatsappService {
         return {
           from: fromPhone,
           toPhoneNumber: toPhone,
-          text: isAudio ? null : (msg.text as any)?.body ?? null,
-          audioId: isAudio ? (msg.audio as any)?.id ?? null : null,
-          messageId: msg.id as string,
+          text: isAudio ? '' : msg.text?.body ?? '',
+          audioId: isAudio ? msg.audio?.id ?? null : null,
+          messageId: String(msg.id),
         };
       } catch {
         return null;
       }
     }
+
+  private async transcribeAudioMessage(audioId: string): Promise<string> {
+    const token = this.configService.get<string>('WHATSAPP_ACCESS_TOKEN');
+    if (!token) {
+      throw new Error('WHATSAPP_ACCESS_TOKEN no configurado para descargar audio de Meta.');
+    }
+
+    const apiVersion = this.configService.get<string>('WHATSAPP_API_VERSION', 'v19.0');
+    this.logger.log(`[Whisper STT] Descargando media de voz desde Meta. Media ID: ${audioId}`);
+
+    const mediaUrlResponse = await axios.get<{ url?: string }>(
+      `https://graph.facebook.com/${apiVersion}/${audioId}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    const downloadUrl = mediaUrlResponse.data?.url;
+
+    if (!downloadUrl) {
+      throw new Error('No se pudo obtener la URL de descarga de audio desde Meta Cloud API.');
+    }
+
+    const audioDownload = await axios.get<ArrayBuffer>(downloadUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: 'arraybuffer',
+    });
+    const audioBuffer = Buffer.from(audioDownload.data);
+    const transcribedText = await this.groqService.transcribeAudioBuffer(audioBuffer, 'voice.ogg');
+    this.logger.log('[Whisper STT] Audio transcrito con éxito.');
+    return transcribedText;
+  }
 
 
   private async processMessage(
@@ -563,12 +591,9 @@ export class WhatsappService {
         restaurant.timezone,
           );
 
-        console.log("[MODIFICATION DEBUG]", {
-          code: state.confirmationCode,
-          date: state.date,
-          time: state.time,
-          newReservationDate,
-        });
+        this.logger.debug(
+          `Modificando reserva WhatsApp ${state.confirmationCode} hacia ${newReservationDate.toISOString()}`,
+        );
 
       const result =
         await this.reservationEngine.modifyReservationByCode(

@@ -67,6 +67,5 @@ export class LanguageSelectorComponent {
   public switchLanguage(lang: string): void {
     const target = lang.trim().toLowerCase();
     this.translate.use(target);
-    console.log(`🌐 [LanguageSelector] Conmutando canal reactivo a: ${target}`);
   }
 }

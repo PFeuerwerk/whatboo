@@ -1,6 +1,11 @@
-name: CI - Whatboo Stable Validation
+name: CI - Validate, Test, Build Images
 
 on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - develop
   workflow_dispatch:
 
 permissions:
@@ -14,11 +19,38 @@ jobs:
 
   validate:
 
-    name: Build & Validate
+    name: Validate, test, package and build Docker images
 
     runs-on: ubuntu-latest
 
-    timeout-minutes: 20
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: whatboo
+          POSTGRES_PASSWORD: whatboo
+          POSTGRES_DB: whatboo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U whatboo -d whatboo_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://whatboo:whatboo@localhost:5432/whatboo_test?schema=public
+      SHADOW_DATABASE_URL: postgresql://whatboo:whatboo@localhost:5432/whatboo_shadow?schema=public
+      JWT_SECRET: ci-jwt-secret-change-in-production
+      ONBOARDING_INVITE_TOKEN: ci-onboarding-token
+      WHATSAPP_APP_SECRET: ci-whatsapp-secret
+      WHATSAPP_WORKER_ENABLED: "false"
+      EMAIL_WORKER_ENABLED: "false"
+      SMTP_VERIFY_ON_START: "false"
+      IMAGE_TAG: ci-${{ github.sha }}
 
     steps:
 
@@ -44,11 +76,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Validate OpenAPI contract
+        run: pnpm --filter api openapi:validate
+
       - name: Generate Prisma Client
         run: pnpm --filter api exec prisma generate
-
-      - name: Backend TypeScript validation
-        run: pnpm --filter api exec tsc --noEmit --skipLibCheck
 
       - name: Build Backend
         run: pnpm --filter api build
@@ -56,5 +88,43 @@ jobs:
       - name: Build Frontend
         run: pnpm --filter web build
 
-      - name: Build Monorepo
-        run: pnpm build
+      - name: Frontend Unit Tests
+        run: pnpm --filter web test:ci
+
+      - name: API E2E
+        run: pnpm --filter api test:e2e
+
+      - name: Package application build artifacts
+        run: |
+          mkdir -p artifacts
+          tar -czf artifacts/whatboo-api-dist.tar.gz -C apps/api dist package.json prisma
+          tar -czf artifacts/whatboo-web-dist.tar.gz -C apps/web dist
+
+      - name: Build API Docker image
+        run: docker build -f infrastructure/docker/api.Dockerfile -t whatboo-api:${IMAGE_TAG} .
+
+      - name: Build Web Docker image
+        run: docker build -f infrastructure/docker/web.Dockerfile -t whatboo-web:${IMAGE_TAG} .
+
+      - name: Build Worker Docker image
+        run: docker build --pull=false -f infrastructure/docker/worker.Dockerfile --build-arg API_IMAGE=whatboo-api:${IMAGE_TAG} -t whatboo-worker:${IMAGE_TAG} .
+
+      - name: Inspect Docker images
+        run: |
+          docker image ls whatboo-api:${IMAGE_TAG}
+          docker image ls whatboo-web:${IMAGE_TAG}
+          docker image ls whatboo-worker:${IMAGE_TAG}
+
+      - name: Export Docker images as CI artifacts
+        run: |
+          docker save whatboo-api:${IMAGE_TAG} | gzip > artifacts/whatboo-api-image.tar.gz
+          docker save whatboo-web:${IMAGE_TAG} | gzip > artifacts/whatboo-web-image.tar.gz
+          docker save whatboo-worker:${IMAGE_TAG} | gzip > artifacts/whatboo-worker-image.tar.gz
+
+      - name: Upload CI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: whatboo-ci-${{ github.sha }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 7

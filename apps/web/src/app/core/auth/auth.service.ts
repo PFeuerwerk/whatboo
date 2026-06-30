@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core'; // Corregido: Importaciones desde el core nativo de Angular
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -28,6 +29,7 @@ export interface LoginResponse {
 })
 export class AuthService {
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
 
   // Funciones core de sesión reactiva requeridas por el Shell y Guards de WhatBoo
   public readonly user = signal<any | null>(null);
@@ -84,7 +86,7 @@ export class AuthService {
     localStorage.removeItem('user_role');
     localStorage.removeItem('tenant_slug');
     this.user.set(null);
-    window.location.href = '/auth/login';
+    void this.router.navigate(['/auth/login']);
   }
 
   private loadUserFromStorage(): void {

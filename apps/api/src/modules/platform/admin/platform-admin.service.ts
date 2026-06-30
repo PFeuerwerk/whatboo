@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, RestaurantStatus, UserRole } from '@prisma/client';
+import { BillingStatus, Prisma, RestaurantStatus, UserRole } from '@prisma/client';
+import { normalizePagination, paginatedResponse } from '../../../common/pagination/paginated-response';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { RedisService } from '../../../infrastructure/cache/redis.service';
 import { UpdatePlatformRestaurantDto } from './dto/update-platform-restaurant.dto';
@@ -27,6 +28,10 @@ export class PlatformAdminService {
       suspendedRestaurants,
       totalUsers,
       totalReservations,
+      billingTrial,
+      billingActive,
+      billingPastDue,
+      billingSuspended,
       metricsByTenant,
     ] = await Promise.all([
       this.prisma.restaurant.count({ where: { deletedAt: null } }),
@@ -35,6 +40,10 @@ export class PlatformAdminService {
       this.prisma.restaurant.count({ where: { status: RestaurantStatus.SUSPENDED, deletedAt: null } }),
       this.prisma.user.count(),
       this.prisma.reservation.count({ where: { deletedAt: null } }),
+      this.prisma.restaurant.count({ where: { billingStatus: BillingStatus.TRIAL, deletedAt: null } }),
+      this.prisma.restaurant.count({ where: { billingStatus: BillingStatus.ACTIVE, deletedAt: null } }),
+      this.prisma.restaurant.count({ where: { billingStatus: BillingStatus.PAST_DUE, deletedAt: null } }),
+      this.prisma.restaurant.count({ where: { billingStatus: BillingStatus.SUSPENDED, deletedAt: null } }),
       this.getTenantMetrics(),
     ]);
 
@@ -44,6 +53,10 @@ export class PlatformAdminService {
         restaurantsActive: activeRestaurants,
         restaurantsInactive: inactiveRestaurants,
         restaurantsSuspended: suspendedRestaurants,
+        billingTrial,
+        billingActive,
+        billingPastDue,
+        billingSuspended,
         users: totalUsers,
         reservations: totalReservations,
       },
@@ -52,8 +65,7 @@ export class PlatformAdminService {
   }
 
   async listRestaurants(query: { q?: string; status?: RestaurantStatus; take?: number; skip?: number }) {
-    const take = Math.min(Math.max(Number(query.take ?? 50), 1), 100);
-    const skip = Math.max(Number(query.skip ?? 0), 0);
+    const { take, skip } = normalizePagination(query);
     const q = query.q?.trim();
     const where: Prisma.RestaurantWhereInput = {
       deletedAt: null,
@@ -83,7 +95,7 @@ export class PlatformAdminService {
       this.prisma.restaurant.count({ where }),
     ]);
 
-    return { data, total };
+    return paginatedResponse(data, total, { take, skip });
   }
 
   async getRestaurant(id: string) {
@@ -96,6 +108,10 @@ export class PlatformAdminService {
         addressLine1: true,
         allowWaitlist: true,
         autoConfirm: true,
+        billingEmail: true,
+        billingCustomerReference: true,
+        trialEndsAt: true,
+        currentPeriodEndsAt: true,
         defaultReservationDuration: true,
         slotIntervalMinutes: true,
         bufferTimeMinutes: true,
@@ -151,6 +167,12 @@ export class PlatformAdminService {
         allowWaitlist: dto.allowWaitlist,
         autoConfirm: dto.autoConfirm,
         status: dto.status,
+        billingPlan: dto.billingPlan,
+        billingStatus: dto.billingStatus,
+        billingEmail: this.nullableText(dto.billingEmail),
+        billingCustomerReference: this.nullableText(dto.billingCustomerReference),
+        trialEndsAt: this.nullableDate(dto.trialEndsAt),
+        currentPeriodEndsAt: this.nullableDate(dto.currentPeriodEndsAt),
       },
       select: this.restaurantListSelect(),
     });
@@ -303,6 +325,8 @@ export class PlatformAdminService {
       locale: true,
       maxCapacity: true,
       status: true,
+      billingPlan: true,
+      billingStatus: true,
       createdAt: true,
       updatedAt: true,
       _count: {
@@ -326,5 +350,12 @@ export class PlatformAdminService {
     if (value === undefined) return undefined;
     const normalized = String(value ?? '').trim();
     return normalized || null;
+  }
+
+  private nullableDate(value?: string | null): Date | null | undefined {
+    if (value === undefined) return undefined;
+    const normalized = String(value ?? '').trim();
+    if (!normalized) return null;
+    return new Date(normalized);
   }
 }

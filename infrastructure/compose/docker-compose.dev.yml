@@ -75,6 +75,7 @@ services:
       - SMTP_HOST=mailpit
       - SMTP_PORT=1025
       - SMTP_SECURE=false
+      - SMTP_VERIFY_ON_START=true
       - EMAIL_FROM=no-reply@whatboo.local
       - EMAIL_FROM_NAME=Whatboo Local
       - EMAIL_REPLY_TO=support@whatboo.local
@@ -111,6 +112,7 @@ services:
       - SMTP_HOST=mailpit
       - SMTP_PORT=1025
       - SMTP_SECURE=false
+      - SMTP_VERIFY_ON_START=true
       - EMAIL_FROM=no-reply@whatboo.local
       - EMAIL_FROM_NAME=Whatboo Local
       - EMAIL_REPLY_TO=support@whatboo.local

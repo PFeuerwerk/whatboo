@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import {
   LlmProvider,
@@ -9,6 +9,8 @@ import { RESERVATION_PROMPT } from '../../prompts/reservation.prompt';
 
 @Injectable()
 export class OllamaProvider implements LlmProvider {
+  private readonly logger = new Logger(OllamaProvider.name);
+
   async extractReservationIntent(
     message: string,
   ): Promise<ReservationIntent> {
@@ -47,10 +49,7 @@ ${message}
 
       const data = await response.json();
 
-      console.log(
-        '[OLLAMA RAW RESPONSE]',
-        data.response,
-      );
+      this.logger.debug(`Ollama raw response: ${data.response}`);
 
       let parsed: any;
 

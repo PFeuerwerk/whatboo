@@ -3,7 +3,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { PlatformAdminService } from '../../core/services/platform-admin.service';
-import { RestaurantStatus } from '../../core/models/restaurant.interfaces';
+import { BillingPlan, BillingStatus, DateLike, RestaurantStatus } from '../../core/models/restaurant.interfaces';
 import {
   PlatformDashboard,
   PlatformObservability,
@@ -32,6 +32,8 @@ export class SystemAdminComponent implements OnInit {
   public readonly searchTerm = signal('');
   public readonly statusFilter = signal<RestaurantStatus | 'ALL'>('ALL');
   public readonly RestaurantStatus = RestaurantStatus;
+  public readonly BillingPlan = BillingPlan;
+  public readonly BillingStatus = BillingStatus;
 
   public readonly activeTenantCount = computed(
     () => this.dashboard()?.totals.restaurantsActive ?? 0,
@@ -116,6 +118,12 @@ export class SystemAdminComponent implements OnInit {
       locale: current.locale,
       maxCapacity: current.maxCapacity,
       status: current.status,
+      billingPlan: current.billingPlan,
+      billingStatus: current.billingStatus,
+      billingEmail: current.billingEmail,
+      billingCustomerReference: current.billingCustomerReference,
+      trialEndsAt: current.trialEndsAt,
+      currentPeriodEndsAt: current.currentPeriodEndsAt,
     }).subscribe({
       next: updated => {
         this.restaurants.update(items => items.map(item => item.id === updated.id ? updated : item));
@@ -127,5 +135,18 @@ export class SystemAdminComponent implements OnInit {
 
   public statusClass(status: RestaurantStatus | string): string {
     return `status-${String(status).toLowerCase()}`;
+  }
+
+  public billingStatusClass(status: BillingStatus | string): string {
+    return `billing-${String(status).toLowerCase().replace('_', '-')}`;
+  }
+
+  public dateInput(value: DateLike | null | undefined): string {
+    if (!value) return '';
+    return new Date(value).toISOString().slice(0, 10);
+  }
+
+  public dateValue(value: string): string | null {
+    return value ? new Date(`${value}T00:00:00.000Z`).toISOString() : null;
   }
 }

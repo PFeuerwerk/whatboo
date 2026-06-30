@@ -30,6 +30,7 @@ export const envValidationSchema = Joi.object({
   WHATSAPP_ACCESS_TOKEN: Joi.string().optional().allow(''),
   WHATSAPP_PHONE_NUMBER_ID: Joi.string().optional().allow(''),
   WHATSAPP_APP_SECRET: Joi.string().optional().allow(''),
+  WHATSAPP_API_VERSION: Joi.string().default('v19.0'),
 
   SMTP_HOST: Joi.string().default('localhost'),
   SMTP_PORT: Joi.number().default(1025),
@@ -39,6 +40,7 @@ export const envValidationSchema = Joi.object({
   SMTP_CONNECTION_TIMEOUT_MS: Joi.number().default(10000),
   SMTP_MAX_CONNECTIONS: Joi.number().default(5),
   SMTP_MAX_MESSAGES: Joi.number().default(100),
+  SMTP_VERIFY_ON_START: Joi.boolean().truthy('true').falsy('false').default(false),
 
   EMAIL_FROM: Joi.string().email().default('no-reply@whatboo.local'),
   EMAIL_FROM_NAME: Joi.string().default('Whatboo'),
@@ -62,4 +64,5 @@ export const envValidationSchema = Joi.object({
   TEMP_PASSWORD_TTL_HOURS: Joi.number().default(24),
 
   WEB_APP_URL: Joi.string().uri().default('http://localhost:4200'),
+  ONBOARDING_INVITE_TOKEN: Joi.string().optional().allow(''),
 });

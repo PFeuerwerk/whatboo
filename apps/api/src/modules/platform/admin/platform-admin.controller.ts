@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { RestaurantStatus } from '@prisma/client';
+import { OptionalTenantRequest } from '../../../common/http/tenant-request';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PlatformAdminService } from './platform-admin.service';
 import { UpdatePlatformRestaurantDto } from './dto/update-platform-restaurant.dto';
@@ -21,14 +22,14 @@ export class PlatformAdminController {
   constructor(private readonly platformAdminService: PlatformAdminService) {}
 
   @Get('dashboard')
-  dashboard(@Req() req: any) {
+  dashboard(@Req() req: OptionalTenantRequest) {
     this.platformAdminService.assertPlatformRole(req.user?.role);
     return this.platformAdminService.getDashboard();
   }
 
   @Get('restaurants')
   restaurants(
-    @Req() req: any,
+    @Req() req: OptionalTenantRequest,
     @Query('q') q?: string,
     @Query('status') status?: string,
     @Query('take') take?: string,
@@ -44,14 +45,14 @@ export class PlatformAdminController {
   }
 
   @Get('restaurants/:id')
-  restaurant(@Req() req: any, @Param('id') id: string) {
+  restaurant(@Req() req: OptionalTenantRequest, @Param('id') id: string) {
     this.platformAdminService.assertPlatformRole(req.user?.role);
     return this.platformAdminService.getRestaurant(id);
   }
 
   @Patch('restaurants/:id')
   updateRestaurant(
-    @Req() req: any,
+    @Req() req: OptionalTenantRequest,
     @Param('id') id: string,
     @Body() dto: UpdatePlatformRestaurantDto,
   ) {
@@ -61,7 +62,7 @@ export class PlatformAdminController {
 
   @Patch('restaurants/:id/status')
   updateRestaurantStatus(
-    @Req() req: any,
+    @Req() req: OptionalTenantRequest,
     @Param('id') id: string,
     @Body() dto: UpdateRestaurantStatusDto,
   ) {
@@ -70,13 +71,13 @@ export class PlatformAdminController {
   }
 
   @Get('users')
-  users(@Req() req: any) {
+  users(@Req() req: OptionalTenantRequest) {
     this.platformAdminService.assertPlatformRole(req.user?.role);
     return this.platformAdminService.listPlatformUsers();
   }
 
   @Get('observability')
-  observability(@Req() req: any) {
+  observability(@Req() req: OptionalTenantRequest) {
     this.platformAdminService.assertPlatformRole(req.user?.role);
     return this.platformAdminService.getObservability();
   }

@@ -7,3 +7,18 @@
 .vip-tag {
   margin-right: var(--space-1);
 }
+
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.profile-actions .action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  text-decoration: none;
+}

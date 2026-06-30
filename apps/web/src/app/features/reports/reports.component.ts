@@ -79,8 +79,7 @@ export class ReportsComponent implements OnInit {
           this.report.set(report);
           this.isLoading.set(false);
         },
-        error: (error: unknown) => {
-          console.error('Error al cargar reporte operativo:', error);
+        error: () => {
           this.report.set(null);
           this.errorMessage.set('No se pudo cargar el reporte operativo desde la API.');
           this.isLoading.set(false);

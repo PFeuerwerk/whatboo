@@ -1,13 +1,16 @@
+import { Logger } from '@nestjs/common';
 import {
   LlmProvider,
   ReservationIntent,
 } from '../../domain/interfaces/llm-provider.interface';
 
 export class MockProvider implements LlmProvider {
+  private readonly logger = new Logger(MockProvider.name);
+
   async extractReservationIntent(
     message: string,
   ): Promise<ReservationIntent> {
-    console.log('Mock AI received:', message);
+    this.logger.debug(`Mock AI received message: ${message}`);
 
     return {
       intent: 'reservation',

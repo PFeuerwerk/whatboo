@@ -9,6 +9,21 @@ export enum RestaurantStatus {
   SUSPENDED = 'SUSPENDED'
 }
 
+export enum BillingPlan {
+  FREE = 'FREE',
+  STARTER = 'STARTER',
+  PRO = 'PRO',
+  ENTERPRISE = 'ENTERPRISE'
+}
+
+export enum BillingStatus {
+  TRIAL = 'TRIAL',
+  ACTIVE = 'ACTIVE',
+  PAST_DUE = 'PAST_DUE',
+  SUSPENDED = 'SUSPENDED',
+  CANCELLED = 'CANCELLED'
+}
+
 export enum UserRole {
   OWNER = 'OWNER',
   MANAGER = 'MANAGER',
@@ -78,6 +93,12 @@ export interface Restaurant {
   allowWaitlist: boolean;
   autoConfirm: boolean;
   status?: RestaurantStatus;
+  billingPlan?: BillingPlan;
+  billingStatus?: BillingStatus;
+  billingEmail?: string | null;
+  billingCustomerReference?: string | null;
+  trialEndsAt?: DateLike | null;
+  currentPeriodEndsAt?: DateLike | null;
   createdAt?: DateLike;
   invitationEmailSent?: boolean;
   updatedAt?: DateLike;

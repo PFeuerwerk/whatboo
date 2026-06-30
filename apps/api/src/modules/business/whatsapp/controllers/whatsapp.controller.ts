@@ -8,8 +8,10 @@ import {
   HttpStatus,
   Post,
   Query,
+  Req,
   UnauthorizedException,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import { CountryCode } from 'libphonenumber-js';
@@ -57,6 +59,7 @@ export class WhatsappController {
     },
   })
   async receiveMessage(
+    @Req() req: Request & { rawBody?: Buffer },
     @Body() body: Record<string, unknown>,
     @Headers('x-hub-signature-256') signature?: string,
   ): Promise<{ status: string; message?: string }> {
@@ -65,6 +68,8 @@ export class WhatsappController {
     if (appSecret && !signature) {
       throw new BadRequestException('Firma criptográfica x-hub-signature-256 ausente.');
     }
+
+    this.whatsappService.validateSignature(req.rawBody ?? JSON.stringify(body ?? {}), signature ?? '');
 
     const payload = this.parseWebhookPayload(body ?? {});
     const prismaPayload = payload as Prisma.InputJsonObject;
@@ -87,8 +92,6 @@ export class WhatsappController {
 
       return { status: 'meta_error_logged' };
     }
-
-    this.whatsappService.validateSignature(payload, signature ?? '');
 
     const entry = payload?.entry?.[0];
     const change = entry?.changes?.[0];

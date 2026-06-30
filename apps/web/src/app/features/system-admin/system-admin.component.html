@@ -27,8 +27,12 @@
       <strong>{{ dashboard()?.totals?.restaurantsSuspended ?? 0 }}</strong>
     </article>
     <article class="metric-card">
-      <span>Usuarios</span>
-      <strong>{{ dashboard()?.totals?.users ?? 0 }}</strong>
+      <span>Billing activo</span>
+      <strong>{{ dashboard()?.totals?.billingActive ?? 0 }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>Past due</span>
+      <strong>{{ dashboard()?.totals?.billingPastDue ?? 0 }}</strong>
     </article>
     <article class="metric-card">
       <span>Reservas</span>
@@ -76,11 +80,14 @@
                   <strong>{{ restaurant.name }}</strong>
                   <small>{{ restaurant.slug }} · {{ restaurant.city || 'Sin ciudad' }}</small>
                 </td>
-                <td>
-                  <span class="status-pill" [ngClass]="statusClass(restaurant.status)">
-                    {{ restaurant.status }}
-                  </span>
-                </td>
+	                <td>
+	                  <span class="status-pill" [ngClass]="statusClass(restaurant.status)">
+	                    {{ restaurant.status }}
+	                  </span>
+                    <span class="status-pill billing-pill" [ngClass]="billingStatusClass(restaurant.billingStatus)">
+                      {{ restaurant.billingPlan }} · {{ restaurant.billingStatus }}
+                    </span>
+	                </td>
                 <td>
                   <small>
                     {{ restaurant._count.users }} usuarios ·
@@ -144,13 +151,54 @@
           </label>
         </div>
 
-        <div class="detail-actions">
-          <button type="button" class="primary-action" (click)="saveBasicTenantData()">Guardar</button>
+	        <div class="detail-actions">
+	          <button type="button" class="primary-action" (click)="saveBasicTenantData()">Guardar</button>
           <button type="button" class="secondary-action" (click)="updateTenantStatus(tenant, RestaurantStatus.ACTIVE)">Activar</button>
           <button type="button" class="danger-action" (click)="updateTenantStatus(tenant, RestaurantStatus.SUSPENDED)">Suspender</button>
+	        </div>
+
+        <div class="billing-panel">
+          <h3>Billing</h3>
+          <div class="form-grid">
+            <label>
+              Plan
+              <select [(ngModel)]="tenant.billingPlan">
+                <option [value]="BillingPlan.FREE">FREE</option>
+                <option [value]="BillingPlan.STARTER">STARTER</option>
+                <option [value]="BillingPlan.PRO">PRO</option>
+                <option [value]="BillingPlan.ENTERPRISE">ENTERPRISE</option>
+              </select>
+            </label>
+            <label>
+              Estado billing
+              <select [(ngModel)]="tenant.billingStatus">
+                <option [value]="BillingStatus.TRIAL">TRIAL</option>
+                <option [value]="BillingStatus.ACTIVE">ACTIVE</option>
+                <option [value]="BillingStatus.PAST_DUE">PAST_DUE</option>
+                <option [value]="BillingStatus.SUSPENDED">SUSPENDED</option>
+                <option [value]="BillingStatus.CANCELLED">CANCELLED</option>
+              </select>
+            </label>
+            <label>
+              Email billing
+              <input [(ngModel)]="tenant.billingEmail">
+            </label>
+            <label>
+              Referencia cliente
+              <input [(ngModel)]="tenant.billingCustomerReference">
+            </label>
+            <label>
+              Fin trial
+              <input type="date" [ngModel]="dateInput(tenant.trialEndsAt)" (ngModelChange)="tenant.trialEndsAt = dateValue($event)">
+            </label>
+            <label>
+              Fin periodo actual
+              <input type="date" [ngModel]="dateInput(tenant.currentPeriodEndsAt)" (ngModelChange)="tenant.currentPeriodEndsAt = dateValue($event)">
+            </label>
+          </div>
         </div>
 
-        <div class="configuration-readout">
+	        <div class="configuration-readout">
           <h3>Configuración asociada</h3>
           <p>Duracion: {{ tenant.defaultReservationDuration }} min</p>
           <p>Intervalo slots: {{ tenant.slotIntervalMinutes }} min</p>

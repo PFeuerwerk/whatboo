@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 
@@ -29,7 +29,8 @@ export class RegisterTenantComponent implements OnInit {
       maxCapacity: [100, [Validators.required, Validators.min(10), Validators.max(1000)]],
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
-      email: ['', [Validators.required, Validators.email]]
+      email: ['', [Validators.required, Validators.email]],
+      inviteCode: ['', [Validators.required]]
     });
   }
 
@@ -59,7 +60,11 @@ export class RegisterTenantComponent implements OnInit {
       ownerLastName: this.registerForm.value.lastName
     };
 
-    this.http.post<any>(`${environment.apiUrl}/auth/register-tenant`, payload)
+    const headers = new HttpHeaders({
+      'X-Onboarding-Token': String(this.registerForm.value.inviteCode ?? '').trim()
+    });
+
+    this.http.post<any>(`${environment.apiUrl}/auth/register-tenant`, payload, { headers })
       .subscribe({
         next: (res) => {
           this.isSaving.set(false);
@@ -72,7 +77,6 @@ export class RegisterTenantComponent implements OnInit {
         error: (err) => {
           this.isSaving.set(false);
           
-          // DETECTAR LA RAÍZ DEL ERROR 400 EN LA RESPUESTA INTERNA DE NESTJS
           const serverResponse = err.error;
           let msg = 'Error en el validador perimetral.';
 
@@ -85,7 +89,6 @@ export class RegisterTenantComponent implements OnInit {
           }
 
           this.errorMessage.set(msg);
-          console.error('❌ Desglose del fallo perimetral HTTP 400:', serverResponse);
         }
       });
   }

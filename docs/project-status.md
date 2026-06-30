@@ -1,142 +1,110 @@
-# Estado estable del proyecto WhatBoo
+# Estado del proyecto WhatBoo
 
-Fecha de corte: 2026-06-29
+Fecha de corte: 2026-06-30
 
-Este documento resume lo que ya esta implementado, alineado y verificado en el proyecto hasta ahora. Su objetivo es servir como punto de referencia antes de continuar con nuevas fases de producto, infraestructura o despliegue.
+Este documento resume el estado real del monorepo tras una revision tecnica del codigo, la documentacion, los scripts disponibles y las verificaciones locales. Sustituye el corte anterior del 2026-06-29 y corrige puntos que ya habian cambiado en el codigo.
 
-## 1. Stack y estructura general
+## 1. Resumen ejecutivo
 
-- Monorepo con `pnpm`.
-- Backend en NestJS, mantenido en `apps/api`.
-- Frontend en Angular 19 standalone, mantenido en `apps/web`.
-- Base de datos PostgreSQL con Prisma.
-- Redis para cache, locks distribuidos, rate limiting y colas.
-- BullMQ para procesamiento asincrono de WhatsApp.
-- Tailwind CSS mantenido en frontend.
-- Dockerfiles separados para API, Web y Worker.
+Estado general: MVP avanzado, compilable y con una base backend solida para dashboard tenant, autenticacion, reservas, clientes, usuarios, email, WhatsApp y administracion de plataforma.
 
-## 2. Frontend Angular 19
-
-Estado: estable y compilando.
-
-Implementado:
-
-- Angular 19 standalone.
-- Interceptor HTTP global para adjuntar tenant a las peticiones.
-- Integracion con backend mediante `environment.apiUrl`.
-- Rutas de dashboard para reservas, clientes, usuarios, mesas, settings, reportes e integraciones.
-- Consumo actualizado de endpoints canonicos:
-  - `/customers`
-  - `/users`
-  - `/reservations`
-  - `/restaurants/settings`
-  - `/restaurants/tables`
-  - `/restaurants/zones`
-- Cancelacion de reservas alineada con endpoint dedicado `PATCH /reservations/:id/cancel`.
-- Staff management alineado con `UsersController` mediante `/users`.
-- Clientes alineados con `CustomersController` mediante `/customers`.
-- Busqueda real de clientes desde frontend contra backend.
-
-Verificacion:
-
-- `pnpm --filter web build` OK.
-
-## 3. Design System frontend
-
-Estado: implementado como base enterprise.
-
-Implementado:
-
-- Design tokens en `apps/web/src/styles`.
-- Estructura CSS modular.
-- Utilities compartidas.
-- Component styles reducidos y mas consistentes.
-- Tailwind 4 integrado mediante `styles.css`.
-- `postcss.config.js` agregado para Angular/Tailwind.
-- Reduccion de CSS duplicado en multiples features.
-- Mejor alineacion visual para dashboard operativo.
-
-Documento relacionado:
-
-- `docs/frontend-audit.md`
-
-## 4. Multi-tenant dinamico
-
-Estado: implementado y alineado backend/frontend.
-
-Implementado:
-
-- Middleware perimetral NestJS para resolver tenant dinamicamente.
-- Soporte de tenant por subdominio y headers.
-- Headers soportados:
-  - `X-Tenant-Slug`
-  - `X-Tenant-ID`
-- Interceptor Angular que adjunta tenant de forma transparente.
-- Validacion en `JwtAuthGuard` para evitar inconsistencias entre token y tenant activo.
-- CORS actualizado para aceptar headers tenant-aware.
-- Indices parciales/relacionales sobre `restaurantId` agregados mediante migracion.
-
-Archivos relevantes:
-
-- `apps/api/src/common/middleware/tenant.middleware.ts`
-- `apps/web/src/app/core/interceptors/tenant.interceptor.ts`
-- `apps/api/src/modules/platform/auth/guards/jwt-auth.guard.ts`
-
-## 5. Backend NestJS
-
-Estado: estable y compilando.
-
-Implementado:
-
-- Arquitectura modular NestJS.
-- Modulos principales:
-  - Auth
-  - Restaurants
-  - Customers
-  - Reservations
-  - Users
-  - WhatsApp
-  - Availability
-  - Health
-  - AI/intent parsing
-- Validacion global mediante `ValidationPipe`.
-- Prefijo global `/api/v1`.
-- Healthcheck en `/api/v1/health`.
-- Redis module y Prisma module operativos.
-
-Verificacion:
+Verificado en esta revision:
 
 - `pnpm --filter api build` OK.
-- Arranque Nest verificado con registro correcto de rutas principales.
+- `pnpm --filter web build` OK.
+- `pnpm --filter api test:e2e` OK, con 12 escenarios dashboard/plataforma/operacion pasando.
+- `pnpm --filter web test:ci` OK con Google Chrome Linux en WSL.
 
-Nota conocida:
+Conclusiones principales:
 
-- El arranque local muestra aviso SMTP `ECONNREFUSED ::1:1025` cuando no hay servidor SMTP local. No bloquea la API y no pertenece a las fases cerradas.
+- El backend esta mas avanzado que el documento anterior: ya existen `CustomersService`, `UsersService`, DTOs para users/customers/reservations, auditoria de cancelacion y endpoint de no-show.
+- El frontend compila y ya expone el modulo de clientes desde `/customers` en la navegacion principal.
+- `docs/api/openapi.yml` esta saneado como contrato OpenAPI valido y se valida con tooling local.
+- Existe CI para install, OpenAPI validate, Prisma generate, API build, Web build, Web unit tests, API e2e, empaquetado de artefactos y construccion/exportacion de imagenes Docker API/Web/Worker.
+
+## 2. Stack y estructura
+
+- Monorepo `pnpm` con `turbo`.
+- Backend NestJS en `apps/api`.
+- Frontend Angular 19 standalone en `apps/web`.
+- PostgreSQL con Prisma 7.
+- Redis para cache, throttling y BullMQ.
+- BullMQ para jobs de WhatsApp y email.
+- Dockerfiles separados para API, Web y Worker.
+- Compose productivo en `infrastructure/compose/docker-compose.prod.yml`.
+
+## 3. Backend API
+
+Estado: estable y compilando.
+
+Implementado:
+
+- Prefijo global `/api/v1`.
+- Validacion global con `ValidationPipe`.
+- Modulos principales:
+  - Auth
+  - Platform Admin
+  - Restaurants
+  - Customers
+  - Users
+  - Reservations
+  - Availability
+  - WhatsApp
+  - AI/intent parsing
+  - Email
+  - Health
+  - OpenAPI serving module
+- Throttling global con soporte Redis fuera de `NODE_ENV=test`.
+- Middleware tenant-aware aplicado a todas las rutas.
+- WebSocket gateway para eventos dashboard por restaurante.
+- Healthcheck agregado de colas `GET /health/queues` para email y WhatsApp.
+- Liveness/readiness separados: `GET /health/live` y `GET /health/ready`.
+
+Verificacion:
+
+- Build TypeScript OK.
+- E2E dashboard/plataforma OK.
+
+## 4. Autenticacion y seguridad
+
+Estado: implementado con varias piezas enterprise ya presentes.
+
+Implementado:
+
+- Login por email, password y `restaurantSlug`.
+- JWT con `restaurantId`, email, role y subject.
+- `JwtAuthGuard` tenant-aware.
+- Roles declarativos mediante `Roles` y `RolesGuard`.
+- Politica de passwords configurable.
+- Historial de passwords.
+- Bloqueo temporal por intentos fallidos.
+- Reset password con token aleatorio, hash SHA-256 en base de datos y un solo uso.
+- Auditoria de login, reset password y acciones administrativas.
+- Invitaciones de staff por email usando token de activacion/reset.
+- Alta de tenants protegida por `X-Onboarding-Token` contra `ONBOARDING_INVITE_TOKEN`.
+- Headers de seguridad y CSP configurable.
+
+Riesgos / pendientes:
+
+- Sin pendientes tecnicos abiertos en esta seccion. `POST /auth/register-tenant` exige `X-Onboarding-Token` y los controllers principales usan `TenantRequest` / `OptionalTenantRequest`.
+
+## 5. Multi-tenant
+
+Estado: implementado y probado en e2e.
+
+Implementado:
+
+- Resolucion de tenant por subdominio y headers:
+  - `X-Tenant-Slug`
+  - `X-Tenant-ID`
+- Validacion de consistencia entre JWT y tenant activo.
+- Aislamiento por `restaurantId` en endpoints criticos.
+- Indices tenant-aware y migraciones recientes para hardening.
+- Prueba e2e que bloquea token/header de tenants distintos.
 
 ## 6. Dashboard API
 
-Estado: cerrado para la fase actual.
-
-### Restaurants
-
-Implementado para dashboard tenant:
-
-- `GET /restaurants/settings`
-- `PATCH /restaurants/settings`
-- `GET /restaurants/zones`
-- `POST /restaurants/zones`
-- `PATCH /restaurants/zones/:zoneId`
-- `DELETE /restaurants/zones/:zoneId`
-- `GET /restaurants/tables`
-- `POST /restaurants/tables`
-- `PATCH /restaurants/tables/:tableId`
-- `DELETE /restaurants/tables/:tableId`
-- `GET /restaurants/analytics`
-- Endpoints legacy compatibles por slug para analytics, customers, staff y meta credentials.
-
-Decision estable:
-
-- No se implemento CRUD platform/admin completo de restaurantes porque el dashboard actual gestiona el tenant activo mediante settings. El CRUD global de restaurantes queda reservado para un futuro panel platform/admin.
+Estado: funcional y cubierto parcialmente por e2e.
 
 ### Customers
 
@@ -145,33 +113,11 @@ Implementado:
 - `GET /customers`
 - `GET /customers?q=&take=&skip=`
 - `GET /customers/:id`
+- `CustomersController`, `CustomersService` y `CustomerRepository`.
 - Busqueda por nombre, apellido, email y telefono.
+- Perfil con metricas, reservas recientes, codigo de confirmacion y acciones de contacto.
 - Aislamiento por tenant.
-- Respuesta paginable `{ data, total }`.
-
-Frontend:
-
-- Pantalla de clientes consume `/customers`.
-- Busqueda conectada al backend.
-- Se eliminaron mocks como fallback visual para evitar ocultar inconsistencias.
-
-### Reservations
-
-Implementado:
-
-- `GET /reservations/today`
-- `GET /reservations?date=YYYY-MM-DD`
-- `GET /reservations/:id`
-- `POST /reservations`
-- `PATCH /reservations/:id`
-- `PATCH /reservations/:id/status`
-- `PATCH /reservations/:id/cancel`
-
-Cancelacion:
-
-- Endpoint dedicado para cancelacion desde dashboard.
-- Soporte de motivo opcional.
-- Emision de evento realtime `reservation_updated`.
+- Respuesta paginada `{ data, total, take, skip }` desde repositorio.
 
 ### Users / Staff
 
@@ -181,229 +127,318 @@ Implementado:
 - `GET /users/:id`
 - `POST /users`
 - `PATCH /users/:id`
-- Gestion de staff por restaurante.
-- Creacion de usuarios con password temporal.
-- Cambio de rol.
-- Activacion/suspension.
-- Proteccion de `OWNER`.
-- No se expone `passwordHash`.
+- `UsersController`, `UsersService` y DTOs.
+- Filtros por rol, estado y busqueda textual.
+- Creacion de staff con password temporal o token de invitacion.
+- Envio de invitacion por email.
+- Cambio de rol y activacion/suspension.
+- Proteccion de usuarios `OWNER`.
+- Respuestas sin `passwordHash`.
+- Auditoria de creacion, invitacion y actualizacion.
 
-Frontend:
-
-- Pantalla de usuarios consume `/users`.
-- Las rutas legacy `/restaurants/staff` siguen existiendo para compatibilidad, pero el contrato canonico ahora es `/users`.
-
-## 7. Core MVP Flow de reservas
-
-Estado: implementado y refactorizado hacia arquitectura mas limpia.
-
-Flujo estable:
-
-1. Mensaje WhatsApp recibido.
-2. Webhook valida estructura y firma.
-3. Payload entra a cola BullMQ.
-4. Worker procesa mensaje.
-5. Servicio deterministico interpreta intencion y entidades.
-6. Se valida disponibilidad.
-7. Se crea reserva dentro de caso de uso transaccional.
-8. Se envia confirmacion por WhatsApp.
+### Reservations
 
 Implementado:
 
-- `CreateReservationUseCase` explicito.
-- `AvailabilityService` explicito.
-- `DeterministicReservationIntentService` para el flujo MVP de WhatsApp.
-- `ReservationEngineService.createReservation()` mantiene compatibilidad y delega al use case.
-- Repositorios criticos aceptan `Prisma.TransactionClient` opcional.
-- Creacion de reserva usa:
-  - Redis lock.
-  - Bloqueo SQL `FOR UPDATE` sobre restaurante.
-  - Check de disponibilidad dentro de la transaccion.
-  - Upsert de customer dentro de la transaccion.
-  - Creacion de reserva dentro de la transaccion.
+- `GET /reservations/today`
+- `GET /reservations`
+- Filtros por `date`, `from`, `to`, `status`, `source`, `q`, `take`, `skip`.
+- `GET /reservations/:id`
+- `POST /reservations`
+- `PATCH /reservations/:id`
+- `PATCH /reservations/:id/status`
+- `PATCH /reservations/:id/cancel`
+- `PATCH /reservations/:id/no-show`
+- `GET /reservations/:id/cancellation-audits`
+- `GET /reservations/:id/no-show-audits`
+- Auditoria estructurada de cancelaciones.
+- Auditoria estructurada dedicada para no-show en `reservation_no_show_audits`, ademas de `AuditLog` general.
+- Revalidacion de disponibilidad al modificar horario, comensales o mesa desde dashboard.
+- Reasignacion automatica a una mesa disponible cuando cambia horario/comensales y no se fuerza mesa concreta.
+- Cancelacion sin contaminar `notes`: el motivo queda en `reservation_cancellation_audits`.
+- Eventos realtime `reservation_updated`.
 
-## 8. WhatsApp webhook, cola y resiliencia
+Riesgos / pendientes:
+
+- Sin pendientes tecnicos abiertos en esta seccion.
+
+### Restaurants / Settings / Tables
+
+Implementado:
+
+- Settings del restaurante activo.
+- Zonas.
+- Mesas.
+- Analytics/reportes operativos.
+- Endpoints legacy por slug para compatibilidad.
+- `RestaurantsController` reducido a capa HTTP fina.
+- Servicios separados para settings, zones, tables, analytics y legacy.
+- DTOs explicitos con validadores `class-validator` para zones, tables, settings, legacy staff y meta credentials.
+- Ruta tenant-aware sin slug para Meta credentials: `GET/PATCH /restaurants/meta-credentials`.
+- El frontend de integraciones ya consume `/restaurants/meta-credentials`; las rutas legacy por slug quedan solo para compatibilidad hasta `Sunset: 2026-09-30`.
+
+Riesgos / pendientes:
+
+- Revisar despues del `Sunset: 2026-09-30` si se eliminan definitivamente los endpoints legacy por slug.
+
+## 7. WhatsApp e IA
+
+Estado: implementado para MVP; el soporte de audio queda pendiente de prueba real con Meta/STT.
+
+Implementado:
+
+- Verificacion webhook Meta.
+- Recepcion de mensajes inbound.
+- Validacion estructural con Zod.
+- Validacion de firma `x-hub-signature-256` cuando `WHATSAPP_APP_SECRET` esta configurado.
+- Cola BullMQ inbound.
+- Worker asincrono de WhatsApp.
+- Parser deterministico para flujo MVP.
+- Estado conversacional en servicio dedicado.
+- Integracion AI con proveedores mock/Ollama/Groq.
+- DLQ para errores de worker.
+- Descarga de audio corregida contra Graph API (`/{version}/{mediaId}`) y version configurable con `WHATSAPP_API_VERSION`.
+- Validacion de firma webhook sobre raw body de la peticion.
+- Trazas debug de WhatsApp/AI/reservas migradas a `Logger` o retiradas.
+
+Riesgos / pendientes:
+
+- Validar en entorno real de Meta que las notas de voz llegan con codec/tamano aceptado por el proveedor STT configurado. Requiere credenciales Meta y proveedor STT real.
+
+## 8. Email y colas
 
 Estado: implementado.
 
 Implementado:
 
-- `GET /whatsapp/webhook` para verificacion Meta.
-- `POST /whatsapp/webhook` para mensajes entrantes.
-- Validacion estructural estricta con Zod.
-- Validacion de firma `x-hub-signature-256`.
-- Validacion de telefono.
-- Rate limiting con `@nestjs/throttler`.
-- Storage de throttling respaldado por Redis.
-- Cola BullMQ para mensajes inbound.
-- Worker asincrono de WhatsApp.
-- DLQ para mensajes fallidos.
-- Soporte de `WHATSAPP_WORKER_ENABLED` para separar API HTTP y Worker.
+- `EmailService` con templates Handlebars.
+- Templates:
+  - forgot password
+  - staff invitation
+- `EmailQueue` con BullMQ.
+- `EmailWorker`.
+- Variables SMTP y worker configurables.
+- Jobs desacoplados de la peticion HTTP.
+- Mailpit configurado en `docker-compose.dev.yml` para SMTP local (`1025`) y UI (`8025`).
+- Verificacion SMTP al arranque controlada por `SMTP_VERIFY_ON_START`; por defecto no bloquea desarrollo local fuera de Docker.
+- Healthcheck especifico `GET /health/email` para SMTP y cola BullMQ/DLQ de email.
+- Healthcheck agregado `GET /health/queues` para colas email y WhatsApp.
+- Probes operativos `GET /health/live` y `GET /health/ready`; readiness valida DB y colas email/WhatsApp.
+- Variables SMTP explicitas en `docker-compose.prod.yml` para API y Worker.
 
-## 9. Base de datos y datos de prueba
+Riesgos / pendientes:
 
-Estado: implementado para pruebas reales locales.
+- Validar credenciales reales del proveedor SMTP en staging/prod y ajustar `SMTP_SECURE`/puerto segun proveedor. Requiere proveedor SMTP real.
 
-Implementado:
+Variables minimas para staging/prod:
 
-- Seed de restaurante demo `la-bella-italia`.
-- Usuarios demo:
-  - `owner@labellaitalia.test`
-  - `manager@labellaitalia.test`
-  - `staff@labellaitalia.test`
-- Password demo:
-  - `WhatBooDemo2026!`
-- Datos iniciales:
-  - restaurante
-  - zonas
-  - mesas
-  - horarios
-  - reglas de capacidad
-  - WhatsApp account
-  - clientes
-  - reservas
-- Migracion para zonas de restaurante.
-- Migracion para indices tenant-aware sobre `restaurantId`.
+```bash
+export SMTP_HOST=smtp.example.com
+export SMTP_PORT=587
+export SMTP_USER=usuario
+export SMTP_PASS=secreto
+export SMTP_SECURE=false
+export SMTP_VERIFY_ON_START=true
+```
 
-## 10. DevOps y contenerizacion
+## 9. Frontend Angular
 
-Estado: implementado y validado localmente.
+Estado: compila y ejecuta unit tests frontend en Chrome Headless Linux.
 
 Implementado:
 
-- `.dockerignore` para reducir contexto Docker.
-- `infrastructure/docker/api.Dockerfile`
-  - multi-stage
-  - Prisma generate
-  - build TypeScript
-  - runtime `node:22-alpine`
-  - usuario no-root
-  - healthcheck
-- `infrastructure/docker/web.Dockerfile`
-  - build Angular
-  - runtime Alpine + Nginx
-  - Brotli/Gzip
-  - SPA fallback
-  - proxy `/api`
-  - healthcheck
-- `infrastructure/docker/worker.Dockerfile`
-  - worker basado en imagen API
-  - `node apps/api/dist/worker.js`
-- `infrastructure/compose/docker-compose.prod.yml`
-  - Postgres
-  - Redis
-  - API
-  - Worker
-  - Web
-  - variables por entorno, sin secretos hardcodeados.
+- Angular 19 standalone.
+- Auth flow:
+  - login
+  - register tenant
+  - forgot password
+  - reset password
+- Guards:
+  - auth
+  - guest
+  - platform admin
+- Interceptores:
+  - auth
+  - tenant
+- Layout dashboard con sidebar.
+- Pantallas:
+  - reservations
+  - customers
+  - tables
+  - settings
+  - reports
+  - integrations
+  - users/staff
+  - platform-admin
+- Servicios HTTP para reservas, users, settings/restaurants y platform-admin.
+- Socket.IO para eventos de reservas.
+- El formulario de register tenant pide codigo de invitacion y lo envia como `X-Onboarding-Token`.
+- `/customers` esta registrado en `app.routes.ts` y enlazado desde el sidebar.
+- La UI de reservas captura `reasonCode` y `details` al cancelar o marcar no-show.
+- El perfil de cliente expone acciones directas de llamada, WhatsApp y email cuando hay datos disponibles.
+- Reportes operativos permiten consultar por rango `from`/`to` y consumen `GET /restaurants/reports/operational`.
+- El panel platform/admin permite revisar restaurantes, estado operativo, observabilidad y billing persistido.
+- `karma.conf.js` define `ChromeHeadlessNoSandbox` y `pnpm --filter web test:ci` autodetecta Chrome/Chromium Linux mediante `CHROME_BIN`.
+- Integraciones Meta consume la ruta tenant-aware `/restaurants/meta-credentials` y ya no depende del slug legacy.
+
+Riesgos / pendientes:
+
+- Sin pendientes tecnicos abiertos en esta seccion. Google Chrome Linux quedo instalado y `pnpm --filter web test:ci` pasa en WSL.
+
+## 10. Base de datos
+
+Estado: esquema amplio y migraciones aplicadas localmente en e2e.
+
+Implementado:
+
+- Restaurantes.
+- Usuarios y roles.
+- Password reset tokens.
+- Password history.
+- Audit logs.
+- Customers.
+- Reservations.
+- Reservation cancellation audits.
+- Tables y zones.
+- Opening hours, blocked dates y capacity rules.
+- WhatsApp accounts y message logs.
+- Billing SaaS por restaurante: plan, estado, email, referencia externa, fin de trial y fin de periodo.
+- Auditoria estructurada de no-show en `reservation_no_show_audits`.
+- Indices por tenant, fechas criticas y accesos reales del dashboard.
+- Revision operativa de indices, soft-delete y cascadas documentada en `docs/database-operational-review.md`.
+- Politica tecnica recomendada de retencion y bajas documentada en `docs/data-retention-policy.md`.
 
 Verificacion:
 
-- Build Docker API OK.
-- Build Docker Web OK.
-- Build Docker Worker OK.
-- Prisma client importable dentro de imagen API.
-- Web container responde `/healthz`.
+- `prisma migrate deploy` no encontro migraciones pendientes durante `pnpm --filter api test:e2e`.
+- `EXPLAIN ANALYZE` ejecutado con `apps/api/scripts/dashboard-explain.sql` sobre consultas reales de dashboard.
+- Migracion `20260630010000_dashboard_query_indexes` aplicada localmente y verificada en `pg_indexes`.
+- Migraciones `20260630020000_add_restaurant_billing_fields` y `20260630030000_add_reservation_no_show_audits` aplicadas localmente.
 
-Nota:
+Riesgos / pendientes:
 
-- Imagen Web final verificada alrededor de 25.8 MB.
-- Imagen API funcional verificada alrededor de 760 MB. Reducirla significativamente requiere una fase especifica de optimizacion de dependencias runtime/Prisma.
+- Validar con criterios legales/producto la politica final de retencion/anonimizacion. La recomendacion tecnica ya esta documentada.
 
-## 11. CI/CD y despliegue cloud
+## 11. DevOps, Docker y CI/CD
 
-Estado: existe base, no cerrado como produccion final.
+Estado: Docker base implementado; CI minimo activo.
+
+Implementado:
+
+- `api.Dockerfile`.
+- `web.Dockerfile`.
+- `worker.Dockerfile`.
+- `docker-compose.prod.yml` con Postgres, Redis, API, Worker y Web.
+- API y worker separados mediante `WHATSAPP_WORKER_ENABLED`.
+- Web con Nginx y proxy a API.
+- `.github/workflows/ci.yml` ejecuta install, OpenAPI validate, Prisma generate, API build, Web build, Web unit tests, API e2e con Postgres service, empaquetado de `dist` y construccion/exportacion de imagenes Docker API/Web/Worker como artefactos de CI.
+- `.github/workflows/release.yml` genera artefactos reproducibles `api-dist` y `web-dist` en ejecucion manual o tag `v*`.
+- `.github/dependabot.yml` automatiza propuestas semanales para root, API, Web y GitHub Actions.
+- Script de smoke post-deploy: `pnpm --filter api smoke` usando `API_BASE_URL`; valida `live`, `ready`, `health` y `openapi`.
+
+Situacion actual de workflows:
+
+- `.github/workflows/deploy.yml` queda intencionalmente pausado: no despliega ni requiere secretos hasta decidir proveedor cloud, registry, runtime y estrategia de secretos/OIDC.
+- La automatizacion de release ya construye artefactos, pero no publica ni despliega.
+
+Riesgos / pendientes:
+
+- No hay despliegue cloud activo desde GitHub Actions; CD esta pausado para evitar fallos por falta de datos de nube.
+- Falta decision final de proveedor y estrategia de secretos/OIDC.
+
+## 12. Documentacion y contrato API
+
+Estado: documentacion amplia, contrato API validado localmente.
 
 Existe:
 
-- `.github/workflows/deploy.yml`
-- Build y push de imagenes a Artifact Registry con tag basado en SHA.
-- Despliegue inicial a Cloud Run.
+- Arquitectura.
+- ADRs.
+- Runbooks.
+- Roles.
+- Seguridad/hardening.
+- Auditoria frontend.
+- Postman collection.
+- OpenAPI validado localmente.
 
-Pendiente:
+Hallazgos:
 
-- Definir proveedor final: GCP o Azure.
-- Reemplazar credenciales JSON por OIDC / Workload Identity Federation.
-- Desplegar Worker como servicio separado.
-- Conectar Cloud SQL y Redis administrado de forma privada.
-- Smoke tests post-deploy.
-- Configuracion final de secretos gestionados.
+- `docs/api/openapi.yml` fue saneado como JSON/YAML valido y se valida con `pnpm --filter api openapi:validate`.
+- `/openapi.json` sirve el mismo contrato versionado de `docs/api/openapi.yml`.
+- El documento anterior de status tenia pendientes ya resueltos, como `UsersService`, `CustomersService`, tests e2e de Dashboard API y DTOs principales.
+- El documento de rol con typo `ai_assitant.md` fue consolidado en `ai_assistant.md`.
 
-## 12. Verificaciones recientes
-
-Comandos verificados durante las fases cerradas:
+## 13. Verificaciones ejecutadas en este corte
 
 ```bash
 pnpm --filter api build
 pnpm --filter web build
+pnpm --filter api openapi:validate
+pnpm --filter api test:e2e
+API_BASE_URL=http://localhost:3000/api/v1 pnpm --filter api smoke
+pnpm --filter web test:ci
+docker build -f infrastructure/docker/api.Dockerfile -t whatboo-api:ci-local .
+docker build -f infrastructure/docker/web.Dockerfile -t whatboo-web:ci-local .
+docker build -f infrastructure/docker/worker.Dockerfile --build-arg API_IMAGE=whatboo-api:ci-local -t whatboo-worker:ci-local .
+node -e "const fs=require('fs'); const path=require('path'); const yaml=require('./node_modules/.pnpm/js-yaml@4.2.0/node_modules/js-yaml'); const files=fs.readdirSync('.github/workflows').filter(f=>f.endsWith('.yml')).map(f=>path.join('.github/workflows',f)).concat(['.github/dependabot.yml']); for (const file of files) yaml.load(fs.readFileSync(file, 'utf8'));"
+git diff --check
 ```
 
-Resultado:
+Resultados:
 
-- API build OK.
-- Web build OK.
-- Nest arranca y registra rutas nuevas de dashboard:
-  - `/api/v1/customers`
-  - `/api/v1/customers/:id`
-  - `/api/v1/reservations/:id/cancel`
-  - `/api/v1/users`
-  - `/api/v1/users/:id`
+- API build: OK.
+- Web build: OK.
+- OpenAPI validate: OK.
+- API e2e: OK, 12 escenarios.
+- Smoke API: script implementado; ejecutar contra una API viva con `API_BASE_URL`.
+- Web unit tests: OK, 22 specs en Chrome Headless Linux.
+- Docker images API/Web/Worker: OK, construidas localmente con los Dockerfiles productivos.
+- Workflows GitHub Actions y Dependabot: YAML valido.
+- `git diff --check`: OK.
 
-## 13. Tareas futuras a revisar
+Cobertura e2e API confirmada:
+
+- Customers list/search/view tenant scoped.
+- Reservations advanced list, update, status y structured cancel audit.
+- Reservations update rechaza mesa no disponible y cancelacion conserva `notes` sin concatenar motivo.
+- No-show registra auditoria estructurada dedicada sin contaminar `notes`.
+- Users create/update/activate/deactivate tenant scoped.
+- Platform admin lista y actualiza billing persistido para restaurantes.
+- Tenant isolation entre header y token.
+- Register tenant bloqueado sin token, bloqueado con token invalido y permitido con token de onboarding valido.
+- WhatsApp webhook acepta firma valida calculada sobre raw body y rechaza firma invalida.
+- Email healthcheck reporta SMTP y cola en estado sano.
+- Queue healthcheck reporta colas email y WhatsApp.
+- Liveness/readiness reportan estado operativo para despliegue.
+- `/openapi.json` sirve el contrato validado.
+- Frontend de integraciones Meta consume `/restaurants/meta-credentials` sin slug legacy.
+- Frontend expone `/customers` y elimina trazas `console.*` de componentes/servicios revisados.
+- Frontend envia motivos estructurados para cancelacion/no-show desde el dashboard.
+- CI en `.github/workflows/ci.yml`: install, OpenAPI validate, Prisma generate, API build, Web build, Web unit tests, API e2e con Postgres service, artefactos de `dist` e imagenes Docker API/Web/Worker exportadas como artefactos.
+- Release artifacts en `.github/workflows/release.yml` para API/Web.
+- Backend sin `console.*` ni `req: any` en `apps/api/src`; el interceptor tenant usa `Logger` y request tipado.
+- Respuestas paginadas dashboard normalizadas con `paginatedResponse` en customers, reservations, users y platform restaurants.
+- Docs de rol AI consolidadas en `docs/roles/ai_assistant.md`.
+
+## 14. Prioridades recomendadas
 
 ### Alta prioridad
 
-- Crear tests e2e para Dashboard API:
-  - customers list/search/view
-  - reservations cancel/status/update
-  - users create/update/activate/deactivate
-  - tenant isolation
-- Corregir specs antiguas del frontend que siguen esperando APIs viejas.
-- Revisar SMTP local y configurar Mailpit/Mailhog o proveedor SMTP real por entorno.
-- Formalizar DTOs backend para `CustomersController` y `UsersController` en lugar de `any`.
-- Agregar paginacion y filtros avanzados a reservas.
-- Agregar endpoint de auditoria de cancelacion con motivo estructurado, no solo notas.
+- Validar audio WhatsApp con credenciales Meta y proveedor STT real antes de activar notas de voz en produccion.
 
 ### Media prioridad
 
-- Crear `StaffService` o `UsersService` para mover logica fuera del controller.
-- Crear `CustomersService` para separar busqueda, perfil y metricas CRM.
-- Normalizar respuestas paginadas en todos los endpoints de dashboard.
-- Agregar Swagger/OpenAPI actualizado con las rutas nuevas.
-- Agregar guards por rol mas declarativos mediante decorators.
-- Revisar legacy endpoints en `RestaurantsController` y planear deprecacion ordenada.
-- Agregar optimistic UI y estados de error mas finos en clientes/usuarios/reservas.
+- Eliminar endpoints legacy por slug de `RestaurantsController` despues de `Sunset: 2026-09-30`, si no hay consumidores externos.
 
-### DevOps / Cloud
+### DevOps / Produccion
 
-- Elegir proveedor final: GCP Cloud Run o Azure Container Apps.
-- Migrar GitHub Actions a OIDC.
-- Agregar despliegue separado de Worker.
-- Configurar Cloud SQL/PostgreSQL administrado y Redis privado.
-- Agregar smoke tests post-deploy.
-- Versionar imagenes por SHA y promover por ambientes.
-- Definir entornos `dev`, `staging` y `prod`.
-
-### Performance
-
-- Reducir tamano de imagen API.
-- Revisar dependencias pesadas de Prisma runtime.
-- Medir queries criticas con `EXPLAIN ANALYZE`.
-- Agregar cache selectivo para settings y availability cuando sea seguro.
-- Agregar indices adicionales segun queries reales de dashboard.
-
-### Seguridad
-
-- Rotacion de secretos.
-- Politicas de password y expiracion de password temporal.
-- Auditoria de acciones administrativas.
-- Rate limiting diferenciado para dashboard y webhook.
-- Reforzar CSP/headers finales en Nginx.
+- Elegir proveedor final de despliegue.
+- Migrar secretos a Secret Manager/Key Vault y usar OIDC.
+- Desplegar API y Worker como servicios separados.
+- Usar Postgres y Redis administrados.
 
 ### Producto
 
-- Panel platform/admin para CRUD global de restaurantes, si el SaaS necesitara operar multiples restaurantes desde una consola central.
-- Invitaciones de staff por email.
-- Perfil detallado de cliente con historial de reservas.
-- Motivos estructurados de cancelacion/no-show.
-- Reportes operativos por rango de fechas.
+- Integrar proveedor real de billing y sincronizar `billingCustomerReference`/estado desde webhooks del proveedor elegido.
+- Convertir el perfil de cliente en workspace CRM mas avanzado si se quieren tareas, etiquetas, timeline completo y notas internas.
+- Definir KPIs/reportes comerciales adicionales sobre los reportes operativos actuales.

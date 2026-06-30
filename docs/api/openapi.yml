@@ -1,620 +1,1141 @@
-openapi: 3.1.0
-
-info:
-title: Restaurant Booking SaaS API
-version: 1.0.0
-description: |
-Multi-tenant Restaurant Booking SaaS Platform.
-
-```
-Features:
-
-- WhatsApp Reservation Automation
-- Reservation Management
-- Availability Engine
-- Waitlist Management
-- Reminder Scheduling
-- Customer Management
-- Multi-Tenant Isolation
-```
-
-servers:
-
-* url: /api/v1
-  description: Production API
-
-tags:
-
-* name: Authentication
-* name: Restaurants
-* name: Users
-* name: Customers
-* name: Reservations
-* name: Availability
-* name: Waitlist
-* name: Dashboard
-* name: WhatsApp
-* name: Health
-
-security:
-
-* bearerAuth: []
-
-paths:
-
-/auth/login:
-
-```
-post:
-  tags:
-    - Authentication
-
-  summary: Login
-
-  security: []
-
-  requestBody:
-    required: true
-
-    content:
-      application/json:
-        schema:
-          $ref: '#/components/schemas/LoginRequest'
-
-  responses:
-
-    '200':
-      description: Authenticated
-
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/LoginResponse'
-```
-
-/auth/refresh:
-
-```
-post:
-  tags:
-    - Authentication
-
-  security: []
-
-  summary: Refresh token
-
-  responses:
-
-    '200':
-      description: Token refreshed
-```
-
-/auth/me:
-
-```
-get:
-  tags:
-    - Authentication
-
-  summary: Current user
-
-  responses:
-
-    '200':
-      description: Current authenticated user
-
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/UserResponse'
-```
-
-/reservations:
-
-```
-get:
-  tags:
-    - Reservations
-
-  summary: List reservations
-
-  parameters:
-
-    - $ref: '#/components/parameters/Page'
-
-    - $ref: '#/components/parameters/PageSize'
-
-    - name: status
-      in: query
-      schema:
-        $ref: '#/components/schemas/ReservationStatus'
-
-    - name: date
-      in: query
-      schema:
-        type: string
-        format: date
-
-  responses:
-
-    '200':
-      description: Reservation list
-
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PaginatedReservations'
-
-post:
-  tags:
-    - Reservations
-
-  summary: Create reservation
-
-  parameters:
-
-    - $ref: '#/components/parameters/IdempotencyKey'
-
-  requestBody:
-    required: true
-
-    content:
-      application/json:
-        schema:
-          $ref: '#/components/schemas/CreateReservationRequest'
-
-  responses:
-
-    '201':
-      description: Reservation created
-
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ReservationResponse'
-```
-
-/reservations/{id}:
-
-```
-get:
-  tags:
-    - Reservations
-
-  summary: Reservation details
-
-  parameters:
-
-    - $ref: '#/components/parameters/ReservationId'
-
-  responses:
-
-    '200':
-      description: Reservation details
-
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ReservationResponse'
-
-patch:
-  tags:
-    - Reservations
-
-  summary: Update reservation
-
-  parameters:
-
-    - $ref: '#/components/parameters/ReservationId'
-
-  responses:
-
-    '200':
-      description: Reservation updated
-
-delete:
-  tags:
-    - Reservations
-
-  summary: Cancel reservation
-
-  parameters:
-
-    - $ref: '#/components/parameters/ReservationId'
-
-  responses:
-
-    '204':
-      description: Reservation cancelled
-```
-
-/availability:
-
-```
-get:
-  tags:
-    - Availability
-
-  summary: Check availability
-
-  parameters:
-
-    - name: date
-      in: query
-      required: true
-      schema:
-        type: string
-        format: date
-
-    - name: time
-      in: query
-      required: true
-      schema:
-        type: string
-
-    - name: guestCount
-      in: query
-      required: true
-      schema:
-        type: integer
-
-  responses:
-
-    '200':
-      description: Availability result
-
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/AvailabilityResponse'
-```
-
-/customers:
-
-```
-get:
-  tags:
-    - Customers
-
-  summary: Customer list
-
-  responses:
-
-    '200':
-      description: Customer list
-```
-
-/waitlist:
-
-```
-get:
-  tags:
-    - Waitlist
-
-  summary: List waitlist entries
-
-  responses:
-
-    '200':
-      description: Waitlist entries
-
-post:
-  tags:
-    - Waitlist
-
-  summary: Create waitlist entry
-
-  responses:
-
-    '201':
-      description: Waitlist entry created
-```
-
-/dashboard/summary:
-
-```
-get:
-  tags:
-    - Dashboard
-
-  summary: Dashboard summary
-
-  responses:
-
-    '200':
-      description: Dashboard metrics
-
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/DashboardSummary'
-```
-
-/whatsapp/webhook:
-
-```
-post:
-  tags:
-    - WhatsApp
-
-  security: []
-
-  summary: Meta webhook
-
-  responses:
-
-    '200':
-      description: Webhook accepted
-
-get:
-  tags:
-    - WhatsApp
-
-  security: []
-
-  summary: Meta verification endpoint
-
-  responses:
-
-    '200':
-      description: Verification successful
-```
-
-/health:
-
-```
-get:
-  tags:
-    - Health
-
-  security: []
-
-  summary: Health check
-
-  responses:
-
-    '200':
-      description: Service healthy
-```
-
-components:
-
-securitySchemes:
-
-```
-bearerAuth:
-
-  type: http
-  scheme: bearer
-  bearerFormat: JWT
-```
-
-parameters:
-
-```
-ReservationId:
-
-  name: id
-  in: path
-  required: true
-
-  schema:
-    type: string
-    format: uuid
-
-Page:
-
-  name: page
-  in: query
-
-  schema:
-    type: integer
-    minimum: 1
-
-PageSize:
-
-  name: pageSize
-  in: query
-
-  schema:
-    type: integer
-    minimum: 1
-    maximum: 100
-
-IdempotencyKey:
-
-  name: Idempotency-Key
-  in: header
-
-  required: false
-
-  schema:
-    type: string
-```
-
-schemas:
-
-```
-LoginRequest:
-
-  type: object
-
-  required:
-    - email
-    - password
-    - restaurantSlug
-
-  properties:
-
-    email:
-      type: string
-      format: email
-
-    password:
-      type: string
-
-    restaurantSlug:
-      type: string
-
-LoginResponse:
-
-  type: object
-
-  required:
-    - accessToken
-
-  properties:
-
-    accessToken:
-      type: string
-
-UserResponse:
-
-  type: object
-
-  properties:
-
-    id:
-      type: string
-      format: uuid
-
-    email:
-      type: string
-
-    role:
-      type: string
-
-CreateReservationRequest:
-
-  type: object
-
-  required:
-    - customerId
-    - reservationStart
-    - guestCount
-
-  properties:
-
-    customerId:
-      type: string
-      format: uuid
-
-    reservationStart:
-      type: string
-      format: date-time
-
-    guestCount:
-      type: integer
-      minimum: 1
-
-    notes:
-      type: string
-
-ReservationResponse:
-
-  type: object
-
-  properties:
-
-    id:
-      type: string
-      format: uuid
-
-    status:
-      $ref: '#/components/schemas/ReservationStatus'
-
-    guestCount:
-      type: integer
-
-ReservationStatus:
-
-  type: string
-
-  enum:
-    - PENDING
-    - CONFIRMED
-    - WAITLISTED
-    - CANCELLED
-    - COMPLETED
-    - NO_SHOW
-
-PaginatedReservations:
-
-  type: object
-
-  properties:
-
-    items:
-
-      type: array
-
-      items:
-        $ref: '#/components/schemas/ReservationResponse'
-
-    total:
-      type: integer
-
-    page:
-      type: integer
-
-    pageSize:
-      type: integer
-
-AvailabilityResponse:
-
-  type: object
-
-  properties:
-
-    available:
-      type: boolean
-
-    alternativeSlots:
-
-      type: array
-
-      items:
-        type: string
-
-DashboardSummary:
-
-  type: object
-
-  properties:
-
-    todayReservations:
-      type: integer
-
-    tomorrowReservations:
-      type: integer
-
-    occupancyPercentage:
-      type: number
-
-    cancelledToday:
-      type: integer
-
-    noShows:
-      type: integer
-
-ErrorResponse:
-
-  type: object
-
-  properties:
-
-    success:
-      type: boolean
-
-    error:
-
-      type: object
-
-      properties:
-
-        code:
-          type: string
-
-        message:
-          type: string
-```
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Whatboo API",
+    "version": "2026.06.30",
+    "description": "Contrato operativo para la API multi-tenant de Whatboo. Todas las rutas privadas usan el prefijo global /api/v1, JWT bearer y cabecera tenant salvo que se indique lo contrario."
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "API base"
+    }
+  ],
+  "tags": [
+    { "name": "Authentication" },
+    { "name": "Customers" },
+    { "name": "Reservations" },
+    { "name": "Restaurants" },
+    { "name": "Users" },
+    { "name": "Platform Admin" },
+    { "name": "WhatsApp" },
+    { "name": "Health" }
+  ],
+  "security": [
+    {
+      "bearerAuth": [],
+      "tenantSlug": []
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login de usuario tenant-aware",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sesion iniciada",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LoginResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Solicitar reset de password",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ForgotPasswordRequest" }
+            }
+          }
+        },
+        "responses": {
+          "202": { "description": "Solicitud aceptada" }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Completar reset de password",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ResetPasswordRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Password actualizado" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/auth/register-tenant": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Crear tenant mediante token de onboarding",
+        "security": [{ "onboardingToken": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterTenantRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Tenant creado" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/customers": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Listar y buscar clientes del tenant actual",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/TakeQuery" },
+          { "$ref": "#/components/parameters/SkipQuery" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clientes paginados",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedCustomers" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/customers/{id}": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Perfil de cliente con historial de reservas",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "$ref": "#/components/parameters/IdPath" },
+          { "$ref": "#/components/parameters/TakeQuery" },
+          { "$ref": "#/components/parameters/SkipQuery" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Perfil de cliente",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CustomerProfile" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/reservations/today": {
+      "get": {
+        "tags": ["Reservations"],
+        "summary": "Reservas del dia actual",
+        "parameters": [{ "$ref": "#/components/parameters/TenantSlugHeader" }],
+        "responses": {
+          "200": {
+            "description": "Reservas del dia",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Reservation" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reservations": {
+      "get": {
+        "tags": ["Reservations"],
+        "summary": "Listar reservas con filtros dashboard",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "name": "date", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "from", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "to", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "status", "in": "query", "schema": { "$ref": "#/components/schemas/ReservationStatus" } },
+          { "name": "source", "in": "query", "schema": { "$ref": "#/components/schemas/ReservationSource" } },
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/TakeQuery" },
+          { "$ref": "#/components/parameters/SkipQuery" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reservas paginadas o lista diaria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "$ref": "#/components/schemas/PaginatedReservations" },
+                    {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Reservation" }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Reservations"],
+        "summary": "Crear reserva manual",
+        "parameters": [{ "$ref": "#/components/parameters/TenantSlugHeader" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateReservationRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reserva creada",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Reservation" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/reservations/{id}": {
+      "get": {
+        "tags": ["Reservations"],
+        "summary": "Ver reserva",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "$ref": "#/components/parameters/IdPath" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reserva",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Reservation" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Reservations"],
+        "summary": "Actualizar fecha, mesa, pax o notas con revalidacion de disponibilidad",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "$ref": "#/components/parameters/IdPath" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateReservationRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reserva actualizada",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Reservation" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/reservations/{id}/status": {
+      "patch": {
+        "tags": ["Reservations"],
+        "summary": "Actualizar estado excepto cancelacion y no-show",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "$ref": "#/components/parameters/IdPath" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateReservationStatusRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Estado actualizado" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/reservations/{id}/cancel": {
+      "patch": {
+        "tags": ["Reservations"],
+        "summary": "Cancelar reserva con motivo estructurado",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "$ref": "#/components/parameters/IdPath" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CancelReservationRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Reserva cancelada" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/reservations/{id}/no-show": {
+      "patch": {
+        "tags": ["Reservations"],
+        "summary": "Marcar reserva como no-show con motivo estructurado",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "$ref": "#/components/parameters/IdPath" }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/NoShowReservationRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Reserva marcada como no-show" },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/reservations/{id}/cancellation-audits": {
+      "get": {
+        "tags": ["Reservations"],
+        "summary": "Listar auditoria de cancelacion de una reserva",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "$ref": "#/components/parameters/IdPath" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Eventos de cancelacion",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ReservationCancellationAudit" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reservations/{id}/no-show-audits": {
+      "get": {
+        "tags": ["Reservations"],
+        "summary": "Listar auditoria estructurada de no-show de una reserva",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "$ref": "#/components/parameters/IdPath" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Eventos de no-show",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ReservationNoShowAudit" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restaurants/settings": {
+      "get": {
+        "tags": ["Restaurants"],
+        "summary": "Configuracion operativa del restaurante",
+        "parameters": [{ "$ref": "#/components/parameters/TenantSlugHeader" }],
+        "responses": { "200": { "description": "Configuracion operativa" } }
+      },
+      "patch": {
+        "tags": ["Restaurants"],
+        "summary": "Actualizar configuracion operativa",
+        "parameters": [{ "$ref": "#/components/parameters/TenantSlugHeader" }],
+        "responses": { "200": { "description": "Configuracion actualizada" } }
+      }
+    },
+    "/restaurants/zones": {
+      "get": {
+        "tags": ["Restaurants"],
+        "summary": "Listar zonas activas",
+        "parameters": [{ "$ref": "#/components/parameters/TenantSlugHeader" }],
+        "responses": { "200": { "description": "Zonas" } }
+      },
+      "post": {
+        "tags": ["Restaurants"],
+        "summary": "Crear zona",
+        "parameters": [{ "$ref": "#/components/parameters/TenantSlugHeader" }],
+        "responses": { "201": { "description": "Zona creada" } }
+      }
+    },
+    "/restaurants/zones/{id}": {
+      "patch": {
+        "tags": ["Restaurants"],
+        "summary": "Actualizar zona",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "$ref": "#/components/parameters/IdPath" }
+        ],
+        "responses": { "200": { "description": "Zona actualizada" } }
+      },
+      "delete": {
+        "tags": ["Restaurants"],
+        "summary": "Desactivar zona",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "$ref": "#/components/parameters/IdPath" }
+        ],
+        "responses": { "200": { "description": "Zona desactivada" } }
+      }
+    },
+    "/restaurants/tables": {
+      "get": {
+        "tags": ["Restaurants"],
+        "summary": "Listar mesas activas",
+        "parameters": [{ "$ref": "#/components/parameters/TenantSlugHeader" }],
+        "responses": { "200": { "description": "Mesas" } }
+      },
+      "post": {
+        "tags": ["Restaurants"],
+        "summary": "Crear mesa",
+        "parameters": [{ "$ref": "#/components/parameters/TenantSlugHeader" }],
+        "responses": { "201": { "description": "Mesa creada" } }
+      }
+    },
+    "/restaurants/tables/{id}": {
+      "patch": {
+        "tags": ["Restaurants"],
+        "summary": "Actualizar mesa",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "$ref": "#/components/parameters/IdPath" }
+        ],
+        "responses": { "200": { "description": "Mesa actualizada" } }
+      },
+      "delete": {
+        "tags": ["Restaurants"],
+        "summary": "Desactivar mesa",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "$ref": "#/components/parameters/IdPath" }
+        ],
+        "responses": { "200": { "description": "Mesa desactivada" } }
+      }
+    },
+    "/restaurants/meta-credentials": {
+      "get": {
+        "tags": ["Restaurants"],
+        "summary": "Obtener credenciales Meta del tenant activo",
+        "parameters": [{ "$ref": "#/components/parameters/TenantSlugHeader" }],
+        "responses": { "200": { "description": "Credenciales Meta" } }
+      },
+      "patch": {
+        "tags": ["Restaurants"],
+        "summary": "Actualizar credenciales Meta del tenant activo",
+        "parameters": [{ "$ref": "#/components/parameters/TenantSlugHeader" }],
+        "responses": { "200": { "description": "Credenciales Meta actualizadas" } }
+      }
+    },
+    "/restaurants/analytics": {
+      "get": {
+        "tags": ["Restaurants"],
+        "summary": "Analitica diaria",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "name": "date", "in": "query", "schema": { "type": "string", "format": "date" } }
+        ],
+        "responses": { "200": { "description": "Analitica diaria" } }
+      }
+    },
+    "/restaurants/reports/operational": {
+      "get": {
+        "tags": ["Restaurants"],
+        "summary": "Reporte operativo por rango",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "name": "from", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "to", "in": "query", "schema": { "type": "string", "format": "date" } }
+        ],
+        "responses": { "200": { "description": "Reporte operativo" } }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Listar staff del tenant",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "name": "role", "in": "query", "schema": { "$ref": "#/components/schemas/UserRole" } },
+          { "name": "isActive", "in": "query", "schema": { "type": "boolean" } },
+          { "$ref": "#/components/parameters/SearchQuery" },
+          { "$ref": "#/components/parameters/TakeQuery" },
+          { "$ref": "#/components/parameters/SkipQuery" }
+        ],
+        "responses": { "200": { "description": "Usuarios paginados" } }
+      },
+      "post": {
+        "tags": ["Users"],
+        "summary": "Crear usuario staff",
+        "parameters": [{ "$ref": "#/components/parameters/TenantSlugHeader" }],
+        "responses": { "201": { "description": "Usuario creado" } }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Ver usuario staff",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "$ref": "#/components/parameters/IdPath" }
+        ],
+        "responses": { "200": { "description": "Usuario" } }
+      },
+      "patch": {
+        "tags": ["Users"],
+        "summary": "Actualizar usuario staff",
+        "parameters": [
+          { "$ref": "#/components/parameters/TenantSlugHeader" },
+          { "$ref": "#/components/parameters/IdPath" }
+        ],
+        "responses": { "200": { "description": "Usuario actualizado" } }
+      }
+    },
+    "/platform/admin/dashboard": {
+      "get": {
+        "tags": ["Platform Admin"],
+        "summary": "Metricas globales SaaS",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Dashboard global",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PlatformDashboard" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/platform/admin/restaurants": {
+      "get": {
+        "tags": ["Platform Admin"],
+        "summary": "Listar restaurantes de plataforma",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Restaurantes paginados",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PaginatedPlatformRestaurants" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/platform/admin/restaurants/{id}": {
+      "get": {
+        "tags": ["Platform Admin"],
+        "summary": "Ver restaurante de plataforma",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdPath" }],
+        "responses": {
+          "200": {
+            "description": "Detalle de restaurante",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PlatformRestaurantDetail" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "patch": {
+        "tags": ["Platform Admin"],
+        "summary": "Actualizar restaurante de plataforma",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdPath" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdatePlatformRestaurantRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Restaurante actualizado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PlatformRestaurantListItem" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/whatsapp/webhook": {
+      "get": {
+        "tags": ["WhatsApp"],
+        "summary": "Verificacion webhook Meta",
+        "security": [],
+        "responses": { "200": { "description": "Challenge validado" } }
+      },
+      "post": {
+        "tags": ["WhatsApp"],
+        "summary": "Webhook entrante de Meta validado con raw body",
+        "security": [],
+        "responses": { "200": { "description": "Evento aceptado" }, "403": { "$ref": "#/components/responses/Forbidden" } }
+      }
+    },
+    "/whatsapp/test-message": {
+      "post": {
+        "tags": ["WhatsApp"],
+        "summary": "Enviar mensaje de prueba",
+        "parameters": [{ "$ref": "#/components/parameters/TenantSlugHeader" }],
+        "responses": { "200": { "description": "Mensaje enviado" } }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Healthcheck general",
+        "security": [],
+        "responses": { "200": { "description": "Servicio sano" } }
+      }
+    },
+    "/health/live": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Liveness probe sin dependencias externas",
+        "security": [],
+        "responses": { "200": { "description": "Proceso API vivo" } }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Readiness probe con dependencias operativas",
+        "security": [],
+        "responses": { "200": { "description": "API lista para trafico" }, "503": { "description": "API no lista" } }
+      }
+    },
+    "/health/email": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Healthcheck de SMTP y cola de email",
+        "security": [],
+        "responses": { "200": { "description": "Email sano" }, "503": { "description": "Email degradado" } }
+      }
+    },
+    "/health/queues": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Healthcheck agregado de colas email y WhatsApp",
+        "security": [],
+        "responses": { "200": { "description": "Colas sanas" }, "503": { "description": "Colas degradadas" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" },
+      "tenantSlug": { "type": "apiKey", "in": "header", "name": "X-Tenant-Slug" },
+      "onboardingToken": { "type": "apiKey", "in": "header", "name": "X-Onboarding-Token" }
+    },
+    "parameters": {
+      "TenantSlugHeader": {
+        "name": "X-Tenant-Slug",
+        "in": "header",
+        "required": false,
+        "schema": { "type": "string" }
+      },
+      "IdPath": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      },
+      "SearchQuery": {
+        "name": "q",
+        "in": "query",
+        "required": false,
+        "schema": { "type": "string" }
+      },
+      "TakeQuery": {
+        "name": "take",
+        "in": "query",
+        "required": false,
+        "schema": { "type": "integer", "minimum": 1, "maximum": 100 }
+      },
+      "SkipQuery": {
+        "name": "skip",
+        "in": "query",
+        "required": false,
+        "schema": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Solicitud invalida",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "No autenticado",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Operacion no permitida",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Recurso no encontrado",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password", "restaurantSlug"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 1 },
+          "restaurantSlug": { "type": "string", "minLength": 1 }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "required": ["accessToken"],
+        "properties": {
+          "accessToken": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/User" }
+        }
+      },
+      "ForgotPasswordRequest": {
+        "type": "object",
+        "required": ["email", "restaurantSlug"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "restaurantSlug": { "type": "string" }
+        }
+      },
+      "ResetPasswordRequest": {
+        "type": "object",
+        "required": ["token", "password"],
+        "properties": {
+          "token": { "type": "string" },
+          "password": { "type": "string", "minLength": 12 }
+        }
+      },
+      "RegisterTenantRequest": {
+        "type": "object",
+        "required": ["restaurantName", "slug", "ownerEmail", "ownerPassword"],
+        "properties": {
+          "restaurantName": { "type": "string" },
+          "slug": { "type": "string" },
+          "ownerEmail": { "type": "string", "format": "email" },
+          "ownerPassword": { "type": "string", "minLength": 12 }
+        }
+      },
+      "ReservationStatus": {
+        "type": "string",
+        "enum": ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED", "NO_SHOW"]
+      },
+      "ReservationSource": {
+        "type": "string",
+        "enum": ["WHATSAPP", "DASHBOARD", "PHONE", "WALK_IN", "API"]
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": ["OWNER", "MANAGER", "STAFF", "ADMIN", "PLATFORM_ADMIN"]
+      },
+      "RestaurantStatus": {
+        "type": "string",
+        "enum": ["ACTIVE", "INACTIVE", "SUSPENDED"]
+      },
+      "BillingPlan": {
+        "type": "string",
+        "enum": ["FREE", "STARTER", "PRO", "ENTERPRISE"]
+      },
+      "BillingStatus": {
+        "type": "string",
+        "enum": ["TRIAL", "ACTIVE", "PAST_DUE", "SUSPENDED", "CANCELLED"]
+      },
+      "Customer": {
+        "type": "object",
+        "required": ["id", "restaurantId", "phone", "active"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "restaurantId": { "type": "string", "format": "uuid" },
+          "firstName": { "type": ["string", "null"] },
+          "lastName": { "type": ["string", "null"] },
+          "phone": { "type": "string" },
+          "email": { "type": ["string", "null"], "format": "email" },
+          "preferredLanguage": { "type": "string" },
+          "notes": { "type": ["string", "null"] },
+          "totalReservations": { "type": "integer" },
+          "lastReservationAt": { "type": ["string", "null"], "format": "date-time" },
+          "active": { "type": "boolean" }
+        }
+      },
+      "CustomerProfile": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Customer" },
+          {
+            "type": "object",
+            "properties": {
+              "metrics": { "type": "object" },
+              "reservations": { "$ref": "#/components/schemas/PaginatedReservations" }
+            }
+          }
+        ]
+      },
+      "Reservation": {
+        "type": "object",
+        "required": ["id", "restaurantId", "customerId", "reservationStart", "reservationEnd", "guestCount", "status"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "restaurantId": { "type": "string", "format": "uuid" },
+          "customerId": { "type": "string", "format": "uuid" },
+          "reservationDate": { "type": "string", "format": "date-time" },
+          "reservationStart": { "type": "string", "format": "date-time" },
+          "reservationEnd": { "type": "string", "format": "date-time" },
+          "guestCount": { "type": "integer", "minimum": 1 },
+          "status": { "$ref": "#/components/schemas/ReservationStatus" },
+          "source": { "$ref": "#/components/schemas/ReservationSource" },
+          "notes": { "type": ["string", "null"] },
+          "confirmationCode": { "type": ["string", "null"] },
+          "customer": { "$ref": "#/components/schemas/Customer" },
+          "assignedTables": { "type": "array", "items": { "type": "object" } }
+        }
+      },
+      "CreateReservationRequest": {
+        "type": "object",
+        "required": ["phone", "guestCount", "reservationStart"],
+        "properties": {
+          "phone": { "type": "string" },
+          "customerName": { "type": "string" },
+          "guestCount": { "type": "integer", "minimum": 1 },
+          "reservationStart": { "type": "string", "format": "date-time" },
+          "durationMinutes": { "type": "integer", "minimum": 15 },
+          "notes": { "type": "string" }
+        }
+      },
+      "UpdateReservationRequest": {
+        "type": "object",
+        "properties": {
+          "reservationStart": { "type": "string", "format": "date-time" },
+          "reservationEnd": { "type": "string", "format": "date-time" },
+          "guestCount": { "type": "integer", "minimum": 1 },
+          "notes": { "type": ["string", "null"] },
+          "tableId": { "type": ["string", "null"], "format": "uuid" }
+        }
+      },
+      "UpdateReservationStatusRequest": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": { "$ref": "#/components/schemas/ReservationStatus" }
+        }
+      },
+      "CancelReservationRequest": {
+        "type": "object",
+        "properties": {
+          "reasonCode": {
+            "type": "string",
+            "enum": ["CUSTOMER_REQUEST", "RESTAURANT_CLOSED", "DUPLICATE_BOOKING", "PAYMENT_OR_DEPOSIT_ISSUE", "OPERATIONAL_CAPACITY", "OTHER"]
+          },
+          "details": { "type": "string", "maxLength": 500 },
+          "source": { "$ref": "#/components/schemas/ReservationSource" }
+        }
+      },
+      "NoShowReservationRequest": {
+        "type": "object",
+        "properties": {
+          "reasonCode": {
+            "type": "string",
+            "enum": ["CUSTOMER_DID_NOT_ARRIVE", "CUSTOMER_UNREACHABLE", "ARRIVED_TOO_LATE", "DUPLICATE_BOOKING", "OTHER"]
+          },
+          "details": { "type": "string", "maxLength": 500 }
+        }
+      },
+      "ReservationCancellationAudit": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "reservationId": { "type": "string", "format": "uuid" },
+          "reason": { "type": "string" },
+          "source": { "$ref": "#/components/schemas/ReservationSource" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ReservationNoShowAudit": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "reservationId": { "type": "string", "format": "uuid" },
+          "reasonCode": {
+            "type": "string",
+            "enum": ["CUSTOMER_DID_NOT_ARRIVE", "CUSTOMER_UNREACHABLE", "ARRIVED_TOO_LATE", "DUPLICATE_BOOKING", "OTHER"]
+          },
+          "details": { "type": ["string", "null"] },
+          "source": { "$ref": "#/components/schemas/ReservationSource" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PaginatedReservations": {
+        "type": "object",
+        "required": ["data", "total", "take", "skip"],
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Reservation" } },
+          "total": { "type": "integer" },
+          "take": { "type": "integer" },
+          "skip": { "type": "integer" }
+        }
+      },
+      "PaginatedCustomers": {
+        "type": "object",
+        "required": ["data", "total", "take", "skip"],
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Customer" } },
+          "total": { "type": "integer" },
+          "take": { "type": "integer" },
+          "skip": { "type": "integer" }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "firstName": { "type": ["string", "null"] },
+          "lastName": { "type": ["string", "null"] },
+          "role": { "$ref": "#/components/schemas/UserRole" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "PlatformDashboard": {
+        "type": "object",
+        "required": ["totals", "metricsByTenant"],
+        "properties": {
+          "totals": {
+            "type": "object",
+            "required": ["restaurants", "restaurantsActive", "restaurantsInactive", "restaurantsSuspended", "billingTrial", "billingActive", "billingPastDue", "billingSuspended", "users", "reservations"],
+            "properties": {
+              "restaurants": { "type": "integer" },
+              "restaurantsActive": { "type": "integer" },
+              "restaurantsInactive": { "type": "integer" },
+              "restaurantsSuspended": { "type": "integer" },
+              "billingTrial": { "type": "integer" },
+              "billingActive": { "type": "integer" },
+              "billingPastDue": { "type": "integer" },
+              "billingSuspended": { "type": "integer" },
+              "users": { "type": "integer" },
+              "reservations": { "type": "integer" }
+            }
+          },
+          "metricsByTenant": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PlatformTenantMetric" }
+          }
+        }
+      },
+      "PlatformTenantMetric": {
+        "type": "object",
+        "required": ["id", "slug", "name", "status", "users", "customers", "reservations", "tables"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "slug": { "type": "string" },
+          "name": { "type": "string" },
+          "status": { "$ref": "#/components/schemas/RestaurantStatus" },
+          "users": { "type": "integer" },
+          "customers": { "type": "integer" },
+          "reservations": { "type": "integer" },
+          "tables": { "type": "integer" }
+        }
+      },
+      "PlatformRestaurantListItem": {
+        "type": "object",
+        "required": ["id", "slug", "name", "timezone", "currency", "locale", "status", "billingPlan", "billingStatus", "createdAt", "updatedAt", "_count"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "slug": { "type": "string" },
+          "name": { "type": "string" },
+          "legalName": { "type": ["string", "null"] },
+          "email": { "type": ["string", "null"], "format": "email" },
+          "phone": { "type": ["string", "null"] },
+          "city": { "type": ["string", "null"] },
+          "country": { "type": ["string", "null"] },
+          "timezone": { "type": "string" },
+          "currency": { "type": "string" },
+          "locale": { "type": "string" },
+          "maxCapacity": { "type": ["integer", "null"] },
+          "status": { "$ref": "#/components/schemas/RestaurantStatus" },
+          "billingPlan": { "$ref": "#/components/schemas/BillingPlan" },
+          "billingStatus": { "$ref": "#/components/schemas/BillingStatus" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "_count": {
+            "type": "object",
+            "properties": {
+              "users": { "type": "integer" },
+              "customers": { "type": "integer" },
+              "reservations": { "type": "integer" },
+              "tables": { "type": "integer" }
+            }
+          }
+        }
+      },
+      "PlatformRestaurantDetail": {
+        "allOf": [
+          { "$ref": "#/components/schemas/PlatformRestaurantListItem" },
+          {
+            "type": "object",
+            "properties": {
+              "taxId": { "type": ["string", "null"] },
+              "website": { "type": ["string", "null"] },
+              "addressLine1": { "type": ["string", "null"] },
+              "allowWaitlist": { "type": "boolean" },
+              "autoConfirm": { "type": "boolean" },
+              "billingEmail": { "type": ["string", "null"], "format": "email" },
+              "billingCustomerReference": { "type": ["string", "null"] },
+              "trialEndsAt": { "type": ["string", "null"], "format": "date-time" },
+              "currentPeriodEndsAt": { "type": ["string", "null"], "format": "date-time" },
+              "defaultReservationDuration": { "type": "integer" },
+              "slotIntervalMinutes": { "type": "integer" },
+              "bufferTimeMinutes": { "type": "integer" },
+              "whatsappAccounts": { "type": "array", "items": { "type": "object" } },
+              "openingHours": { "type": "array", "items": { "type": "object" } },
+              "capacityRules": { "type": "array", "items": { "type": "object" } }
+            }
+          }
+        ]
+      },
+      "PaginatedPlatformRestaurants": {
+        "type": "object",
+        "required": ["data", "total", "take", "skip"],
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/PlatformRestaurantListItem" } },
+          "total": { "type": "integer" },
+          "take": { "type": "integer" },
+          "skip": { "type": "integer" }
+        }
+      },
+      "UpdatePlatformRestaurantRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "legalName": { "type": ["string", "null"] },
+          "taxId": { "type": ["string", "null"] },
+          "email": { "type": ["string", "null"], "format": "email" },
+          "phone": { "type": ["string", "null"] },
+          "website": { "type": ["string", "null"] },
+          "addressLine1": { "type": ["string", "null"] },
+          "city": { "type": ["string", "null"] },
+          "country": { "type": ["string", "null"] },
+          "timezone": { "type": "string" },
+          "currency": { "type": "string" },
+          "locale": { "type": "string" },
+          "maxCapacity": { "type": ["integer", "null"] },
+          "allowWaitlist": { "type": "boolean" },
+          "autoConfirm": { "type": "boolean" },
+          "status": { "$ref": "#/components/schemas/RestaurantStatus" },
+          "billingPlan": { "$ref": "#/components/schemas/BillingPlan" },
+          "billingStatus": { "$ref": "#/components/schemas/BillingStatus" },
+          "billingEmail": { "type": ["string", "null"], "format": "email" },
+          "billingCustomerReference": { "type": ["string", "null"] },
+          "trialEndsAt": { "type": ["string", "null"], "format": "date-time" },
+          "currentPeriodEndsAt": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": { "type": "integer" },
+          "message": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ]
+          },
+          "error": { "type": "string" }
+        }
+      }
+    }
+  }
+}

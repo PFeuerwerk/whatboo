@@ -39,6 +39,7 @@ import { WhatsappWorker } from '../../../workers/whatsapp.worker';
 
   exports: [
     WhatsappClientService,
+    WhatsappQueue,
   ],
 })
 export class WhatsappModule {}

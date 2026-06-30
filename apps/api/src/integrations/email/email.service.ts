@@ -41,13 +41,34 @@ export class EmailService implements IEmailService, OnModuleInit {
       connectionTimeout,
     });
 
-    this.transporter.verify((error) => {
-      if (error) {
-        this.logger.error(`Fallo en la conexion SMTP: ${error.message}`);
-        return;
+    if (this.configService.get<boolean>('SMTP_VERIFY_ON_START', false)) {
+      const health = await this.checkHealth();
+      if (health.status === 'up') {
+        this.logger.log(`Conexion SMTP establecida en ${host}:${port}`);
+      } else {
+        this.logger.warn(`SMTP no disponible al arranque: ${health.error}`);
       }
-      this.logger.log(`Conexion SMTP establecida en ${host}:${port}`);
-    });
+      return;
+    }
+
+    this.logger.log(`Servicio SMTP configurado en ${host}:${port}. Verificacion inicial desactivada.`);
+  }
+
+  async checkHealth(): Promise<{ status: 'up' | 'down'; host: string; port: number; error?: string }> {
+    const host = this.configService.get<string>('SMTP_HOST', 'localhost');
+    const port = this.configService.get<number>('SMTP_PORT', 1025);
+
+    try {
+      await this.transporter.verify();
+      return { status: 'up', host, port };
+    } catch (error) {
+      return {
+        status: 'down',
+        host,
+        port,
+        error: error instanceof Error ? error.message : 'Error SMTP desconocido',
+      };
+    }
   }
 
   async sendMail(options: SendEmailOptions): Promise<void> {

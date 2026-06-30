@@ -1,6 +1,10 @@
-import { bootstrapApplication } from '@angular/platform-browser'; // Corregido: Importación de platform-browser
+import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
 import { AppComponent } from './app/app.component';
 
 bootstrapApplication(AppComponent, appConfig)
-  .catch((err: any) => console.error(err)); // Corregido: Tipado explícito para noImplicitAny
+  .catch((err: unknown) => {
+    setTimeout(() => {
+      throw err;
+    });
+  });

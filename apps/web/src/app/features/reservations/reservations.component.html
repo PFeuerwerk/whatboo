@@ -93,4 +93,48 @@
       </div>
     }
   </div>
+
+  @if (actionDialog(); as dialog) {
+    <div class="dialog-backdrop" role="presentation">
+      <section class="action-dialog" role="dialog" aria-modal="true" [attr.aria-label]="dialog.title">
+        <header class="dialog-header">
+          <h2>{{ dialog.title }}</h2>
+          <button type="button" class="dialog-close" (click)="closeActionDialog()" [disabled]="actionIsSubmitting()" aria-label="Cerrar">
+            ×
+          </button>
+        </header>
+
+        <label class="field-label" for="reservation-action-reason">{{ dialog.reasonLabel }}</label>
+        <select
+          id="reservation-action-reason"
+          class="field-control"
+          [ngModel]="actionReasonCode()"
+          (ngModelChange)="actionReasonCode.set($event)"
+          [disabled]="actionIsSubmitting()">
+          @for (option of dialog.options; track option.code) {
+            <option [value]="option.code">{{ option.label }}</option>
+          }
+        </select>
+
+        <label class="field-label" for="reservation-action-details">{{ dialog.detailsLabel }}</label>
+        <textarea
+          id="reservation-action-details"
+          class="field-control field-textarea"
+          rows="4"
+          maxlength="500"
+          placeholder="Añade el motivo exacto indicado por sala, teléfono o cliente."
+          [ngModel]="actionReasonDetails()"
+          (ngModelChange)="actionReasonDetails.set($event)"
+          [disabled]="actionIsSubmitting()">
+        </textarea>
+
+        <footer class="dialog-actions">
+          <button type="button" class="secondary-btn" (click)="closeActionDialog()" [disabled]="actionIsSubmitting()">Volver</button>
+          <button type="button" class="danger-btn" (click)="submitActionDialog()" [disabled]="!canSubmitAction()">
+            {{ actionIsSubmitting() ? 'Guardando...' : dialog.primaryLabel }}
+          </button>
+        </footer>
+      </section>
+    </div>
+  }
 </div>

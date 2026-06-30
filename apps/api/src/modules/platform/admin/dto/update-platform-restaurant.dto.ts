@@ -1,5 +1,6 @@
 import {
   IsBoolean,
+  IsDateString,
   IsEmail,
   IsEnum,
   IsInt,
@@ -8,7 +9,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { RestaurantStatus } from '@prisma/client';
+import { BillingPlan, BillingStatus, RestaurantStatus } from '@prisma/client';
 
 export class UpdatePlatformRestaurantDto {
   @IsOptional()
@@ -76,4 +77,28 @@ export class UpdatePlatformRestaurantDto {
   @IsOptional()
   @IsEnum(RestaurantStatus)
   status?: RestaurantStatus;
+
+  @IsOptional()
+  @IsEnum(BillingPlan)
+  billingPlan?: BillingPlan;
+
+  @IsOptional()
+  @IsEnum(BillingStatus)
+  billingStatus?: BillingStatus;
+
+  @IsOptional()
+  @IsEmail()
+  billingEmail?: string | null;
+
+  @IsOptional()
+  @IsString()
+  billingCustomerReference?: string | null;
+
+  @IsOptional()
+  @IsDateString()
+  trialEndsAt?: string | null;
+
+  @IsOptional()
+  @IsDateString()
+  currentPeriodEndsAt?: string | null;
 }

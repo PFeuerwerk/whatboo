@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ReservationRepository } from '../repositories/reservation.repository';
 import { AvailabilityService } from '../../availability/services/availability.service';
 import { CustomerRepository } from '../../customers/repositories/customer.repository';
@@ -42,6 +42,8 @@ export interface GetReservationResult {
 
 @Injectable()
 export class ReservationEngineService {
+  private readonly logger = new Logger(ReservationEngineService.name);
+
   constructor(
     private readonly reservationRepository: ReservationRepository,
       private readonly restaurantRepository: RestaurantRepository,
@@ -305,7 +307,7 @@ export class ReservationEngineService {
           reservationEnd,
             tables[0].id,
         );
-        console.log("[RESCHEDULE RESULT]", updatedReservation);
+        this.logger.debug(`Reserva modificada por código: ${updatedReservation?.id ?? reservation.id}`);
 
 
         if (
@@ -329,7 +331,10 @@ export class ReservationEngineService {
           reservation: updatedReservation,
         };
       } catch (error) {
-        console.error("[MODIFICATION ERROR]", error);
+        this.logger.error(
+          'Fallo al modificar reserva por código.',
+          error instanceof Error ? error.stack : String(error),
+        );
 
         throw new InternalServerErrorException(
           "Fallo al modificar la reserva por código.",

@@ -1,6 +1,7 @@
 {
   "NAV": {
     "RESERVATIONS": "Reservations",
+    "CUSTOMERS": "Customers",
     "FLOOR_PLAN": "Tables & areas",
     "CONFIG": "Settings",
     "REPORTS": "Reports",

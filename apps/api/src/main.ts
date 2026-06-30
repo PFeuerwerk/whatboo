@@ -6,7 +6,7 @@ import { securityHeadersMiddleware } from './common/security/security-headers.mi
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   const configService = app.get<ConfigService>(ConfigService);
   const httpInstance = app.getHttpAdapter().getInstance() as { disable?: (name: string) => void };
   httpInstance.disable?.('x-powered-by');

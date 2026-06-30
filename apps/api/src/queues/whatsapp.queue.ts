@@ -74,4 +74,41 @@ export class WhatsappQueue implements OnModuleInit {
       jobId: input.sourceJobId ? `dlq:${input.sourceJobId}` : undefined,
     });
   }
+
+  async checkHealth(): Promise<{
+    status: 'up' | 'down';
+    mode: 'redis';
+    waiting?: number;
+    active?: number;
+    delayed?: number;
+    failed?: number;
+    dlqWaiting?: number;
+    error?: string;
+  }> {
+    if (!this.queue || !this.redisConnection) {
+      return { status: 'down', mode: 'redis', error: 'Cola de WhatsApp no inicializada.' };
+    }
+
+    try {
+      await this.redisConnection.ping();
+      const counts = await this.queue.getJobCounts('waiting', 'active', 'delayed', 'failed');
+      const dlqCounts = this.dlq ? await this.dlq.getJobCounts('waiting') : { waiting: 0 };
+
+      return {
+        status: 'up',
+        mode: 'redis',
+        waiting: counts.waiting ?? 0,
+        active: counts.active ?? 0,
+        delayed: counts.delayed ?? 0,
+        failed: counts.failed ?? 0,
+        dlqWaiting: dlqCounts.waiting ?? 0,
+      };
+    } catch (error) {
+      return {
+        status: 'down',
+        mode: 'redis',
+        error: error instanceof Error ? error.message : 'Error desconocido en cola de WhatsApp.',
+      };
+    }
+  }
 }

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, ReservationStatus, ReservationSource } from '@prisma/client';
+import { normalizePagination, paginatedResponse } from '../../../../common/pagination/paginated-response';
 import { PrismaService } from '../../../../infrastructure/database/prisma.service';
 
 export interface CreateReservationRepositoryInput {
@@ -41,6 +42,15 @@ export interface CreateReservationCancellationAuditInput {
   source?: ReservationSource;
 }
 
+export interface CreateReservationNoShowAuditInput {
+  restaurantId: string;
+  reservationId: string;
+  markedByUserId?: string | null;
+  reasonCode: string;
+  details?: string | null;
+  source?: ReservationSource;
+}
+
 @Injectable()
 export class ReservationRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -61,8 +71,7 @@ export class ReservationRepository {
   }
 
   async list(restaurantId: string, input: ListReservationsRepositoryInput) {
-    const take = Math.min(Math.max(Number(input.take ?? 50), 1), 100);
-    const skip = Math.max(Number(input.skip ?? 0), 0);
+    const { take, skip } = normalizePagination(input);
     const q = input.q?.trim();
     const where: Prisma.ReservationWhereInput = {
       restaurantId,
@@ -105,7 +114,7 @@ export class ReservationRepository {
       this.prisma.reservation.count({ where }),
     ]);
 
-    return { data, total, take, skip };
+    return paginatedResponse(data, total, { take, skip });
   }
 
   async findById(restaurantId: string, id: string) {
@@ -228,6 +237,37 @@ export class ReservationRepository {
       where: { restaurantId, reservationId },
       include: {
         cancelledByUser: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createNoShowAudit(input: CreateReservationNoShowAuditInput) {
+    return this.prisma.reservationNoShowAudit.create({
+      data: {
+        restaurantId: input.restaurantId,
+        reservationId: input.reservationId,
+        markedByUserId: input.markedByUserId ?? null,
+        reasonCode: input.reasonCode,
+        details: input.details?.trim() || null,
+        source: input.source ?? ReservationSource.DASHBOARD,
+      },
+    });
+  }
+
+  async listNoShowAudits(restaurantId: string, reservationId: string) {
+    return this.prisma.reservationNoShowAudit.findMany({
+      where: { restaurantId, reservationId },
+      include: {
+        markedByUser: {
           select: {
             id: true,
             email: true,
