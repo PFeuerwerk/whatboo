@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - apps/web/public/privacy-policy*.html
+      - apps/web/public/terms*.html
+      - apps/web/public/data-deletion*.html
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -33,6 +35,8 @@ jobs:
         run: |
           mkdir -p _site
           cp apps/web/public/privacy-policy*.html _site/
+          cp apps/web/public/terms*.html _site/
+          cp apps/web/public/data-deletion*.html _site/
           cat > _site/index.html <<'HTML'
           <!doctype html>
           <html lang="es">
