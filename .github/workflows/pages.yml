@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - apps/web/public/privacy-policy.html
+      - apps/web/public/privacy-policy*.html
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -32,18 +32,18 @@ jobs:
       - name: Prepare static site
         run: |
           mkdir -p _site
-          cp apps/web/public/privacy-policy.html _site/privacy-policy.html
+          cp apps/web/public/privacy-policy*.html _site/
           cat > _site/index.html <<'HTML'
           <!doctype html>
           <html lang="es">
             <head>
               <meta charset="utf-8">
               <meta name="viewport" content="width=device-width, initial-scale=1">
-              <meta http-equiv="refresh" content="0; url=privacy-policy.html">
+              <meta http-equiv="refresh" content="0; url=privacy-policy-la-bella-italia.html">
               <title>WhatBoo</title>
             </head>
             <body>
-              <p><a href="privacy-policy.html">Política de privacidad</a></p>
+              <p><a href="privacy-policy-la-bella-italia.html">Política de privacidad de La Bella Italia</a></p>
             </body>
           </html>
           HTML
