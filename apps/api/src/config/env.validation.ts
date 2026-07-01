@@ -29,8 +29,12 @@ export const envValidationSchema = Joi.object({
   WHATSAPP_VERIFY_TOKEN: Joi.string().optional().allow(''),
   WHATSAPP_ACCESS_TOKEN: Joi.string().optional().allow(''),
   WHATSAPP_PHONE_NUMBER_ID: Joi.string().optional().allow(''),
+  WHATSAPP_WABA_ID: Joi.string().optional().allow(''),
+  WHATSAPP_APP_ID: Joi.string().optional().allow(''),
   WHATSAPP_APP_SECRET: Joi.string().optional().allow(''),
   WHATSAPP_API_VERSION: Joi.string().default('v19.0'),
+  WHATSAPP_META_USER_ID: Joi.string().optional().allow(''),
+  WEBHOOK_VERIFY_TOKEN: Joi.string().optional().allow(''),
 
   SMTP_HOST: Joi.string().default('localhost'),
   SMTP_PORT: Joi.number().default(1025),
